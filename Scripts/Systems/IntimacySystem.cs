@@ -398,14 +398,20 @@ namespace UsurperRemake.Systems
 
             bool matched = false;
 
+            // Trait threshold for matching — lower means more forgiving.
+            // Base traits are 0.2-0.8 (mean 0.5). At 0.35f, most NPCs have clear
+            // preferences while archetype-reduced traits (e.g. thug tenderness 0.08-0.32)
+            // still correctly fail, reflecting the NPC's personality.
+            const float t = 0.35f;
+
             switch (phase)
             {
                 case 1: // Anticipation: How do you begin?
                     matched = choice switch
                     {
-                        "1" => profile.Tenderness > 0.5f || profile.Romanticism > 0.5f,      // Take it slow
-                        "2" => profile.Passion > 0.5f || profile.Sensuality > 0.5f,           // Pull them close
-                        "3" => profile.IntimateStyle == RomanceStyle.Dominant ||                // Let them lead
+                        "1" => profile.Tenderness > t || profile.Romanticism > t,              // Take it slow
+                        "2" => profile.Passion > t || profile.Sensuality > t,                   // Pull them close
+                        "3" => profile.IntimateStyle == RomanceStyle.Dominant ||                 // Let them lead
                                profile.IntimateStyle == RomanceStyle.Switch,
                         _ => false
                     };
@@ -414,9 +420,9 @@ namespace UsurperRemake.Systems
                 case 3: // Escalation: What do you whisper?
                     matched = choice switch
                     {
-                        "1" => profile.Romanticism > 0.5f || profile.Tenderness > 0.5f,      // "You're so beautiful"
-                        "2" => profile.Passion > 0.5f || profile.Adventurousness > 0.5f,      // "I need you. Now."
-                        "3" => profile.Sensuality > 0.5f ||                                    // "Tell me what you want"
+                        "1" => profile.Romanticism > t || profile.Tenderness > t,              // "You're so beautiful"
+                        "2" => profile.Passion > t || profile.Adventurousness > t,              // "I need you. Now."
+                        "3" => profile.Sensuality > t ||                                        // "Tell me what you want"
                                profile.IntimateStyle == RomanceStyle.Dominant,
                         _ => false
                     };
@@ -425,9 +431,9 @@ namespace UsurperRemake.Systems
                 case 5: // Afterglow: What do you say?
                     matched = choice switch
                     {
-                        "1" => profile.Commitment > 0.5f || profile.Romanticism > 0.5f,      // "Stay with me tonight"
-                        "2" => profile.Passion > 0.5f || profile.Sensuality > 0.5f,           // "That was amazing"
-                        "3" => profile.Tenderness > 0.5f || profile.Patience > 0.5f,          // Hold them close
+                        "1" => profile.Commitment > t || profile.Romanticism > t,              // "Stay with me tonight"
+                        "2" => profile.Passion > t || profile.Sensuality > t,                   // "That was amazing"
+                        "3" => profile.Tenderness > t || profile.Patience > t,                  // Hold them close
                         _ => false
                     };
                     break;
@@ -653,7 +659,7 @@ namespace UsurperRemake.Systems
             string physicalDesc = partner.Race switch
             {
                 CharacterRace.Elf => $"  {their.Substring(0, 1).ToUpper() + their.Substring(1)} elven form is lithe and graceful, skin almost luminous in the dim light.",
-                CharacterRace.Dwarf => $"  {genderCap}'s sturdy frame is surprisingly soft in your arms, skin warm against yours.",
+                CharacterRace.Dwarf => $"  {their.Substring(0, 1).ToUpper() + their.Substring(1)} sturdy frame is surprisingly soft in your arms, skin warm against yours.",
                 CharacterRace.Orc => $"  {their.Substring(0, 1).ToUpper() + their.Substring(1)} powerful body is impressive, green-tinged skin warm with desire.",
                 CharacterRace.Hobbit => $"  {their.Substring(0, 1).ToUpper() + their.Substring(1)} smaller frame fits perfectly against you, soft and inviting.",
                 _ => $"  {their.Substring(0, 1).ToUpper() + their.Substring(1)} body is warm and welcoming, curves and planes you want to memorize."

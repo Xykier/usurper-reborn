@@ -1568,10 +1568,10 @@ public partial class QuestSystem
         var lower = name.ToLower();
 
         // Irregular plurals
-        if (lower.EndsWith("wolf")) return name.Substring(0, name.Length - 4) + "olves";
-        if (lower.EndsWith("thief")) return name.Substring(0, name.Length - 4) + "ieves";
-        if (lower.EndsWith("elf")) return name.Substring(0, name.Length - 3) + "lves";
-        if (lower.EndsWith("man")) return name.Substring(0, name.Length - 3) + "men";
+        if (lower.EndsWith("wolf")) return name.Substring(0, name.Length - 1) + "ves";
+        if (lower.EndsWith("thief")) return name.Substring(0, name.Length - 1) + "ves";
+        if (lower.EndsWith("elf")) return name.Substring(0, name.Length - 1) + "ves";
+        if (lower.EndsWith("man")) return name.Substring(0, name.Length - 2) + "en";
 
         // Words ending in s, x, z, ch, sh → add "es"
         if (lower.EndsWith("s") || lower.EndsWith("x") || lower.EndsWith("z") ||
@@ -2067,20 +2067,25 @@ public partial class QuestSystem
         string questTitle;
         string questDescription;
 
+        // Use shop-generated items (what players actually see in shops)
+        // Level filter matches shop display: MinLevel within playerLevel -20 to +15
+        int minLevel = Math.Max(1, playerLevel - 20);
+        int maxLevel = playerLevel + 15;
+
         if (questTypeRoll < 35)
         {
-            // Weapon quest (35%)
+            // Weapon quest (35%) — from Weapon Shop procedural inventory
             questTarget = QuestTarget.BuyWeapon;
-            var weapons = EquipmentDatabase.GetOneHandedWeapons()
-                .Concat(EquipmentDatabase.GetTwoHandedWeapons())
-                .Where(w => w.Value >= playerLevel * 50 && w.Value <= playerLevel * 500)
+            var weapons = EquipmentDatabase.GetShopWeapons(WeaponHandedness.OneHanded)
+                .Concat(EquipmentDatabase.GetShopWeapons(WeaponHandedness.TwoHanded))
+                .Where(w => w.MinLevel >= minLevel && w.MinLevel <= maxLevel)
                 .ToList();
 
             if (weapons.Count > 0)
             {
                 targetEquipment = weapons[random.Next(weapons.Count)];
                 questTitle = $"Acquire: {targetEquipment.Name}";
-                questDescription = $"The Merchant Guild seeks a {targetEquipment.Name}. Purchase one from any shop.";
+                questDescription = $"The Merchant Guild seeks a {targetEquipment.Name}. Purchase one from the Weapon Shop.";
             }
             else
             {
@@ -2089,17 +2094,25 @@ public partial class QuestSystem
         }
         else if (questTypeRoll < 65)
         {
-            // Armor quest (30%)
+            // Armor quest (30%) — from Armor Shop procedural inventory
             questTarget = QuestTarget.BuyArmor;
-            var armor = EquipmentDatabase.GetAllArmor()
-                .Where(a => a.Value >= playerLevel * 40 && a.Value <= playerLevel * 400)
-                .ToList();
+            var armorSlots = new[] {
+                EquipmentSlot.Head, EquipmentSlot.Body, EquipmentSlot.Arms,
+                EquipmentSlot.Hands, EquipmentSlot.Legs, EquipmentSlot.Feet,
+                EquipmentSlot.Waist, EquipmentSlot.Face, EquipmentSlot.Cloak
+            };
+            var armor = new List<Equipment>();
+            foreach (var slot in armorSlots)
+            {
+                armor.AddRange(EquipmentDatabase.GetShopArmor(slot)
+                    .Where(a => a.MinLevel >= minLevel && a.MinLevel <= maxLevel));
+            }
 
             if (armor.Count > 0)
             {
                 targetEquipment = armor[random.Next(armor.Count)];
                 questTitle = $"Acquire: {targetEquipment.Name}";
-                questDescription = $"The Merchant Guild needs a {targetEquipment.Name}. Purchase one from any shop.";
+                questDescription = $"The Merchant Guild needs a {targetEquipment.Name}. Purchase one from the Armor Shop.";
             }
             else
             {
@@ -2108,17 +2121,17 @@ public partial class QuestSystem
         }
         else if (questTypeRoll < 85)
         {
-            // Accessory quest (20%)
+            // Accessory quest (20%) — from Magic Shop (uses static + shop accessories)
             questTarget = QuestTarget.BuyAccessory;
             var accessories = EquipmentDatabase.GetAccessories()
-                .Where(a => a.Value >= playerLevel * 60 && a.Value <= playerLevel * 600)
+                .Where(a => a.MinLevel <= playerLevel)
                 .ToList();
 
             if (accessories.Count > 0)
             {
                 targetEquipment = accessories[random.Next(accessories.Count)];
                 questTitle = $"Acquire: {targetEquipment.Name}";
-                questDescription = $"A collector is seeking a {targetEquipment.Name}. Purchase one for a reward.";
+                questDescription = $"A collector is seeking a {targetEquipment.Name}. Purchase one from the Magic Shop.";
             }
             else
             {
@@ -2127,17 +2140,17 @@ public partial class QuestSystem
         }
         else
         {
-            // Shield quest (15%)
+            // Shield quest (15%) — from Weapon Shop procedural inventory
             questTarget = QuestTarget.BuyShield;
-            var shields = EquipmentDatabase.GetShields()
-                .Where(s => s.Value >= playerLevel * 30 && s.Value <= playerLevel * 300)
+            var shields = EquipmentDatabase.GetShopShields()
+                .Where(s => s.MinLevel >= minLevel && s.MinLevel <= maxLevel)
                 .ToList();
 
             if (shields.Count > 0)
             {
                 targetEquipment = shields[random.Next(shields.Count)];
                 questTitle = $"Acquire: {targetEquipment.Name}";
-                questDescription = $"The city guard needs a {targetEquipment.Name}. Purchase one from a shop.";
+                questDescription = $"The city guard needs a {targetEquipment.Name}. Purchase one from the Weapon Shop.";
             }
             else
             {

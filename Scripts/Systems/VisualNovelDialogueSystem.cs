@@ -1238,6 +1238,42 @@ namespace UsurperRemake.Systems
             var state = npcConversationStates.GetValueOrDefault(npc.ID) ?? new ConversationState();
             bool isAttracted = profile?.IsAttractedTo(player!.Sex == CharacterSex.Female ? GenderIdentity.Female : GenderIdentity.Male) ?? true;
 
+            // If NPC is already the player's Spouse or Lover, flirting always succeeds warmly
+            var romanceType = RomanceTracker.Instance.GetRelationType(npc.ID);
+            if (romanceType == RomanceRelationType.Spouse || romanceType == RomanceRelationType.Lover)
+            {
+                state.LastFlirtWasPositive = true;
+                state.FlirtSuccessCount++;
+                flirtCountThisSession++;
+
+                terminal!.SetColor("bright_magenta");
+                string their = npc.Sex == CharacterSex.Female ? "her" : "his";
+                string gender = npc.Sex == CharacterSex.Female ? "she" : "he";
+
+                if (flirtCountThisSession == 1)
+                    terminal.WriteLine($"  You catch {npc.Name2}'s eye and flash a playful grin...");
+                else
+                    terminal.WriteLine($"  You lean closer to {npc.Name2} with a mischievous look...");
+                terminal.WriteLine("");
+                await Task.Delay(500);
+
+                terminal.SetColor("yellow");
+                var loverResponses = new[]
+                {
+                    $"  *{gender} grins back* \"You're incorrigible... and I love it.\"",
+                    $"  *laughs softly* \"Even after all this time, you make me blush.\"",
+                    $"  *moves closer* \"Keep looking at me like that and we won't make it home.\"",
+                    $"  *{their} eyes sparkle* \"You always know how to make me smile.\"",
+                    $"  *playfully* \"Careful, or I'll drag you somewhere private.\""
+                };
+                terminal.WriteLine(loverResponses[random.Next(loverResponses.Length)]);
+
+                RelationshipSystem.UpdateRelationship(player!, npc, 1, 1, false, true);
+                terminal.WriteLine("");
+                await terminal.PressAnyKey();
+                return;
+            }
+
             // Check NPC's relationship status
             bool npcIsMarried = npc.Married || npc.IsMarried;
             // Check if NPC has a spouse/partner that isn't the player (makes flirting harder)

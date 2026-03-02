@@ -976,8 +976,45 @@ public class WeaponShopLocation : BaseLocation
         }
 
         terminal.WriteLine("");
-        terminal.Write("Sell which? (0 to cancel): ");
-        var input = await terminal.GetInput("");
+        terminal.Write("Sell which? ([A]ll backpack, 0 to cancel): ");
+        var input = (await terminal.GetInput("")).Trim().ToUpper();
+
+        if (input == "A")
+        {
+            // Sell all weapons/shields from backpack (not equipped items)
+            var sellable = currentPlayer.Inventory
+                .Where(i => i.IsIdentified && !i.IsCursed &&
+                       (i.Type == ObjType.Weapon || i.Type == ObjType.Shield))
+                .ToList();
+
+            if (sellable.Count == 0)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("No sellable weapons or shields in your backpack.");
+                await Pause();
+                return;
+            }
+
+            long totalGold = sellable.Sum(i => (long)((i.Value / 2) * fenceModifier));
+            terminal.SetColor("yellow");
+            terminal.WriteLine($"Sell {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {FormatNumber(totalGold)} gold? (Y/N): ");
+            var bulkConfirm = (await terminal.GetInput("")).Trim().ToUpper();
+
+            if (bulkConfirm == "Y")
+            {
+                foreach (var item in sellable)
+                    currentPlayer.Inventory.Remove(item);
+                currentPlayer.Gold += totalGold;
+                currentPlayer.Statistics.RecordSale(totalGold);
+                currentPlayer.RecalculateStats();
+
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("");
+                terminal.WriteLine($"Sold {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {FormatNumber(totalGold)} gold!");
+            }
+            await Pause();
+            return;
+        }
 
         if (!int.TryParse(input, out int sellChoice) || sellChoice < 1 || sellChoice > sellableItems.Count)
         {

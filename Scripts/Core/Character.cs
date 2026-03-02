@@ -403,6 +403,21 @@ public class Character
     public float LoversBlissBonus { get; set; } = 0f;  // Damage/defense % bonus from perfect intimacy
     public float CycleExpMultiplier { get; set; } = 1.0f; // NG+ XP multiplier (scales with cycle)
 
+    // Fatigue system (v0.49.1) — single-player only
+    public int Fatigue { get; set; } = 0; // 0-100, accumulates from combat/exploration, reset on sleep
+
+    /// <summary>Get fatigue tier label and color for display. Returns empty strings for Normal tier.</summary>
+    public (string label, string color) GetFatigueTier()
+    {
+        if (Fatigue < GameConfig.FatigueFreshThreshold)
+            return ("Well-Rested", "bright_green");
+        if (Fatigue < GameConfig.FatigueTiredThreshold)
+            return ("", ""); // Normal — no display
+        if (Fatigue < GameConfig.FatigueExhaustedThreshold)
+            return ("Tired", "yellow");
+        return ("Exhausted", "bright_red");
+    }
+
     // Herb pouch inventory (v0.48.5)
     public int HerbHealing { get; set; }        // Healing Herbs (garden lv1)
     public int HerbIronbark { get; set; }       // Ironbark Root (garden lv2)

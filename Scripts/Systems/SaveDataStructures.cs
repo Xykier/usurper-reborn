@@ -461,6 +461,7 @@ namespace UsurperRemake.Systems
         public int HerbsGatheredToday { get; set; } = 0;
         public int WellRestedCombats { get; set; } = 0;
         public float WellRestedBonus { get; set; } = 0f;
+        public int Fatigue { get; set; } = 0;
         public int LoversBlissCombats { get; set; } = 0;
         public float LoversBlissBonus { get; set; } = 0f;
         public float CycleExpMultiplier { get; set; } = 1.0f;

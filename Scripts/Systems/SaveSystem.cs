@@ -722,6 +722,7 @@ namespace UsurperRemake.Systems
                 HerbsGatheredToday = player.HerbsGatheredToday,
                 WellRestedCombats = player.WellRestedCombats,
                 WellRestedBonus = player.WellRestedBonus,
+                Fatigue = player.Fatigue,
                 LoversBlissCombats = player.LoversBlissCombats,
                 LoversBlissBonus = player.LoversBlissBonus,
                 CycleExpMultiplier = player.CycleExpMultiplier,

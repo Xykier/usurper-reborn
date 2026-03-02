@@ -186,21 +186,14 @@ public class DailySystemManager
             PendingDailyResetDisplay = true;
         }
         
-        // Use MaintenanceSystem for complete Pascal-compatible maintenance
+        // Always run basic daily reset (counters, turns, daily flags)
+        await RunBasicDailyReset();
+
+        // Run MaintenanceSystem for additional Pascal-compatible processing
+        // (alive bonus, team wages, class maintenance, healing spoilage, etc.)
         if (maintenanceSystem != null)
         {
-            var maintenanceRan = await maintenanceSystem.CheckAndRunMaintenance(forced);
-            
-            if (!maintenanceRan)
-            {
-                // Run basic daily reset if maintenance wasn't needed
-                await RunBasicDailyReset();
-            }
-        }
-        else
-        {
-            // Fallback to basic daily reset
-            await RunBasicDailyReset();
+            await maintenanceSystem.CheckAndRunMaintenance(forced);
         }
         
         // Process mode-specific resets
@@ -335,6 +328,9 @@ public class DailySystemManager
         // Reset home daily counters (v0.44.0)
         player.HomeRestsToday = 0;
         player.HerbsGatheredToday = 0;
+
+        // Reset fatigue on full sleep (v0.49.1)
+        player.Fatigue = 0;
 
         // Reset companion daily flags
         CompanionSystem.Instance?.ResetDailyFlags();
@@ -1256,7 +1252,7 @@ public class DailySystemManager
     /// Check if the time period changed and return an atmospheric message if so.
     /// Returns null if no transition occurred.
     /// </summary>
-    public string? CheckTimeTransition(Character player)
+    public string? CheckTimeTransition(Character player, bool inDungeon = false)
     {
         if (DoorMode.IsOnlineMode) return null;
 
@@ -1268,6 +1264,19 @@ public class DailySystemManager
 
         // Don't show transition on first check (game start)
         if (previousPeriod == null) return null;
+
+        if (inDungeon)
+        {
+            return currentPeriod switch
+            {
+                GameTimePeriod.Dawn => "You sense dawn breaking somewhere far above.",
+                GameTimePeriod.Morning => "The dungeon air shifts subtly — morning has come to the world above.",
+                GameTimePeriod.Afternoon => "Time blurs underground, but your gut says it's afternoon.",
+                GameTimePeriod.Evening => "A chill deepens in the stone walls. Evening must be approaching.",
+                GameTimePeriod.Night => "The darkness feels heavier now. Night has fallen above.",
+                _ => null
+            };
+        }
 
         return currentPeriod switch
         {

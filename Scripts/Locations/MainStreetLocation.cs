@@ -227,7 +227,9 @@ public class MainStreetLocation : BaseLocation
         terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("A"); terminal.SetColor("darkgray"); terminal.Write("]");
         terminal.SetColor("white"); terminal.Write("rmor Shop  ");
         terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("M"); terminal.SetColor("darkgray"); terminal.Write("]");
-        terminal.SetColor("white"); terminal.WriteLine("agic Shop");
+        terminal.SetColor("white"); terminal.Write("agic Shop  ");
+        terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("U"); terminal.SetColor("darkgray"); terminal.Write("]");
+        terminal.SetColor("cyan"); terminal.WriteLine("Music Shop");
 
         terminal.SetColor("darkgray");
         terminal.Write(" ["); terminal.SetColor("bright_yellow"); terminal.Write("I"); terminal.SetColor("darkgray"); terminal.Write("]");
@@ -256,9 +258,7 @@ public class MainStreetLocation : BaseLocation
             terminal.Write(" ["); terminal.SetColor("bright_yellow"); terminal.Write("N"); terminal.SetColor("darkgray"); terminal.Write("]");
             terminal.SetColor("white"); terminal.Write("ews        ");
             terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("F"); terminal.SetColor("darkgray"); terminal.Write("]");
-            terminal.SetColor("white"); terminal.Write("ame       ");
-            terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("U"); terminal.SetColor("darkgray"); terminal.Write("]");
-            terminal.SetColor("cyan"); terminal.WriteLine("Music Shop");
+            terminal.SetColor("white"); terminal.WriteLine("ame");
         }
 
         // Tier 3 (Level 5+): Full menu
@@ -514,7 +514,7 @@ public class MainStreetLocation : BaseLocation
         }
         terminal.WriteLine("");
 
-        // Row 2 - Shops (W/A/M always, J tier 3+)
+        // Row 2 - Shops (W/A/M/U always, J tier 3+)
         terminal.SetColor("darkgray");
         terminal.Write(" [");
         terminal.SetColor("bright_yellow");
@@ -542,8 +542,18 @@ public class MainStreetLocation : BaseLocation
         terminal.SetColor("white");
         terminal.Write("agic Shop   ");
 
+        terminal.SetColor("darkgray");
+        terminal.Write("[");
+        terminal.SetColor("bright_yellow");
+        terminal.Write("U");
+        terminal.SetColor("darkgray");
+        terminal.Write("]");
+        terminal.SetColor("cyan");
+        terminal.Write("Music Shop");
+
         if (tier >= 3)
         {
+            terminal.Write("  ");
             terminal.SetColor("darkgray");
             terminal.Write("[");
             terminal.SetColor("bright_yellow");
@@ -616,15 +626,6 @@ public class MainStreetLocation : BaseLocation
             terminal.Write("]");
             terminal.SetColor("white");
             terminal.Write("ome         ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("U");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.Write("Music Shop");
 
             if (tier >= 3)
             {
@@ -2068,11 +2069,17 @@ public class MainStreetLocation : BaseLocation
     
     private string GetTimeOfDay()
     {
-        var hour = DateTime.Now.Hour;
+        // Use game clock in single-player, real clock in online mode
+        int hour;
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
+            hour = currentPlayer.GameTimeMinutes / 60;
+        else
+            hour = DateTime.Now.Hour;
+
         return hour switch
         {
             >= 6 and < 12 => "morning",
-            >= 12 and < 18 => "afternoon", 
+            >= 12 and < 18 => "afternoon",
             >= 18 and < 22 => "evening",
             _ => "night"
         };

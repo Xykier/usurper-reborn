@@ -649,6 +649,16 @@ public class HealerLocation : BaseLocation
     {
         var player = GetCurrentPlayer();
 
+        if (player.MaxMana <= 0)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("cyan");
+            terminal.WriteLine($"\"{player.Class}s have no use for mana potions,\" {Manager} says, shaking their head.");
+            terminal.SetColor("gray");
+            await terminal.PressAnyKey();
+            return;
+        }
+
         int potionPrice = Math.Max(75, player.Level * 3);
         int manaRestored = 30 + player.Level * 5;
         var (_, _, singleManaWithTax) = CityControlSystem.CalculateHealingTaxedPrice(potionPrice);

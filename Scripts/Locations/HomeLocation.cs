@@ -286,9 +286,8 @@ public class HomeLocation : BaseLocation
 
         terminal.WriteLine("");
 
-        // Single-player: Wait until nightfall
-        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null
-            && !DailySystemManager.CanRestForNight(currentPlayer))
+        // Single-player: Sleep or Wait
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
         {
             terminal.SetColor("darkgray");
             terminal.Write(" [");
@@ -296,8 +295,16 @@ public class HomeLocation : BaseLocation
             terminal.Write("Z");
             terminal.SetColor("darkgray");
             terminal.Write("] ");
-            terminal.SetColor("dark_cyan");
-            terminal.WriteLine("Wait until nightfall");
+            if (DailySystemManager.CanRestForNight(currentPlayer))
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("Sleep (advance to morning)");
+            }
+            else
+            {
+                terminal.SetColor("dark_cyan");
+                terminal.WriteLine("Wait until nightfall");
+            }
         }
 
         // Navigation row
@@ -415,7 +422,15 @@ public class HomeLocation : BaseLocation
         ShowBBSMenuRow(("A", "bright_yellow", "Herbs"), ("T", "bright_yellow", "Trophies"), ("F", "bright_yellow", "Family"));
         ShowBBSMenuRow(("P", "bright_yellow", "Partner"), ("B", "bright_yellow", "Bedroom"), ("!", "bright_yellow", "Resurrect"));
         ShowBBSMenuRow(("I", "bright_yellow", "Inventory"), ("G", "bright_yellow", "Gear"), ("H", "bright_yellow", "Heal(Pot)"));
-        ShowBBSMenuRow(("R", "bright_yellow", "Return"));
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
+        {
+            string zLabel = DailySystemManager.CanRestForNight(currentPlayer) ? "Sleep" : "Wait";
+            ShowBBSMenuRow(("Z", "bright_yellow", zLabel), ("R", "bright_yellow", "Return"));
+        }
+        else
+        {
+            ShowBBSMenuRow(("R", "bright_yellow", "Return"));
+        }
 
         ShowBBSFooter();
     }
@@ -512,7 +527,12 @@ public class HomeLocation : BaseLocation
                 return false;
             case "Z":
                 if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
-                    await DailySystemManager.Instance.WaitUntilEvening(currentPlayer, terminal);
+                {
+                    if (DailySystemManager.CanRestForNight(currentPlayer))
+                        await SleepAtHome();
+                    else
+                        await DailySystemManager.Instance.WaitUntilEvening(currentPlayer, terminal);
+                }
                 return false;
             case "R":
             case "Q":
@@ -589,6 +609,15 @@ public class HomeLocation : BaseLocation
 
         currentPlayer.HomeRestsToday++;
 
+        // Reduce fatigue from home rest (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer.Fatigue > 0)
+        {
+            int oldFatigue = currentPlayer.Fatigue;
+            currentPlayer.Fatigue = Math.Max(0, currentPlayer.Fatigue - GameConfig.FatigueReductionHomeRest);
+            if (currentPlayer.Fatigue < oldFatigue)
+                terminal.WriteLine($"You feel refreshed. (Fatigue -{oldFatigue - currentPlayer.Fatigue})", "bright_green");
+        }
+
         // Apply Well-Rested buff from Hearth
         int hearthLevel = Math.Clamp(currentPlayer.HearthLevel, 0, 5);
         if (hearthLevel > 0)
@@ -639,28 +668,125 @@ public class HomeLocation : BaseLocation
             DreamSystem.Instance.ExperienceDream(dream.Id);
         }
 
-        // In single-player, resting at home advances the day if it's nighttime
-        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode)
+        await terminal.WaitForKey();
+    }
+
+    private async Task SleepAtHome()
+    {
+        if (UsurperRemake.BBS.DoorMode.IsOnlineMode || currentPlayer == null)
+            return;
+
+        if (!DailySystemManager.CanRestForNight(currentPlayer))
         {
-            if (DailySystemManager.CanRestForNight(currentPlayer))
-            {
-                terminal.WriteLine("");
-                terminal.SetColor("gray");
-                terminal.WriteLine("You settle in for a proper night's rest...");
-                await Task.Delay(1500);
-                await DailySystemManager.Instance.RestAndAdvanceToMorning(currentPlayer);
-                terminal.SetColor("yellow");
-                terminal.WriteLine($"A new day dawns. (Day {DailySystemManager.Instance.CurrentDay})");
-                await Task.Delay(1500);
-            }
-            else
-            {
-                terminal.WriteLine("");
-                terminal.SetColor("gray");
-                var period = DailySystemManager.GetTimePeriodString(currentPlayer);
-                terminal.WriteLine($"It's only {period}. You rest briefly but it's too early to sleep for the night.");
-            }
+            terminal.SetColor("gray");
+            terminal.WriteLine("It's not late enough to sleep for the night. Try waiting until evening.");
+            await terminal.WaitForKey();
+            return;
         }
+
+        int homeLevel = Math.Clamp(currentPlayer.HomeLevel, 0, 5);
+
+        // Flavor text based on home level
+        terminal.WriteLine("");
+        switch (homeLevel)
+        {
+            case 0:
+                terminal.WriteLine("You burrow into the straw pile for the night...", "gray");
+                break;
+            case 1:
+                terminal.WriteLine("You stretch out on your cot and close your eyes...", "gray");
+                break;
+            case 2:
+                terminal.WriteLine("You climb into your wooden bed and pull the blanket over you...", "gray");
+                break;
+            default:
+                terminal.WriteLine("You settle into the comfort of your bed for a full night's sleep...", "gray");
+                break;
+        }
+        await Task.Delay(1500);
+
+        // Full HP/Mana/Stamina recovery with Blood Price penalty
+        float restEfficiency = 1.0f;
+        if (currentPlayer.MurderWeight >= 6f) restEfficiency = 0.50f;
+        else if (currentPlayer.MurderWeight >= 3f) restEfficiency = 0.75f;
+
+        long healAmount = (long)((currentPlayer.MaxHP - currentPlayer.HP) * restEfficiency);
+        long manaAmount = (long)((currentPlayer.MaxMana - currentPlayer.Mana) * restEfficiency);
+        long staminaAmount = (long)((currentPlayer.MaxCombatStamina - currentPlayer.CurrentCombatStamina) * restEfficiency);
+        currentPlayer.HP = Math.Min(currentPlayer.MaxHP, currentPlayer.HP + healAmount);
+        currentPlayer.Mana = Math.Min(currentPlayer.MaxMana, currentPlayer.Mana + manaAmount);
+        currentPlayer.CurrentCombatStamina = Math.Min(currentPlayer.MaxCombatStamina, currentPlayer.CurrentCombatStamina + staminaAmount);
+
+        if (currentPlayer.MurderWeight >= 3f)
+        {
+            terminal.WriteLine("Dark memories invade your dreams, leaving you less than fully rested...", "dark_red");
+        }
+
+        if (restEfficiency >= 1.0f)
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("You wake feeling completely refreshed!");
+        }
+        else
+        {
+            terminal.SetColor("green");
+            terminal.WriteLine($"Recovered {healAmount} HP, {manaAmount} mana, {staminaAmount} stamina. ({(int)(restEfficiency * 100)}% recovery)");
+        }
+
+        // Apply Well-Rested buff from Hearth
+        int hearthLevel = Math.Clamp(currentPlayer.HearthLevel, 0, 5);
+        if (hearthLevel > 0)
+        {
+            float bonus = GameConfig.HearthDamageBonus[hearthLevel];
+            int combats = GameConfig.HearthCombatDuration[hearthLevel];
+            currentPlayer.WellRestedCombats = combats;
+            currentPlayer.WellRestedBonus = bonus;
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine($"The warmth of your hearth invigorates you! (+{(int)(bonus * 100)}% damage/defense for {combats} combats)");
+        }
+
+        // Check for dreams
+        var dream = DreamSystem.Instance.GetDreamForRest(currentPlayer, 0);
+        if (dream != null)
+        {
+            await Task.Delay(1500);
+            terminal.WriteLine("");
+            terminal.SetColor("dark_magenta");
+            terminal.WriteLine("As sleep takes you, dreams unfold...");
+            terminal.WriteLine("");
+            await Task.Delay(1500);
+
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine($"=== {dream.Title} ===");
+            terminal.WriteLine("");
+
+            terminal.SetColor("magenta");
+            foreach (var line in dream.Content)
+            {
+                terminal.WriteLine($"  {line}");
+                await Task.Delay(1200);
+            }
+
+            if (!string.IsNullOrEmpty(dream.PhilosophicalHint))
+            {
+                terminal.WriteLine("");
+                terminal.SetColor("dark_cyan");
+                terminal.WriteLine($"  ({dream.PhilosophicalHint})");
+            }
+
+            terminal.WriteLine("");
+            DreamSystem.Instance.ExperienceDream(dream.Id);
+        }
+
+        // Advance to morning
+        terminal.WriteLine("");
+        terminal.SetColor("gray");
+        terminal.WriteLine("You drift off to sleep...");
+        await Task.Delay(2000);
+        await DailySystemManager.Instance.RestAndAdvanceToMorning(currentPlayer);
+        terminal.SetColor("yellow");
+        terminal.WriteLine($"A new day dawns. (Day {DailySystemManager.Instance.CurrentDay})");
+        await Task.Delay(1500);
 
         await terminal.WaitForKey();
     }

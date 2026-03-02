@@ -87,7 +87,7 @@ namespace UsurperRemake.Systems
                 },
 
                 CombatRole = CombatRole.Hybrid,
-                Abilities = new[] { "Starlight Heal", "Divine Smite", "Aurora Shield", "Sacrifice" },
+                Abilities = new[] { "Lay on Hands", "Divine Smite", "Aura of Protection", "Holy Avenger" },
 
                 PersonalQuestName = "The Light That Was",
                 PersonalQuestDescription = "Help Lyris recover an artifact that could restore Aurelion's true nature.",
@@ -144,7 +144,7 @@ namespace UsurperRemake.Systems
                 },
 
                 CombatRole = CombatRole.Tank,
-                Abilities = new[] { "Shield Wall", "Taunt", "Last Stand", "Sacrifice" },
+                Abilities = new[] { "Power Strike", "Shield Wall", "Battle Cry", "Last Stand" },
 
                 PersonalQuestName = "Ghosts of the Guard",
                 PersonalQuestDescription = "Help Aldric find closure by confronting the demon that killed his unit.",
@@ -203,7 +203,7 @@ namespace UsurperRemake.Systems
                 },
 
                 CombatRole = CombatRole.Healer,
-                Abilities = new[] { "Greater Heal", "Purify", "Sanctuary", "Final Sacrifice" },
+                Abilities = new[] { "Prayer of Mending", "Holy Smite", "Sanctuary", "Greater Heal" },
 
                 PersonalQuestName = "The Meaning of Mercy",
                 PersonalQuestDescription = "Help Mira decide if healing is worth continuing, culminating in a choice.",
@@ -260,7 +260,7 @@ namespace UsurperRemake.Systems
                 },
 
                 CombatRole = CombatRole.Damage,
-                Abilities = new[] { "Backstab", "Smoke Bomb", "Disarm Trap", "Last Laugh" },
+                Abilities = new[] { "Backstab", "Poison Blade", "Shadow Step", "Death Mark" },
 
                 PersonalQuestName = "One More Sunrise",
                 PersonalQuestDescription = "Help Vex accomplish everything on his 'before I die' list.",
@@ -320,7 +320,7 @@ namespace UsurperRemake.Systems
                 },
 
                 CombatRole = CombatRole.Hybrid,
-                Abilities = new[] { "Inspiring Melody", "Soothing Song", "Discordant Note", "Ballad of Heroes" },
+                Abilities = new[] { "Lay on Hands", "Divine Smite", "Aura of Protection", "Holy Avenger" },
 
                 PersonalQuestName = "The Lost Opus",
                 PersonalQuestDescription = "Help Melodia recover a legendary musical score from the dungeon depths.",

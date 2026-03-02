@@ -492,6 +492,17 @@ public partial class CombatEngine
 
         terminal.WriteLine("");
 
+        // Fatigue warning at combat start (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && player.Fatigue >= GameConfig.FatigueTiredThreshold)
+        {
+            var (fatigueLabel, fatigueColor) = player.GetFatigueTier();
+            terminal.SetColor(fatigueColor);
+            if (player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
+                terminal.WriteLine("(Exhaustion weighs heavily on you)");
+            else
+                terminal.WriteLine("(Your tiredness dulls your reflexes)");
+        }
+
         // Show first combat hint for new players
         HintSystem.Instance.TryShowHint(HintSystem.HINT_FIRST_COMBAT, terminal, player.HintsShown);
 
@@ -1101,6 +1112,15 @@ public partial class CombatEngine
                 player, result.CurrentRound * GameConfig.MinutesPerCombatRound);
         }
 
+        // Fatigue increment from combat (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode)
+        {
+            int fatigueCost = result.Outcome == CombatOutcome.PlayerDied
+                ? GameConfig.FatigueCostCombatLoss
+                : GameConfig.FatigueCostCombat;
+            player.Fatigue = Math.Min(100, player.Fatigue + fatigueCost);
+        }
+
         return result;
     }
 
@@ -1343,7 +1363,7 @@ public partial class CombatEngine
         // Tactical options (monster combat only)
         if (monster != null)
         {
-            terminal.WriteLine("  P - Power Attack, plus 50 percent damage, lower accuracy");
+            terminal.WriteLine("  P - Power Attack, 1.75x damage, 15 stamina");
             terminal.WriteLine("  E - Precise Strike, higher accuracy");
         }
 
@@ -1781,7 +1801,7 @@ public partial class CombatEngine
             terminal.SetColor("bright_yellow");
             terminal.Write("[P] ");
             terminal.SetColor("yellow");
-            terminal.Write($"{"Power Attack (+50% dmg, -accuracy)",-34}");
+            terminal.Write($"{"Power Attack (1.75x dmg, 15 stam)",-34}");
             terminal.SetColor("green");
             terminal.WriteLine("║");
 
@@ -2504,6 +2524,15 @@ public partial class CombatEngine
         if (attacker.WellRestedCombats > 0 && attacker.WellRestedBonus > 0f)
         {
             attackPower += (long)(attackPower * attacker.WellRestedBonus);
+        }
+
+        // Fatigue damage penalty (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && attacker.Fatigue >= GameConfig.FatigueTiredThreshold)
+        {
+            float fatigueDmgPenalty = attacker.Fatigue >= GameConfig.FatigueExhaustedThreshold
+                ? GameConfig.FatigueExhaustedDamagePenalty
+                : GameConfig.FatigueTiredDamagePenalty;
+            attackPower += (long)(attackPower * fatigueDmgPenalty);
         }
 
         // Lover's Bliss bonus damage (perfect intimacy match)
@@ -3496,6 +3525,15 @@ public partial class CombatEngine
         if (player.WellRestedCombats > 0 && player.WellRestedBonus > 0f)
         {
             playerDefense += (long)(playerDefense * player.WellRestedBonus);
+        }
+
+        // Fatigue defense penalty (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && player.Fatigue >= GameConfig.FatigueTiredThreshold)
+        {
+            float fatigueDefPenalty = player.Fatigue >= GameConfig.FatigueExhaustedThreshold
+                ? GameConfig.FatigueExhaustedDefensePenalty
+                : GameConfig.FatigueTiredDefensePenalty;
+            playerDefense += (long)(playerDefense * fatigueDefPenalty);
         }
 
         // Ironbark Root herb defense bonus
@@ -4725,6 +4763,12 @@ public partial class CombatEngine
                 expReward += (long)(expReward * victoryBoons.XPPercent);
             if (victoryBoons.GoldPercent > 0)
                 goldReward += (long)(goldReward * victoryBoons.GoldPercent);
+        }
+
+        // Fatigue XP penalty — Exhausted tier only (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && result.Player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
+        {
+            expReward += (long)(expReward * GameConfig.FatigueExhaustedXPPenalty);
         }
 
         // Apply per-slot XP percentage distribution
@@ -6942,6 +6986,12 @@ public partial class CombatEngine
                     terminal.WriteLine("(same)");
                 }
             }
+            else if (lootItem.Type == global::ObjType.Shield && currentEquip.WeaponPower > 0)
+            {
+                // Shield replacing an off-hand weapon (dual-wield) — show the trade-off
+                terminal.SetColor("yellow");
+                terminal.WriteLine($"  Off-hand weapon (Attack: {currentEquip.WeaponPower}) would be replaced by shield (Armor: {lootItem.Armor})");
+            }
             else
             {
                 int currentAC = currentEquip.ArmorClass;
@@ -8300,6 +8350,14 @@ public partial class CombatEngine
                         // Buff bonuses (well-rested, lover's bliss, divine blessing, poison coating, herbs)
                         if (player.WellRestedCombats > 0 && player.WellRestedBonus > 0f)
                             attackPower += (long)(attackPower * player.WellRestedBonus);
+                        // Fatigue damage penalty (single-player only, multi-monster path)
+                        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && player.Fatigue >= GameConfig.FatigueTiredThreshold)
+                        {
+                            float fatigueDmgPenaltyMM = player.Fatigue >= GameConfig.FatigueExhaustedThreshold
+                                ? GameConfig.FatigueExhaustedDamagePenalty
+                                : GameConfig.FatigueTiredDamagePenalty;
+                            attackPower += (long)(attackPower * fatigueDmgPenaltyMM);
+                        }
                         if (player.LoversBlissCombats > 0 && player.LoversBlissBonus > 0f)
                             attackPower += (long)(attackPower * player.LoversBlissBonus);
                         if (player.HerbBuffType == (int)HerbType.FirebloomPetal && player.HerbBuffCombats > 0)
@@ -8531,6 +8589,16 @@ public partial class CombatEngine
         var target = targetIndex.HasValue ? monsters[targetIndex.Value] : GetRandomLivingMonster(monsters);
         if (target == null || !target.IsAlive) return;
 
+        // Stamina cost (matches power_strike ability definition)
+        const int staminaCost = 15;
+        if (!player.HasEnoughStamina(staminaCost))
+        {
+            terminal.WriteLine($"Not enough stamina for Power Attack! Need {staminaCost}, have {player.CurrentCombatStamina}.", "red");
+            await Task.Delay(GetCombatDelay(800));
+            return;
+        }
+        player.SpendStamina(staminaCost);
+
         // Apply PowerStance status
         player.ApplyStatus(StatusEffect.PowerStance, 1);
 
@@ -8539,9 +8607,19 @@ public partial class CombatEngine
         terminal.WriteLine($"You wind up for a powerful strike at {target.Name}!");
         await Task.Delay(GetCombatDelay(500));
 
-        // Power Attack: +75% damage (with weapon soft cap), no defense penalty
+        // Power Attack: 1.75x damage (with weapon soft cap), no defense penalty
         long powerDamage = (long)((player.Strength + GetEffectiveWeapPow(player.WeapPow)) * 1.75);
         powerDamage += random.Next(5, 25);
+
+        // Apply defense calculation (was missing)
+        long defense = target.Defence + random.Next(0, (int)Math.Max(1, target.Defence / 8));
+        if (target.ArmPow > 0)
+        {
+            long effectiveArm = GetEffectiveArmPow(target.ArmPow);
+            int armPowMax = (int)Math.Min(effectiveArm, int.MaxValue - 1);
+            defense += random.Next(0, armPowMax + 1);
+        }
+        powerDamage = Math.Max(1, powerDamage - defense);
         powerDamage = DifficultySystem.ApplyPlayerDamageMultiplier(powerDamage);
 
         terminal.SetColor("bright_red");
@@ -8953,6 +9031,31 @@ public partial class CombatEngine
                     terminal.WriteLine($"{target.Name} is slain!");
                     result.DefeatedMonsters.Add(target);
                 }
+            }
+        }
+
+        // Off-hand follow-up for melee attack abilities when dual-wielding
+        // Power Strike etc. empower the main hand — the off-hand still gets its normal swing
+        if (ability.Type == ClassAbilitySystem.AbilityType.Attack && abilityResult.Damage > 0 && isPlayer && player.IsDualWielding
+            && abilityResult.SpecialEffect != "aoe" && abilityResult.SpecialEffect != "aoe_taunt")
+        {
+            var offHandTarget = (target != null && target.IsAlive) ? target : GetRandomLivingMonster(monsters);
+            if (offHandTarget != null && offHandTarget.IsAlive)
+            {
+                terminal.WriteLine("");
+                terminal.SetColor("bright_green");
+                terminal.WriteLine(isPlayer
+                    ? $"Off-hand strike at {offHandTarget.Name}!"
+                    : $"{actorName} follows up with an off-hand strike at {offHandTarget.Name}!");
+                await Task.Delay(GetCombatDelay(500));
+
+                long ohDamage = player.Strength + GetEffectiveWeapPow(player.WeapPow) + random.Next(1, 15);
+                double ohMod = GetWeaponConfigDamageModifier(player, isOffHandAttack: true);
+                ohDamage = (long)(ohDamage * ohMod);
+                ohDamage = DifficultySystem.ApplyPlayerDamageMultiplier(ohDamage);
+
+                await ApplySingleMonsterDamage(offHandTarget, ohDamage, result, "off-hand strike", player);
+                ApplyPostHitEnchantments(player, offHandTarget, ohDamage, result);
             }
         }
 
@@ -12835,6 +12938,12 @@ public partial class CombatEngine
             adjustedExp = (long)(adjustedExp * result.Player.CycleExpMultiplier);
         }
 
+        // Fatigue XP penalty — Exhausted tier only (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && result.Player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
+        {
+            adjustedExp += (long)(adjustedExp * GameConfig.FatigueExhaustedXPPenalty);
+        }
+
         // Apply per-slot XP percentage distribution
         long totalXPPotMM = adjustedExp;
         long playerXPmm = (long)(totalXPPotMM * result.Player.TeamXPPercent[0] / 100.0);
@@ -14040,6 +14149,34 @@ public partial class CombatEngine
 
             // Apply all post-hit enchantment effects (lifesteal, elemental procs, sunforged, poison)
             ApplyPostHitEnchantments(player, monster, actualDamage, result);
+
+            if (monster.HP <= 0)
+            {
+                terminal.WriteLine($"{monster.Name} is slain!", "bright_green");
+            }
+        }
+
+        // Off-hand follow-up for melee attack abilities when dual-wielding
+        if (ability.Type == ClassAbilitySystem.AbilityType.Attack && abilityResult.Damage > 0 && player.IsDualWielding
+            && monster != null && monster.IsAlive)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("bright_green");
+            terminal.WriteLine($"Off-hand strike at {monster.Name}!");
+            await Task.Delay(GetCombatDelay(500));
+
+            long ohDamage = player.Strength + GetEffectiveWeapPow(player.WeapPow) + random.Next(1, 15);
+            double ohMod = GetWeaponConfigDamageModifier(player, isOffHandAttack: true);
+            ohDamage = (long)(ohDamage * ohMod);
+            ohDamage = DifficultySystem.ApplyPlayerDamageMultiplier(ohDamage);
+
+            monster.HP -= Math.Max(1, ohDamage);
+            result.TotalDamageDealt += Math.Max(1, ohDamage);
+            player.Statistics.RecordDamageDealt(Math.Max(1, ohDamage), false);
+
+            terminal.SetColor("white");
+            terminal.WriteLine($"Off-hand deals {Math.Max(1, ohDamage)} damage!");
+            ApplyPostHitEnchantments(player, monster, Math.Max(1, ohDamage), result);
 
             if (monster.HP <= 0)
             {
@@ -15954,6 +16091,16 @@ public partial class CombatEngine
             await Task.Delay(GetCombatDelay(500));
             return;
         }
+
+        // Stamina cost (matches power_strike ability definition)
+        const int staminaCost = 15;
+        if (!attacker.HasEnoughStamina(staminaCost))
+        {
+            terminal.WriteLine($"Not enough stamina for Power Attack! Need {staminaCost}, have {attacker.CurrentCombatStamina}.", "red");
+            await Task.Delay(GetCombatDelay(800));
+            return;
+        }
+        attacker.SpendStamina(staminaCost);
 
         // Apply PowerStance status so any extra attacks this round follow the same rules
         attacker.ApplyStatus(StatusEffect.PowerStance, 1);

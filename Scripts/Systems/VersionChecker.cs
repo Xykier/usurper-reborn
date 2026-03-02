@@ -780,12 +780,17 @@ rd /S /Q ""{tempDir}"" 2>nul
                 }
                 else
                 {
+                    // On Linux BBS, the updater script must survive the parent process exit.
+                    // When sshd terminates the session, it sends SIGHUP to all processes in the
+                    // process group. Use nohup + background (&) to detach the updater so it
+                    // keeps running after the game exits and the SSH session closes.
+                    var escapedPath = updaterPath.Replace("'", "'\\''");
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                     {
                         FileName = "/bin/bash",
-                        Arguments = $"\"{updaterPath}\"",
+                        Arguments = $"-c \"nohup /bin/bash '{escapedPath}' > /dev/null 2>&1 &\"",
                         UseShellExecute = false,
-                        CreateNoWindow = false
+                        CreateNoWindow = true
                     });
                 }
 

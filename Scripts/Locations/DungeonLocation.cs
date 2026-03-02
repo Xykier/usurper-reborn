@@ -34,7 +34,7 @@ public class DungeonLocation : BaseLocation
     // Player state tracking for tension
     private int consecutiveMonsterRooms = 0;
     private int roomsExploredThisFloor = 0;
-    private bool hasRestThisFloor = false;
+    private bool hasCampedThisFloor = false;
 
     // Dungeon handles poison ticks on room movement, not on every menu input.
     // This prevents invalid keys and guide navigation from double-ticking poison.
@@ -114,7 +114,7 @@ public class DungeonLocation : BaseLocation
             bool didRespawn = floorResult.DidRespawn;
 
             roomsExploredThisFloor = wasRestored ? currentFloor.Rooms.Count(r => r.IsExplored) : 0;
-            hasRestThisFloor = false;
+            hasCampedThisFloor = false;
 
             // Track dungeon exploration statistics
             player.Statistics.RecordDungeonLevel(currentDungeonLevel);
@@ -1473,8 +1473,8 @@ public class DungeonLocation : BaseLocation
             row1.Add(("X", "bright_yellow", "Examine"));
         if (room.HasStairsDown && (room.IsCleared || !room.HasMonsters))
             row1.Add(("D", "bright_yellow", "Descend"));
-        if ((room.IsCleared || !room.HasMonsters) && !hasRestThisFloor)
-            row1.Add(("R", "bright_yellow", "Rest"));
+        if ((room.IsCleared || !room.HasMonsters) && !hasCampedThisFloor)
+            row1.Add(("R", "bright_yellow", "Camp"));
 
         if (row1.Count > 0)
             ShowBBSMenuRow(row1.ToArray());
@@ -1885,8 +1885,8 @@ public class DungeonLocation : BaseLocation
             terminal.WriteLine("Descend stairs");
         }
 
-        // Rest (if safe - room cleared or no monsters)
-        if ((room.IsCleared || !room.HasMonsters) && !hasRestThisFloor)
+        // Camp (if safe - room cleared or no monsters)
+        if ((room.IsCleared || !room.HasMonsters) && !hasCampedThisFloor)
         {
             terminal.SetColor("darkgray");
             terminal.Write("  [");
@@ -1895,7 +1895,7 @@ public class DungeonLocation : BaseLocation
             terminal.SetColor("darkgray");
             terminal.Write("] ");
             terminal.SetColor("white");
-            terminal.WriteLine("Rest and recover");
+            terminal.WriteLine("Make camp and recover");
         }
 
         // General options
@@ -2979,7 +2979,7 @@ public class DungeonLocation : BaseLocation
                 return false;
 
             case "R":
-                if ((room.IsCleared || !room.HasMonsters) && !hasRestThisFloor)
+                if ((room.IsCleared || !room.HasMonsters) && !hasCampedThisFloor)
                 {
                     await RestInRoom();
                     RequestRedisplay();
@@ -3082,7 +3082,10 @@ public class DungeonLocation : BaseLocation
             {
                 var timePlayer = GetCurrentPlayer();
                 if (timePlayer != null)
+                {
                     DailySystemManager.Instance.AdvanceGameTime(timePlayer, GameConfig.MinutesPerDungeonRoom);
+                    timePlayer.Fatigue = Math.Min(100, timePlayer.Fatigue + GameConfig.FatigueCostDungeonRoom);
+                }
             }
 
             // Room discovery message
@@ -3940,7 +3943,7 @@ public class DungeonLocation : BaseLocation
             DungeonEventType.Shrine => "finds a mysterious shrine",
             DungeonEventType.NPCEncounter => "encounters someone in the darkness",
             DungeonEventType.Puzzle => "discovers a puzzle mechanism",
-            DungeonEventType.RestSpot => "finds a safe resting spot",
+            DungeonEventType.RestSpot => "finds a safe campsite",
             DungeonEventType.MysteryEvent => "senses something unusual",
             DungeonEventType.Riddle => "encounters a riddle gate",
             DungeonEventType.LoreDiscovery => "discovers ancient writings",
@@ -4712,7 +4715,7 @@ public class DungeonLocation : BaseLocation
         currentDungeonLevel = nextLevel;
         if (player != null) player.CurrentLocation = $"Dungeon Floor {currentDungeonLevel}";
         roomsExploredThisFloor = floorResult.WasRestored ? currentFloor.Rooms.Count(r => r.IsExplored) : 0;
-        hasRestThisFloor = false;
+        hasCampedThisFloor = false;
         consecutiveMonsterRooms = 0;
 
         // Track dungeon floor telemetry
@@ -4794,7 +4797,7 @@ public class DungeonLocation : BaseLocation
         if (!GameConfig.ScreenReaderMode)
             terminal.ClearScreen();
         terminal.SetColor("green");
-        terminal.WriteLine("You find a defensible corner and rest...");
+        terminal.WriteLine("You find a defensible corner and make camp...");
         terminal.WriteLine("");
         await Task.Delay(1500);
 
@@ -4845,7 +4848,7 @@ public class DungeonLocation : BaseLocation
                     if (session != null)
                     {
                         var sb = new System.Text.StringBuilder();
-                        sb.AppendLine("\u001b[32m  The group rests in a defensible position...\u001b[0m");
+                        sb.AppendLine("\u001b[32m  The group makes camp in a defensible position...\u001b[0m");
                         sb.AppendLine($"\u001b[32m  You recover {mateHeal:N0} hit points.\u001b[0m");
                         if (mateMana > 0)
                             sb.AppendLine($"\u001b[32m  You recover {mateMana:N0} mana.\u001b[0m");
@@ -4868,7 +4871,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("cyan");
         terminal.WriteLine($"HP: {player.HP}/{player.MaxHP}  MP: {player.Mana}/{player.MaxMana}  ST: {player.CurrentCombatStamina}/{player.MaxCombatStamina}");
 
-        hasRestThisFloor = true;
+        hasCampedThisFloor = true;
 
         // Check for nightmares in the dungeon
         var dream = UsurperRemake.Systems.DreamSystem.Instance.GetDreamForRest(player, currentDungeonLevel);
@@ -4905,7 +4908,7 @@ public class DungeonLocation : BaseLocation
         {
             terminal.WriteLine("");
             terminal.SetColor("gray");
-            terminal.WriteLine("You feel rested, but dare not linger too long.");
+            terminal.WriteLine("You break camp, feeling recovered but wary.");
         }
 
         await Task.Delay(2500);
@@ -5005,7 +5008,7 @@ public class DungeonLocation : BaseLocation
             currentDungeonLevel = targetLevel;
             if (player != null) player.CurrentLocation = $"Dungeon Floor {currentDungeonLevel}";
             roomsExploredThisFloor = floorResult.WasRestored ? currentFloor.Rooms.Count(r => r.IsExplored) : 0;
-            hasRestThisFloor = false;
+            hasCampedThisFloor = false;
             consecutiveMonsterRooms = 0;
 
             // Log floor change
@@ -7769,15 +7772,11 @@ public class DungeonLocation : BaseLocation
         var lowerName = name.ToLower();
 
         // Irregular plurals
-        if (lowerName == "wolf") return name.Substring(0, name.Length - 4) + "olves";
-        if (lowerName.EndsWith("wolf")) return name.Substring(0, name.Length - 4) + "olves";
-        if (lowerName == "thief") return name.Substring(0, name.Length - 4) + "ieves";
-        if (lowerName.EndsWith("thief")) return name.Substring(0, name.Length - 4) + "ieves";
-        if (lowerName == "elf") return name.Substring(0, name.Length - 3) + "lves";
-        if (lowerName.EndsWith("elf")) return name.Substring(0, name.Length - 3) + "lves";
+        if (lowerName.EndsWith("wolf")) return name.Substring(0, name.Length - 1) + "ves";
+        if (lowerName.EndsWith("thief")) return name.Substring(0, name.Length - 1) + "ves";
+        if (lowerName.EndsWith("elf")) return name.Substring(0, name.Length - 1) + "ves";
         if (lowerName == "dwarf") return name + "s"; // Dwarfs or Dwarves both acceptable
-        if (lowerName == "man") return name.Substring(0, name.Length - 3) + "en";
-        if (lowerName.EndsWith("man")) return name.Substring(0, name.Length - 3) + "en";
+        if (lowerName.EndsWith("man")) return name.Substring(0, name.Length - 2) + "en";
 
         // Words ending in s, x, z, ch, sh - add "es"
         if (lowerName.EndsWith("s") || lowerName.EndsWith("x") || lowerName.EndsWith("z") ||
@@ -10208,7 +10207,7 @@ public class DungeonLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("cyan");
-        terminal.WriteLine("*** ANOTHER ADVENTURER ***");
+        terminal.WriteLine("*** DUNGEON ENCOUNTER ***");
         terminal.WriteLine("");
 
         var player = GetCurrentPlayer();
@@ -10216,27 +10215,21 @@ public class DungeonLocation : BaseLocation
 
         switch (npcType)
         {
-            case 0: // Friendly trader
-                terminal.WriteLine("A fellow adventurer hails you!", "white");
-                terminal.WriteLine("\"Greetings, friend! I have supplies for sale.\"", "yellow");
+            case 0: // Pixie encounter
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine("A tiny glowing pixie darts through the corridor!");
+                terminal.SetColor("magenta");
+                terminal.WriteLine("She flits about trailing sparkles of light, giggling mischievously.");
                 terminal.WriteLine("");
 
                 terminal.SetColor("darkgray");
                 terminal.Write("[");
                 terminal.SetColor("bright_yellow");
-                terminal.Write("B");
+                terminal.Write("C");
                 terminal.SetColor("darkgray");
                 terminal.Write("] ");
                 terminal.SetColor("white");
-                terminal.WriteLine("Buy healing potions (500 gold each)");
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("I");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine("Trade information (100 gold)");
+                terminal.WriteLine("Try to catch her");
                 terminal.SetColor("darkgray");
                 terminal.Write("[");
                 terminal.SetColor("bright_yellow");
@@ -10244,47 +10237,97 @@ public class DungeonLocation : BaseLocation
                 terminal.SetColor("darkgray");
                 terminal.Write("] ");
                 terminal.SetColor("white");
-                terminal.WriteLine("Leave");
+                terminal.WriteLine("Leave her be");
 
-                var tradeChoice = await terminal.GetInput("Choice: ");
-                if (tradeChoice.ToUpper() == "B")
+                var pixieChoice = await terminal.GetInput("Choice: ");
+                if (pixieChoice.ToUpper() == "C")
                 {
-                    if (player.Gold >= 500)
+                    // DEX-based catch chance: 35% base + 1% per DEX, capped at 85%
+                    int catchChance = Math.Min(85, 35 + (int)player.Dexterity);
+                    bool caught = dungeonRandom.Next(100) < catchChance;
+
+                    terminal.WriteLine("");
+                    if (caught)
                     {
-                        player.Gold -= 500;
-                        player.Healing = Math.Min(player.MaxPotions, player.Healing + 1);
-                        terminal.WriteLine("You purchase a healing potion.", "green");
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine("You snatch the pixie gently from the air!");
+                        terminal.WriteLine("");
+                        terminal.SetColor("magenta");
+                        terminal.WriteLine("She looks up at you with sparkling eyes...");
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine("\"Oh! You're quick! Very well, a kiss for the clever one!\"");
+                        terminal.WriteLine("");
+
+                        // Kiss - full HP/Mana restore
+                        player.HP = player.MaxHP;
+                        player.Mana = player.MaxMana;
+                        terminal.SetColor("bright_green");
+                        terminal.WriteLine("The pixie's kiss fills you with warmth. You feel completely restored!");
+
+                        // Blessing - combat buff
+                        if (player.WellRestedCombats <= 0)
+                        {
+                            player.WellRestedCombats = 5;
+                            player.WellRestedBonus = 15;
+                            terminal.SetColor("cyan");
+                            terminal.WriteLine("A pixie blessing settles over you! (+15% damage/defense for 5 combats)");
+                        }
+                        else
+                        {
+                            player.WellRestedCombats += 3;
+                            terminal.SetColor("cyan");
+                            terminal.WriteLine("Your existing blessing grows stronger! (+3 bonus combat rounds)");
+                        }
+
+                        // Gift - level-scaled gold
+                        long pixieGold = currentDungeonLevel * 100 + dungeonRandom.Next(200);
+                        player.Gold += pixieGold;
+                        terminal.SetColor("yellow");
+                        terminal.WriteLine($"She sprinkles pixie dust that turns to gold! (+{pixieGold} gold)");
+
+                        terminal.SetColor("magenta");
+                        terminal.WriteLine("");
+                        terminal.WriteLine("The pixie winks and vanishes in a shower of sparkles.");
+                        ShareEventRewardsWithGroup(player, pixieGold, 0, "Pixie Gift");
+                        BroadcastDungeonEvent($"\u001b[35m  {player.Name2} catches a pixie and receives a magical blessing!\u001b[0m");
                     }
                     else
                     {
-                        terminal.WriteLine("\"You don't have enough gold, friend.\"", "yellow");
+                        terminal.SetColor("bright_red");
+                        terminal.WriteLine("The pixie dodges your grasp!");
+                        terminal.SetColor("magenta");
+                        terminal.WriteLine("");
+                        terminal.WriteLine("\"Clumsy mortal! You'll regret that!\"");
+                        terminal.WriteLine("");
+
+                        // Curse - poison + gold stolen
+                        terminal.SetColor("dark_magenta");
+                        terminal.WriteLine("She blows a cloud of sparkling dust in your face!");
+
+                        player.Poison = Math.Max(player.Poison, 1);
+                        terminal.SetColor("green");
+                        terminal.WriteLine("The pixie dust makes you feel queasy... you've been poisoned!");
+
+                        long stolenGold = Math.Min(player.Gold, currentDungeonLevel * 50 + dungeonRandom.Next(100));
+                        if (stolenGold > 0)
+                        {
+                            player.Gold -= stolenGold;
+                            terminal.SetColor("red");
+                            terminal.WriteLine($"She snatches {stolenGold} gold from your pouch as she flies away!");
+                        }
+
+                        terminal.SetColor("magenta");
+                        terminal.WriteLine("");
+                        terminal.WriteLine("The pixie cackles and disappears in a puff of glitter.");
+                        BroadcastDungeonEvent($"\u001b[31m  {player.Name2} angers a pixie and is cursed!\u001b[0m");
                     }
                 }
-                else if (tradeChoice.ToUpper() == "I")
+                else
                 {
-                    if (player.Gold >= 100)
-                    {
-                        player.Gold -= 100;
-                        terminal.SetColor("cyan");
-                        terminal.WriteLine("");
-                        terminal.WriteLine("The adventurer leans in close...");
-                        terminal.WriteLine("");
-                        terminal.WriteLine("\"The boss room is always at the far end of the dungeon.\"");
-                        terminal.WriteLine("\"Watch for traps near treasure rooms - thieves love 'em.\"");
-                        terminal.WriteLine("\"Resting recovers health, but you can only rest once per floor.\"");
-                        terminal.WriteLine("\"And between you and me... the deeper you go, the richer the rewards.\"");
-                        terminal.WriteLine("");
-                        terminal.SetColor("gray");
-                        terminal.WriteLine($"(-100 gold)");
-                    }
-                    else
-                    {
-                        terminal.WriteLine("\"Information costs gold, friend. Come back when you have some.\"", "yellow");
-                    }
-                }
-                else if (tradeChoice.ToUpper() != "L")
-                {
-                    terminal.WriteLine("The adventurer shrugs as you walk away.", "gray");
+                    terminal.SetColor("magenta");
+                    terminal.WriteLine("You watch the pixie flit away, her laughter echoing off the walls.");
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("Perhaps some things are best left alone.");
                 }
                 break;
 
@@ -10784,9 +10827,9 @@ public class DungeonLocation : BaseLocation
         terminal.WriteLine("The air here is calm, protected by ancient magic.", "gray");
         terminal.WriteLine("");
 
-        if (!hasRestThisFloor)
+        if (!hasCampedThisFloor)
         {
-            terminal.WriteLine("You rest and recover your strength.", "green");
+            terminal.WriteLine("You make camp and recover your strength.", "green");
 
             // Sanctuary provides better recovery - 33% of max stats
             long healAmount = player.MaxHP / 3;
@@ -10810,7 +10853,16 @@ public class DungeonLocation : BaseLocation
                 terminal.WriteLine("The sanctuary's magic cures your poison!", "cyan");
             }
 
-            hasRestThisFloor = true;
+            hasCampedThisFloor = true;
+
+            // Reduce fatigue from dungeon rest (single-player only)
+            if (!UsurperRemake.BBS.DoorMode.IsOnlineMode)
+            {
+                int oldFatigue = player.Fatigue;
+                player.Fatigue = Math.Max(0, player.Fatigue - GameConfig.FatigueReductionDungeonRest);
+                if (oldFatigue > 0 && player.Fatigue < oldFatigue)
+                    terminal.WriteLine($"You feel somewhat refreshed. (Fatigue -{oldFatigue - player.Fatigue})", "bright_green");
+            }
 
             // Share rest healing with grouped players
             if (teammates != null)
@@ -10827,7 +10879,7 @@ public class DungeonLocation : BaseLocation
 
                     var session = GroupSystem.GetSession(mate.GroupPlayerUsername ?? "");
                     session?.EnqueueMessage(
-                        $"\u001b[32m  ═══ Safe Haven Rest ═══\u001b[0m\n" +
+                        $"\u001b[32m  ═══ Safe Haven Camp ═══\u001b[0m\n" +
                         $"\u001b[32m  +{mateHeal} HP" +
                         (mateMana > 0 ? $"  +{mateMana} MP" : "") +
                         (mateSta > 0 ? $"  +{mateSta} STA" : "") + "\u001b[0m");
@@ -11417,36 +11469,82 @@ public class DungeonLocation : BaseLocation
     // Additional encounter methods
     private async Task BeggarEncounter()
     {
+        var currentPlayer = GetCurrentPlayer();
+
         terminal.SetColor("cyan");
         terminal.WriteLine("☂ BEGGAR ENCOUNTER ☂");
         terminal.WriteLine("");
-        terminal.WriteLine("A poor beggar approaches you with outstretched hands.");
-        terminal.WriteLine("'Please, kind sir/madam, spare some gold for a poor soul?'");
+        terminal.WriteLine("A ragged figure huddles against the dungeon wall, hands outstretched.");
+        terminal.WriteLine("\"Please... spare some gold for a lost soul? I've been trapped down here for days.\"");
         terminal.WriteLine("");
-        
-        var choice = await terminal.GetInput("(G)ive gold to beggar or (I)gnore them? ");
-        
-        if (choice.ToUpper() == "G")
+
+        terminal.SetColor("white");
+        terminal.WriteLine("  (G) Give gold          (+Chivalry)");
+        terminal.WriteLine("  (R) Rob the beggar     (+Darkness)");
+        terminal.WriteLine("  (I) Ignore and move on");
+        terminal.WriteLine("");
+
+        var choice = (await terminal.GetInput("Your choice: ")).ToUpper().Trim();
+
+        if (choice == "G")
         {
-            var currentPlayer = GetCurrentPlayer();
-            if (currentPlayer.Gold >= 10)
+            int giveAmount = Math.Max(10, currentPlayer.Level * 2);
+            if (currentPlayer.Gold >= giveAmount)
             {
-                currentPlayer.Gold -= 10;
+                currentPlayer.Gold -= giveAmount;
                 currentPlayer.Chivalry += 5;
-                terminal.WriteLine("The beggar thanks you profusely for your kindness!", "green");
-                terminal.WriteLine("Your chivalry increases!");
+                terminal.WriteLine("");
+                terminal.WriteLine($"You hand over {giveAmount} gold. The beggar's eyes well with tears.", "green");
+                terminal.WriteLine("\"Bless you... bless you, kind one.\"", "green");
+                terminal.WriteLine("+5 Chivalry", "bright_green");
+
+                // Small chance the beggar rewards your kindness
+                if (dungeonRandom.Next(100) < 15)
+                {
+                    terminal.WriteLine("");
+                    terminal.WriteLine("The beggar presses something into your hand before shuffling away.", "yellow");
+                    int bonusGold = giveAmount * 3 + dungeonRandom.Next(50, 150);
+                    currentPlayer.Gold += bonusGold;
+                    terminal.WriteLine($"It's a hidden pouch with {bonusGold} gold!", "bright_yellow");
+                    terminal.WriteLine("\"I was testing your heart. You passed.\"", "cyan");
+                }
             }
             else
             {
+                terminal.WriteLine("");
                 terminal.WriteLine("You don't have enough gold to spare.", "red");
+            }
+        }
+        else if (choice == "R")
+        {
+            int stolenGold = 5 + dungeonRandom.Next(currentPlayer.Level, currentPlayer.Level * 3);
+            currentPlayer.Gold += stolenGold;
+            currentPlayer.Darkness += 10;
+            terminal.WriteLine("");
+            terminal.WriteLine("You shove the beggar aside and rifle through their rags.", "red");
+            terminal.WriteLine($"You find {stolenGold} gold hidden in their cloak.", "yellow");
+            terminal.WriteLine("+10 Darkness", "bright_red");
+            currentPlayer.Statistics?.RecordGoldChange(currentPlayer.Gold);
+
+            // Chance the beggar fights back
+            if (dungeonRandom.Next(100) < 20)
+            {
+                terminal.WriteLine("");
+                terminal.WriteLine("The beggar snarls and slashes at you with a hidden blade!", "bright_red");
+                int damage = Math.Max(5, currentPlayer.Level + dungeonRandom.Next(5, 15));
+                currentPlayer.HP -= damage;
+                terminal.WriteLine($"You take {damage} damage!", "red");
+                if (currentPlayer.HP <= 0) currentPlayer.HP = 1; // Don't kill from this
             }
         }
         else
         {
-            terminal.WriteLine("You ignore the beggar and continue on your way.", "gray");
+            terminal.WriteLine("");
+            terminal.WriteLine("You step past the beggar without a word.", "gray");
+            terminal.WriteLine("Their hollow eyes follow you into the darkness.", "gray");
         }
-        
-        await Task.Delay(2000);
+
+        await terminal.PressAnyKey();
     }
     
     private Monster CreateMerchantMonster()

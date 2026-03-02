@@ -3666,6 +3666,7 @@ public partial class GameEngine
         player.HerbsGatheredToday = playerData.HerbsGatheredToday;
         player.WellRestedCombats = playerData.WellRestedCombats;
         player.WellRestedBonus = playerData.WellRestedBonus;
+        player.Fatigue = playerData.Fatigue;
         player.LoversBlissCombats = playerData.LoversBlissCombats;
         player.LoversBlissBonus = playerData.LoversBlissBonus;
         player.CycleExpMultiplier = playerData.CycleExpMultiplier;

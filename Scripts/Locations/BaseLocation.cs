@@ -684,7 +684,8 @@ public abstract class BaseLocation
                     }
 
                     // Show atmospheric time transition message if period changed
-                    var transition = DailySystemManager.Instance.CheckTimeTransition(currentPlayer);
+                    bool inDungeon = this is DungeonLocation;
+                    var transition = DailySystemManager.Instance.CheckTimeTransition(currentPlayer, inDungeon);
                     if (transition != null)
                     {
                         terminal.WriteLine("");
@@ -1260,9 +1261,25 @@ public abstract class BaseLocation
             terminal.SetColor("gray");
             terminal.Write(" — ");
             terminal.SetColor(timeColor);
-            terminal.WriteLine(timePeriod);
+            terminal.Write(timePeriod);
+
+            // Append fatigue tier label when Tired or Exhausted
+            var (fatigueLabel, fatigueColor) = currentPlayer.GetFatigueTier();
+            int headerLen = Name.Length + 3 + timePeriod.Length;
+            if (!string.IsNullOrEmpty(fatigueLabel) && currentPlayer.Fatigue >= GameConfig.FatigueTiredThreshold)
+            {
+                terminal.SetColor("gray");
+                terminal.Write(" (");
+                terminal.SetColor(fatigueColor);
+                terminal.Write(fatigueLabel);
+                terminal.SetColor("gray");
+                terminal.Write(")");
+                headerLen += 3 + fatigueLabel.Length; // " (" + label + ")"
+            }
+            terminal.WriteLine("");
+
             terminal.SetColor("yellow");
-            terminal.WriteLine(new string('═', Name.Length + 3 + timePeriod.Length));
+            terminal.WriteLine(new string('═', headerLen));
         }
         else
         {
@@ -2270,6 +2287,12 @@ public abstract class BaseLocation
                 }
                 return (true, false);
 
+            case "t":
+            case "time":
+                ShowGameTime();
+                await terminal.PressAnyKey();
+                return (true, false);
+
             case "compact":
             case "mobile":
                 currentPlayer.CompactMode = !currentPlayer.CompactMode;
@@ -2393,6 +2416,17 @@ public abstract class BaseLocation
         terminal.Write("/mat");
         terminal.SetColor("white");
         terminal.WriteLine("- View crafting materials                                 ║");
+
+        terminal.SetColor("bright_yellow");
+        terminal.Write("║  ");
+        terminal.SetColor("cyan");
+        terminal.Write("/time     ");
+        terminal.SetColor("gray");
+        terminal.Write("or ");
+        terminal.SetColor("cyan");
+        terminal.Write("/t  ");
+        terminal.SetColor("white");
+        terminal.WriteLine("- Show current time of day                               ║");
 
         terminal.SetColor("bright_yellow");
         terminal.Write("║  ");
@@ -2638,6 +2672,38 @@ public abstract class BaseLocation
     }
 
     /// <summary>
+    /// Show current game time (single-player: game clock, online: real time)
+    /// </summary>
+    protected void ShowGameTime()
+    {
+        terminal.WriteLine("");
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
+        {
+            // Single-player: show game clock
+            var timeStr = DailySystemManager.GetTimeString(currentPlayer);
+            var period = DailySystemManager.GetTimePeriodString(currentPlayer);
+            var color = DailySystemManager.GetTimePeriodColor(currentPlayer);
+            terminal.SetColor(color);
+            terminal.WriteLine($"  Time: {timeStr} ({period})");
+
+            // Show rest availability
+            terminal.SetColor("gray");
+            if (DailySystemManager.CanRestForNight(currentPlayer))
+                terminal.WriteLine("  You can rest for the night.");
+            else
+                terminal.WriteLine($"  Rest available after {GameConfig.RestAvailableHour}:00 PM (Evening).");
+        }
+        else
+        {
+            // Online: show real time (server time)
+            var now = DateTime.Now;
+            terminal.SetColor("white");
+            terminal.WriteLine($"  Server Time: {now:h:mm tt}");
+        }
+        terminal.WriteLine("");
+    }
+
+    /// <summary>
     /// Show health status
     /// </summary>
     protected async Task ShowHealthStatus()
@@ -2655,6 +2721,29 @@ public abstract class BaseLocation
         terminal.Write("  MP: ");
         terminal.SetColor(mpPercent > 50 ? "bright_cyan" : mpPercent > 25 ? "cyan" : "gray");
         terminal.WriteLine($"{currentPlayer?.CurrentMana}/{currentPlayer?.MaxMana} ({mpPercent}%)");
+
+        // Fatigue display (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
+        {
+            var (fatigueLabel, fatigueColor) = currentPlayer.GetFatigueTier();
+            terminal.SetColor("white");
+            terminal.Write("  Fatigue: ");
+            if (!string.IsNullOrEmpty(fatigueLabel))
+            {
+                terminal.SetColor(fatigueColor);
+                terminal.Write($"{fatigueLabel} ");
+            }
+            terminal.SetColor("gray");
+            terminal.Write($"({currentPlayer.Fatigue}/100)");
+            // Show penalty description
+            if (currentPlayer.Fatigue >= GameConfig.FatigueExhaustedThreshold)
+                terminal.WriteLine($" — -10% damage/defense/XP");
+            else if (currentPlayer.Fatigue >= GameConfig.FatigueTiredThreshold)
+                terminal.WriteLine($" — -5% damage/defense");
+            else
+                terminal.WriteLine("");
+        }
+
         terminal.WriteLine("");
         await terminal.PressAnyKey();
     }

@@ -266,6 +266,7 @@ public class LocationManager
         if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && previousLocation != locationId)
         {
             DailySystemManager.Instance.AdvanceGameTime(player, GameConfig.MinutesPerTravel);
+            player.Fatigue = Math.Min(100, player.Fatigue + GameConfig.FatigueCostTravel);
         }
 
         // Enter the location

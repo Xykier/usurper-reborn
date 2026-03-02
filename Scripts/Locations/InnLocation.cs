@@ -502,9 +502,8 @@ public class InnLocation : BaseLocation
             terminal.WriteLine("Attack a sleeper");
         }
 
-        // Single-player: Wait until nightfall option
-        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null
-            && !DailySystemManager.CanRestForNight(currentPlayer))
+        // Single-player: Sleep/Wait option
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
         {
             terminal.SetColor("darkgray");
             terminal.Write("[");
@@ -512,8 +511,16 @@ public class InnLocation : BaseLocation
             terminal.Write("Z");
             terminal.SetColor("darkgray");
             terminal.Write("] ");
-            terminal.SetColor("dark_cyan");
-            terminal.WriteLine("Wait until nightfall");
+            if (DailySystemManager.CanRestForNight(currentPlayer))
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("Sleep (advance to morning)");
+            }
+            else
+            {
+                terminal.SetColor("dark_cyan");
+                terminal.WriteLine("Wait until nightfall");
+            }
         }
 
         terminal.SetColor("yellow");
@@ -586,7 +593,7 @@ public class InnLocation : BaseLocation
         terminal.SetColor("yellow");
         terminal.WriteLine(" Inn Activities:");
         ShowBBSMenuRow(("D", "bright_yellow", "rink(5g)"), ("F", "bright_yellow", "ight Seth"), ("T", "bright_yellow", "alk"), ("G", "bright_yellow", "ame"));
-        ShowBBSMenuRow(("U", "bright_yellow", "Rumors"), ("B", "bright_yellow", "ulletin"), ("E", "bright_yellow", "at/Rest"), ("O", "bright_yellow", "rder(10g)"));
+        ShowBBSMenuRow(("U", "bright_yellow", "Rumors"), ("B", "bright_yellow", "ulletin"), ("E", "bright_yellow", "Rest"), ("O", "bright_yellow", "rder(10g)"));
 
         terminal.SetColor("cyan");
         terminal.WriteLine(" Areas:");
@@ -608,7 +615,16 @@ public class InnLocation : BaseLocation
             ShowBBSMenuRow(("N", "bright_yellow", $"Room({roomCost}g)"), ("K", "bright_yellow", "Attack Sleeper"));
         }
 
-        ShowBBSMenuRow(("R", "bright_yellow", "eturn"));
+        // Single-player: Sleep/Wait option
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
+        {
+            string zLabel = DailySystemManager.CanRestForNight(currentPlayer) ? "Sleep" : "Wait";
+            ShowBBSMenuRow(("Z", "bright_yellow", zLabel), ("R", "bright_yellow", "eturn"));
+        }
+        else
+        {
+            ShowBBSMenuRow(("R", "bright_yellow", "eturn"));
+        }
 
         // Footer: status + quick commands
         ShowBBSFooter();
@@ -696,7 +712,12 @@ public class InnLocation : BaseLocation
 
             case "Z":
                 if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null)
-                    await DailySystemManager.Instance.WaitUntilEvening(currentPlayer, terminal);
+                {
+                    if (DailySystemManager.CanRestForNight(currentPlayer))
+                        await SleepAtInn();
+                    else
+                        await DailySystemManager.Instance.WaitUntilEvening(currentPlayer, terminal);
+                }
                 return false;
 
             case "Q":
@@ -1960,8 +1981,11 @@ public class InnLocation : BaseLocation
         if (currentPlayer.MurderWeight >= 6f) restEfficiency = 0.50f;
         else if (currentPlayer.MurderWeight >= 3f) restEfficiency = 0.75f;
 
-        var healing = (long)(Math.Min(10, currentPlayer.MaxHP - currentPlayer.HP) * restEfficiency);
-        var manaRecovery = (long)(Math.Min(currentPlayer.MaxMana / 4, currentPlayer.MaxMana - currentPlayer.Mana) * restEfficiency);
+        // Recover 50% of missing HP and mana
+        long missingHP = currentPlayer.MaxHP - currentPlayer.HP;
+        long missingMana = currentPlayer.MaxMana - currentPlayer.Mana;
+        var healing = (long)(missingHP * 0.50f * restEfficiency);
+        var manaRecovery = (long)(missingMana * 0.50f * restEfficiency);
 
         if (healing > 0 || manaRecovery > 0)
         {
@@ -1984,6 +2008,15 @@ public class InnLocation : BaseLocation
         else
         {
             terminal.WriteLine("You are already at full health.", "white");
+        }
+
+        // Reduce fatigue from inn rest (single-player only)
+        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer.Fatigue > 0)
+        {
+            int oldFatigue = currentPlayer.Fatigue;
+            currentPlayer.Fatigue = Math.Max(0, currentPlayer.Fatigue - GameConfig.FatigueReductionInnRest);
+            if (currentPlayer.Fatigue < oldFatigue)
+                terminal.WriteLine($"A brief rest eases your weariness. (Fatigue -{oldFatigue - currentPlayer.Fatigue})", "bright_green");
         }
 
         // Check for dreams during rest (nightmares take priority if MurderWeight > 0)
@@ -2024,28 +2057,104 @@ public class InnLocation : BaseLocation
             await Task.Delay(2000);
         }
 
-        // In single-player, resting at the Inn advances the day if it's nighttime
-        if (!UsurperRemake.BBS.DoorMode.IsOnlineMode)
+        await terminal.WaitForKey();
+    }
+
+    /// <summary>
+    /// Sleep at the Inn to advance the day (single-player only).
+    /// Full HP/Mana/Stamina recovery, dreams, no Well-Rested bonus (that's Home-only).
+    /// </summary>
+    private async Task SleepAtInn()
+    {
+        if (UsurperRemake.BBS.DoorMode.IsOnlineMode || currentPlayer == null)
+            return;
+
+        if (!DailySystemManager.CanRestForNight(currentPlayer))
         {
-            if (DailySystemManager.CanRestForNight(currentPlayer))
-            {
-                terminal.WriteLine("");
-                terminal.SetColor("gray");
-                terminal.WriteLine("You settle in for a proper night's rest...");
-                await Task.Delay(1500);
-                await DailySystemManager.Instance.RestAndAdvanceToMorning(currentPlayer);
-                terminal.SetColor("yellow");
-                terminal.WriteLine($"A new day dawns. (Day {DailySystemManager.Instance.CurrentDay})");
-                await Task.Delay(1500);
-            }
-            else
-            {
-                terminal.WriteLine("");
-                terminal.SetColor("gray");
-                var period = DailySystemManager.GetTimePeriodString(currentPlayer);
-                terminal.WriteLine($"It's only {period}. You rest briefly but it's too early to sleep for the night.");
-            }
+            terminal.SetColor("gray");
+            terminal.WriteLine("It's not late enough to sleep for the night. Try waiting until evening.");
+            await terminal.WaitForKey();
+            return;
         }
+
+        terminal.WriteLine("");
+        terminal.WriteLine("The innkeeper shows you to a small room upstairs...", "gray");
+        await Task.Delay(1500);
+        terminal.WriteLine("You settle into the straw mattress and close your eyes.", "gray");
+        await Task.Delay(1500);
+
+        // Full HP/Mana/Stamina recovery with Blood Price penalty
+        float restEfficiency = 1.0f;
+        if (currentPlayer.MurderWeight >= 6f) restEfficiency = 0.50f;
+        else if (currentPlayer.MurderWeight >= 3f) restEfficiency = 0.75f;
+
+        long healAmount = (long)((currentPlayer.MaxHP - currentPlayer.HP) * restEfficiency);
+        long manaAmount = (long)((currentPlayer.MaxMana - currentPlayer.Mana) * restEfficiency);
+        long staminaAmount = (long)((currentPlayer.MaxCombatStamina - currentPlayer.CurrentCombatStamina) * restEfficiency);
+        currentPlayer.HP = Math.Min(currentPlayer.MaxHP, currentPlayer.HP + healAmount);
+        currentPlayer.Mana = Math.Min(currentPlayer.MaxMana, currentPlayer.Mana + manaAmount);
+        currentPlayer.CurrentCombatStamina = Math.Min(currentPlayer.MaxCombatStamina, currentPlayer.CurrentCombatStamina + staminaAmount);
+
+        if (currentPlayer.MurderWeight >= 3f)
+        {
+            terminal.WriteLine("Dark memories invade your dreams, leaving you less than fully rested...", "dark_red");
+        }
+
+        if (restEfficiency >= 1.0f)
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("You wake feeling completely refreshed!");
+        }
+        else
+        {
+            terminal.SetColor("green");
+            terminal.WriteLine($"Recovered {healAmount} HP, {manaAmount} mana, {staminaAmount} stamina. ({(int)(restEfficiency * 100)}% recovery)");
+        }
+
+        // Check for dreams
+        var dream = DreamSystem.Instance.GetDreamForRest(currentPlayer, 0);
+        if (dream != null)
+        {
+            await Task.Delay(1500);
+            terminal.WriteLine("");
+            terminal.SetColor("dark_magenta");
+            terminal.WriteLine("As sleep takes you, dreams unfold...");
+            terminal.WriteLine("");
+            await Task.Delay(1500);
+
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine($"=== {dream.Title} ===");
+            terminal.WriteLine("");
+
+            terminal.SetColor("magenta");
+            foreach (var line in dream.Content)
+            {
+                terminal.WriteLine($"  {line}");
+                await Task.Delay(1200);
+            }
+
+            if (!string.IsNullOrEmpty(dream.PhilosophicalHint))
+            {
+                terminal.WriteLine("");
+                terminal.SetColor("dark_cyan");
+                terminal.WriteLine($"  ({dream.PhilosophicalHint})");
+            }
+
+            terminal.WriteLine("");
+            DreamSystem.Instance.ExperienceDream(dream.Id);
+        }
+
+        // Advance to morning
+        terminal.WriteLine("");
+        terminal.SetColor("gray");
+        terminal.WriteLine("You drift off to sleep...");
+        await Task.Delay(2000);
+        await DailySystemManager.Instance.RestAndAdvanceToMorning(currentPlayer);
+        terminal.SetColor("yellow");
+        terminal.WriteLine($"A new day dawns. (Day {DailySystemManager.Instance.CurrentDay})");
+        await Task.Delay(1500);
+
+        await terminal.WaitForKey();
     }
 
     /// <summary>
@@ -3202,6 +3311,31 @@ public class InnLocation : BaseLocation
         }
     }
 
+    /// <summary>
+    /// Get display name for an equipment item, hiding real name if unidentified
+    /// </summary>
+    private static string GetEquipmentDisplayName(Equipment item)
+    {
+        if (item.IsIdentified) return item.Name;
+        return item.Slot switch
+        {
+            EquipmentSlot.MainHand => "Unidentified Weapon",
+            EquipmentSlot.OffHand => item.WeaponPower > 0 ? "Unidentified Weapon" : "Unidentified Shield",
+            EquipmentSlot.Head => "Unidentified Helm",
+            EquipmentSlot.Body => "Unidentified Armor",
+            EquipmentSlot.Arms => "Unidentified Bracers",
+            EquipmentSlot.Hands => "Unidentified Gauntlets",
+            EquipmentSlot.Legs => "Unidentified Greaves",
+            EquipmentSlot.Feet => "Unidentified Boots",
+            EquipmentSlot.Waist => "Unidentified Belt",
+            EquipmentSlot.Face => "Unidentified Mask",
+            EquipmentSlot.Cloak => "Unidentified Cloak",
+            EquipmentSlot.Neck => "Unidentified Amulet",
+            EquipmentSlot.LFinger or EquipmentSlot.RFinger => "Unidentified Ring",
+            _ => "Unidentified Item"
+        };
+    }
+
     private void CompanionDisplayEquipmentSlot(Character target, EquipmentSlot slot, string label)
     {
         var item = target.GetEquipment(slot);
@@ -3212,7 +3346,7 @@ public class InnLocation : BaseLocation
             if (!item.IsIdentified)
             {
                 terminal.SetColor("magenta");
-                terminal.WriteLine($"{item.Name} (unidentified)");
+                terminal.WriteLine(GetEquipmentDisplayName(item));
             }
             else
             {
@@ -3316,9 +3450,7 @@ public class InnLocation : BaseLocation
             if (!item.IsIdentified)
             {
                 terminal.SetColor("magenta");
-                terminal.Write($"{item.Name} ");
-                terminal.SetColor("darkgray");
-                terminal.Write("(unidentified)");
+                terminal.Write($"{GetEquipmentDisplayName(item)} ");
             }
             else
             {
@@ -3506,8 +3638,8 @@ public class InnLocation : BaseLocation
             terminal.Write($"  {i + 1}. ");
             terminal.SetColor("gray");
             terminal.Write($"[{slot.GetDisplayName(),-12}] ");
-            terminal.SetColor("white");
-            terminal.Write($"{item.Name}");
+            terminal.SetColor(item.IsIdentified ? "white" : "magenta");
+            terminal.Write(GetEquipmentDisplayName(item));
             if (item.IsCursed)
             {
                 terminal.SetColor("red");
@@ -3592,7 +3724,7 @@ public class InnLocation : BaseLocation
             {
                 if (item.IsCursed)
                 {
-                    cursedItems.Add(item.Name);
+                    cursedItems.Add(GetEquipmentDisplayName(item));
                     continue;
                 }
 

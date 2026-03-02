@@ -373,6 +373,23 @@ public class PersonalityProfile
                 profile.Sensuality += 0.1f;         // Appreciates physical beauty
                 profile.IntimateStyle = RomanceStyle.Switch;
                 break;
+
+            default: // citizen, commoner, adventurer, and any other archetype
+                // Give every NPC a distinct romantic personality by boosting their strongest trait
+                // and assigning a random IntimateStyle
+                var styles = new[] { RomanceStyle.Dominant, RomanceStyle.Submissive, RomanceStyle.Switch, RomanceStyle.Vanilla, RomanceStyle.Adventurous };
+                profile.IntimateStyle = styles[Random.Shared.Next(styles.Length)];
+
+                // Boost 1-2 random romance traits so every NPC has clear preferences
+                var traitRoll = Random.Shared.Next(4);
+                switch (traitRoll)
+                {
+                    case 0: profile.Romanticism += 0.2f; profile.Tenderness += 0.15f; break;
+                    case 1: profile.Passion += 0.2f; profile.Sensuality += 0.15f; break;
+                    case 2: profile.Tenderness += 0.2f; profile.Patience += 0.15f; break;
+                    case 3: profile.Adventurousness += 0.2f; profile.Passion += 0.15f; break;
+                }
+                break;
         }
 
         // Randomly assign orientation — heterosexual is the vast majority,

@@ -287,7 +287,7 @@ public static class LootGenerator
         {
             // Daggers - Fast, low damage, high crit
             ("Dagger", new[] { "All" }, 1, 30, 8),
-            ("Stiletto", new[] { "Assassin", "Ranger" }, 10, 50, 15),
+            ("Stiletto", new[] { "Assassin", "Ranger", "Jester" }, 10, 50, 15),
             ("Assassin's Blade", new[] { "Assassin" }, 30, 80, 35),
             ("Shadow Fang", new[] { "Assassin" }, 50, 100, 60),
 
@@ -308,29 +308,59 @@ public static class LootGenerator
 
             // Maces - Anti-armor
             ("Club", new[] { "All" }, 1, 20, 6),
-            ("Mace", new[] { "Cleric", "Paladin", "Warrior" }, 10, 45, 18),
-            ("War Hammer", new[] { "Cleric", "Paladin", "Warrior" }, 25, 70, 40),
-            ("Flail", new[] { "Cleric", "Paladin" }, 40, 85, 60),
+            ("Mace", new[] { "Cleric", "Paladin", "Warrior", "Jester", "Alchemist" }, 10, 45, 18),
+            ("War Hammer", new[] { "Cleric", "Paladin", "Warrior", "Alchemist" }, 25, 70, 40),
+            ("Flail", new[] { "Cleric", "Paladin", "Alchemist" }, 40, 85, 60),
             ("Holy Mace", new[] { "Cleric", "Paladin" }, 60, 100, 85),
             ("Scepter of Judgment", new[] { "Paladin" }, 80, 100, 120),
 
             // Staves - Magic focused
-            ("Quarterstaff", new[] { "Magician", "Sage", "Cleric" }, 1, 35, 8),
+            ("Quarterstaff", new[] { "Magician", "Sage", "Cleric", "Alchemist" }, 1, 35, 8),
             ("Magic Staff", new[] { "Magician", "Sage" }, 15, 55, 22),
             ("Staff of Power", new[] { "Magician", "Sage" }, 35, 80, 45),
             ("Archmage's Staff", new[] { "Magician", "Sage" }, 60, 100, 75),
             ("Staff of the Cosmos", new[] { "Sage" }, 85, 100, 110),
 
-            // Ranger weapons
-            ("Hunting Bow", new[] { "Ranger" }, 5, 40, 16),
-            ("Longbow", new[] { "Ranger" }, 25, 70, 38),
-            ("Composite Bow", new[] { "Ranger" }, 50, 90, 65),
-            ("Elven Bow", new[] { "Ranger" }, 75, 100, 100),
-
             // Holy weapons (Paladin exclusive high tier)
             ("Silver Blade", new[] { "Paladin" }, 35, 75, 50),
             ("Holy Avenger", new[] { "Paladin" }, 60, 100, 90),
             ("Blade of the Righteous", new[] { "Paladin" }, 85, 100, 135),
+
+            // Bard weapons - Performance blades (raw damage, no musical abilities)
+            ("Rapier", new[] { "Bard", "Jester", "Assassin" }, 5, 40, 12),
+            ("Dueling Blade", new[] { "Bard", "Jester" }, 20, 60, 25),
+            ("Songblade", new[] { "Bard" }, 35, 80, 45),
+            ("Virtuoso's Rapier", new[] { "Bard" }, 60, 100, 75),
+
+            // Bard instruments - Musical instruments (required for musical abilities)
+            ("Wooden Flute", new[] { "Bard" }, 1, 25, 7),
+            ("Travel Lute", new[] { "Bard" }, 5, 35, 10),
+            ("Silver Lyre", new[] { "Bard" }, 15, 50, 16),
+            ("War Drum", new[] { "Bard" }, 25, 60, 22),
+            ("Enchanted Harp", new[] { "Bard" }, 35, 70, 30),
+            ("Battle Horn", new[] { "Bard" }, 45, 80, 38),
+            ("Mythril Lute", new[] { "Bard" }, 55, 85, 48),
+            ("Celestial Harp", new[] { "Bard" }, 65, 95, 58),
+            ("Songweaver's Opus", new[] { "Bard" }, 75, 100, 70),
+            ("Instrument of the Spheres", new[] { "Bard" }, 85, 100, 85),
+
+            // Jester weapons - Trick weapons and gadgets
+            ("Throwing Knife", new[] { "Jester", "Assassin" }, 5, 35, 10),
+            ("Trick Blade", new[] { "Jester" }, 20, 60, 22),
+            ("Jester's Scepter", new[] { "Jester" }, 40, 80, 42),
+            ("Chaos Edge", new[] { "Jester" }, 50, 90, 55),
+            ("Fool's Edge", new[] { "Jester" }, 65, 100, 70),
+            ("Madcap's Razor", new[] { "Jester" }, 80, 100, 90),
+
+            // Alchemist weapons - Enchanted and chemical weapons
+            ("Pestle Club", new[] { "Alchemist" }, 1, 30, 8),
+            ("Alchemist's Blade", new[] { "Alchemist" }, 15, 50, 20),
+            ("Venom-Etched Dagger", new[] { "Alchemist", "Assassin" }, 30, 70, 38),
+            ("Transmuter's Staff", new[] { "Alchemist" }, 45, 85, 55),
+            ("Elixir-Infused Blade", new[] { "Alchemist" }, 55, 95, 65),
+            ("Philosopher's Edge", new[] { "Alchemist" }, 70, 100, 85),
+
+            // === TWO-HANDED WEAPONS START HERE ===
 
             // Two-Handed Greatswords - High damage, balanced
             ("Wooden Greatsword", new[] { "Warrior", "Barbarian", "Paladin" }, 1, 20, 8),
@@ -373,36 +403,11 @@ public static class LootGenerator
             ("Earthshaker", new[] { "Warrior", "Barbarian", "Paladin" }, 45, 85, 44),
             ("Skullbreaker", new[] { "Warrior", "Barbarian" }, 65, 100, 54),
 
-            // Bard weapons - Performance blades (raw damage, no musical abilities)
-            ("Rapier", new[] { "Bard", "Jester", "Assassin" }, 5, 40, 12),
-            ("Dueling Blade", new[] { "Bard", "Jester" }, 20, 60, 25),
-            ("Songblade", new[] { "Bard" }, 35, 80, 45),
-            ("Virtuoso's Rapier", new[] { "Bard" }, 60, 100, 75),
-
-            // Bard instruments - Musical instruments (required for musical abilities)
-            ("Wooden Flute", new[] { "Bard" }, 1, 25, 7),
-            ("Travel Lute", new[] { "Bard" }, 5, 35, 10),
-            ("Silver Lyre", new[] { "Bard" }, 15, 50, 16),
-            ("War Drum", new[] { "Bard" }, 25, 60, 22),
-            ("Enchanted Harp", new[] { "Bard" }, 35, 70, 30),
-            ("Battle Horn", new[] { "Bard" }, 45, 80, 38),
-            ("Mythril Lute", new[] { "Bard" }, 55, 85, 48),
-            ("Celestial Harp", new[] { "Bard" }, 65, 95, 58),
-            ("Songweaver's Opus", new[] { "Bard" }, 75, 100, 70),
-            ("Instrument of the Spheres", new[] { "Bard" }, 85, 100, 85),
-
-            // Jester weapons - Trick weapons and gadgets
-            ("Throwing Knife", new[] { "Jester", "Assassin" }, 5, 35, 10),
-            ("Trick Blade", new[] { "Jester" }, 20, 60, 22),
-            ("Jester's Scepter", new[] { "Jester" }, 40, 80, 42),
-            ("Fool's Edge", new[] { "Jester" }, 65, 100, 70),
-
-            // Alchemist weapons - Enchanted and chemical weapons
-            ("Pestle Club", new[] { "Alchemist" }, 1, 30, 8),
-            ("Alchemist's Blade", new[] { "Alchemist" }, 15, 50, 20),
-            ("Venom-Etched Dagger", new[] { "Alchemist", "Assassin" }, 30, 70, 38),
-            ("Transmuter's Staff", new[] { "Alchemist" }, 45, 85, 55),
-            ("Philosopher's Edge", new[] { "Alchemist" }, 70, 100, 85),
+            // Ranger Bows - Two-handed ranged (Ranger-exclusive)
+            ("Hunting Bow", new[] { "Ranger" }, 5, 40, 16),
+            ("Longbow", new[] { "Ranger" }, 25, 70, 38),
+            ("Composite Bow", new[] { "Ranger" }, 50, 90, 65),
+            ("Elven Bow", new[] { "Ranger" }, 75, 100, 100),
 
             // Two-Handed Bows - Ranged weapons
             ("Short Bow", new[] { "All" }, 1, 30, 8),
@@ -687,8 +692,8 @@ public static class LootGenerator
 
         #region Template Accessors (for ShopItemGenerator)
 
-        // One-handed weapons are indices 0-36, two-handed start at index 37
-        internal const int TwoHandedWeaponStartIndex = 37;
+        // One-handed weapons are indices 0-54, two-handed start at index 55
+        internal const int TwoHandedWeaponStartIndex = 55;
 
         internal static IReadOnlyList<(string Name, string[] Classes, int MinLevel, int MaxLevel, float BasePower)>
             GetWeaponTemplates() => WeaponTemplates;

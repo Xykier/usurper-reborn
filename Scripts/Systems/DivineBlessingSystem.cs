@@ -433,13 +433,18 @@ namespace UsurperRemake.Systems
         }
 
         /// <summary>
-        /// Calculate lifesteal from divine blessings
+        /// Calculate lifesteal from divine blessings.
+        /// Only active while the player has a prayer buff (daily prayer at the temple).
         /// </summary>
         public int CalculateLifesteal(Character attacker, int damageDealt)
         {
             var blessing = GetBlessings(attacker);
 
             if (!blessing.IsActive || blessing.LifestealPercent <= 0)
+                return 0;
+
+            // Lifesteal requires an active prayer — resets on daily reset
+            if (!blessing.HasTemporaryBlessing)
                 return 0;
 
             return (int)(damageDealt * blessing.LifestealPercent / 100f);

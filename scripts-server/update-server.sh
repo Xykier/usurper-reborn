@@ -49,18 +49,29 @@ chmod +x /opt/usurper/UsurperReborn
 chown -R usurper:usurper /opt/usurper
 echo "  New binary deployed."
 
-# 4. Restart world simulator if running
+# 4. Restart services
 echo "[4/4] Restarting services..."
-if systemctl is-active --quiet usurper-world 2>/dev/null; then
-    systemctl restart usurper-world
-    echo "  World simulator restarted."
-else
-    echo "  World simulator not running (skipped)."
+
+# MUD server (single-process model — handles all players + world sim)
+if systemctl is-active --quiet usurper-mud 2>/dev/null; then
+    systemctl restart usurper-mud
+    echo "  MUD server restarted (all players will need to reconnect)."
+fi
+
+# SSH daemon (per-process model — new connections get the new binary)
+if systemctl is-active --quiet sshd-usurper 2>/dev/null; then
+    systemctl restart sshd-usurper
+    echo "  Game SSH daemon restarted."
 fi
 
 echo ""
-echo "Update complete! New player connections will use the updated binary."
-echo "Existing connections continue with the old version until they disconnect."
+echo "Update complete!"
+if systemctl is-active --quiet usurper-mud 2>/dev/null; then
+    echo "MUD server restarted — players can reconnect now."
+else
+    echo "New player connections will use the updated binary."
+    echo "Existing connections continue with the old version until they disconnect."
+fi
 echo ""
 echo "Rollback if needed:"
 echo "  sudo cp -r $BACKUP_DIR/* /opt/usurper/"

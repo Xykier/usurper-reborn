@@ -587,8 +587,39 @@ public partial class MagicShopLocation : BaseLocation
         }
 
         DisplayMessage("");
-        DisplayMessage("Enter item # to sell (0 to cancel): ", "yellow", false);
-        string input = terminal.GetInputSync("");
+        DisplayMessage("Enter item # to sell ([A]ll magic items, 0 to cancel): ", "yellow", false);
+        string input = terminal.GetInputSync("").Trim().ToUpper();
+
+        if (input == "A")
+        {
+            var sellable = player.Inventory
+                .Where(i => i.IsIdentified && !i.IsCursed &&
+                       (i.Type == ObjType.Magic || i.MagicType != MagicItemType.None ||
+                        i.Type == ObjType.Fingers || i.Type == ObjType.Neck || i.Type == ObjType.Waist))
+                .ToList();
+
+            if (sellable.Count == 0)
+            {
+                DisplayMessage("No sellable magic items in your backpack.", "gray");
+                return;
+            }
+
+            long totalGold = sellable.Sum(i => (long)((i.Value / 2) * fenceModifier));
+            DisplayMessage($"Sell {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {totalGold:N0} gold? (Y/N): ", "yellow", false);
+            var bulkConfirm = terminal.GetInputSync("").Trim().ToUpper();
+
+            if (bulkConfirm == "Y")
+            {
+                foreach (var item in sellable)
+                    player.Inventory.Remove(item);
+                player.Gold += totalGold;
+                player.Statistics.RecordSale(totalGold);
+                DisplayMessage("");
+                DisplayMessage("Deal!", "green");
+                DisplayMessage($"Sold {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {totalGold:N0} gold.", "gray");
+            }
+            return;
+        }
 
         if (int.TryParse(input, out int itemIndex) && itemIndex > 0 && itemIndex <= player.Inventory.Count)
         {

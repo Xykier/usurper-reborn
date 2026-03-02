@@ -1,16 +1,13 @@
-# Usurper Reborn - World Simulator Systemd Service
+# DEPRECATED: This standalone world simulator service has been replaced by
+# usurper-mud.service, which runs the world simulator in-process alongside
+# the game server. Use usurper-mud.service instead for new deployments.
+#
+# This file is kept for reference only.
+#
+# ---
+# Usurper Reborn - World Simulator Systemd Service (LEGACY)
 # Runs 24/7 headless NPC simulation independent of player connections.
 # NPCs dungeon, level up, shop, train, form teams, socialize, and more.
-#
-# Install:
-#   sudo cp usurper-world.service /etc/systemd/system/
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable usurper-world
-#   sudo systemctl start usurper-world
-#
-# Monitor:
-#   sudo systemctl status usurper-world
-#   tail -f /var/usurper/logs/world-sim.log
 #
 # Configuration flags:
 #   --sim-interval <sec>  Tick interval in seconds (default: 60)

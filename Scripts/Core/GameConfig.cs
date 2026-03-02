@@ -9,7 +9,7 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.49.0";
+    public const string Version = "0.49.1";
     public const string VersionName = "Swords and Lutes";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
@@ -699,6 +699,22 @@ public static partial class GameConfig
     public const float SongIronLullabyBonus = 0.15f;          // Lullaby of Iron: +15% defense
     public const float SongFortuneBonus = 0.25f;              // Fortune's Tune: +25% gold from kills
     public const float SongBattleHymnBonus = 0.10f;           // Battle Hymn: +10% attack AND +10% defense
+    // Fatigue system (v0.49.1) — single-player only
+    public const int FatigueFreshThreshold = 25;              // 0-24 = Fresh (Well-Rested)
+    public const int FatigueTiredThreshold = 50;              // 50-74 = Tired
+    public const int FatigueExhaustedThreshold = 75;          // 75-100 = Exhausted
+    public const int FatigueCostCombat = 3;                   // Per combat encounter (win/flee)
+    public const int FatigueCostCombatLoss = 5;               // Per combat loss/death
+    public const int FatigueCostDungeonRoom = 1;              // Per dungeon room explored
+    public const int FatigueCostTravel = 1;                   // Per location travel
+    public const int FatigueReductionHomeRest = 20;           // Home [E] Rest & Recover
+    public const int FatigueReductionInnRest = 15;            // Inn [E] Rest at table
+    public const int FatigueReductionDungeonRest = 10;        // Dungeon rest spot
+    public const float FatigueTiredDamagePenalty = -0.05f;    // -5% damage when Tired
+    public const float FatigueTiredDefensePenalty = -0.05f;   // -5% defense when Tired
+    public const float FatigueExhaustedDamagePenalty = -0.10f; // -10% damage when Exhausted
+    public const float FatigueExhaustedDefensePenalty = -0.10f; // -10% defense when Exhausted
+    public const float FatigueExhaustedXPPenalty = -0.10f;    // -10% XP when Exhausted
     // Study / Library
     public const float StudyXPBonus = 0.05f;                  // +5% XP from combat
     // Servants' Quarters

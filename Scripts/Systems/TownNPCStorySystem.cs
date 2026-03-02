@@ -81,19 +81,41 @@ namespace UsurperRemake.Systems
                             "I couldn't fight. When I saw him, I just... ran. I left my squad behind.",
                             "All these years, I've been waiting for someone to finish what I couldn't start."
                         },
-                        OnComplete = "Marcus_Healed" // Triggers resolution
+                        Choice = new NPCChoice
+                        {
+                            Prompt = "Marcus looks at you with hollow eyes, waiting for judgment.",
+                            Options = new[]
+                            {
+                                new NPCChoiceOption { Key = "forgive", Text = "It wasn't your fault. Surviving takes courage too.", Chivalry = 25 },
+                                new NPCChoiceOption { Key = "kill", Text = "Your suffering ends here, soldier.", Darkness = 100 }
+                            }
+                        }
                     },
                     new NPCStoryStage
                     {
                         StageId = 3,
                         Name = "Peace",
-                        Trigger = "After confession",
+                        Trigger = "Chose to forgive",
                         Dialogue = new[] {
                             "*standing straighter* I've made a decision. I'm going back to the dungeon.",
                             "Not to fight. To remember. To honor those I left behind.",
                             "Thank you. You gave me something I lost down there - hope."
                         },
                         Reward = new NPCReward { ChivalryBonus = 50, ItemId = "medal_of_the_fallen" }
+                    },
+                    new NPCStoryStage
+                    {
+                        StageId = -1,
+                        Name = "Silence",
+                        Trigger = "Chose to kill",
+                        Dialogue = new[] {
+                            "Marcus doesn't resist. He closes his remaining eye and exhales slowly.",
+                            "*quietly* ...thank you.",
+                            "The healer turns away. No one stops you. No one says a word.",
+                            "You find a worn medal among his belongings. It reads: 'For Valor.'"
+                        },
+                        Reward = new NPCReward { ItemId = "medal_of_the_fallen" },
+                        OnComplete = "Marcus_Killed"
                     }
                 }
             },

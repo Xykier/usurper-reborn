@@ -823,9 +823,47 @@ public class ArmorShopLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("white");
-        terminal.Write("Sell which piece? (0 to cancel): ");
+        terminal.Write("Sell which piece? ([A]ll backpack, 0 to cancel): ");
 
-        var input = await terminal.GetInput("");
+        var input = (await terminal.GetInput("")).Trim().ToUpper();
+
+        if (input == "A")
+        {
+            var armorTypes = new[] { ObjType.Body, ObjType.Head, ObjType.Arms, ObjType.Hands,
+                ObjType.Legs, ObjType.Feet, ObjType.Waist, ObjType.Face, ObjType.Abody };
+            var sellable = currentPlayer.Inventory
+                .Where(i => i.IsIdentified && !i.IsCursed && armorTypes.Contains(i.Type))
+                .ToList();
+
+            if (sellable.Count == 0)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("No sellable armor in your backpack.");
+                await Pause();
+                return;
+            }
+
+            long totalGold = sellable.Sum(i => (long)((i.Value / 2) * fenceModifier));
+            terminal.SetColor("yellow");
+            terminal.WriteLine($"Sell {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {FormatNumber(totalGold)} gold? (Y/N): ");
+            var bulkConfirm = (await terminal.GetInput("")).Trim().ToUpper();
+
+            if (bulkConfirm == "Y")
+            {
+                foreach (var item in sellable)
+                    currentPlayer.Inventory.Remove(item);
+                currentPlayer.Gold += totalGold;
+                currentPlayer.Statistics.RecordSale(totalGold);
+                currentPlayer.RecalculateStats();
+
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("");
+                terminal.WriteLine($"Sold {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {FormatNumber(totalGold)} gold!");
+            }
+            await Pause();
+            return;
+        }
+
         if (!int.TryParse(input, out int sellChoice) || sellChoice < 1 || sellChoice > sellableItems.Count)
         {
             return;
