@@ -224,7 +224,8 @@ namespace UsurperRemake.Systems
             {
                 Success = true,
                 Outcome = BossOutcome.Saved,
-                God = type
+                God = type,
+                ApproachType = "merciful"
             };
         }
 
@@ -316,7 +317,8 @@ namespace UsurperRemake.Systems
                 {
                     Success = true,
                     Outcome = BossOutcome.Allied,
-                    God = type
+                    God = type,
+                    ApproachType = "allied"
                 };
             }
 
@@ -331,7 +333,8 @@ namespace UsurperRemake.Systems
                 {
                     Success = true,
                     Outcome = BossOutcome.Spared,
-                    God = type
+                    God = type,
+                    ApproachType = "merciful"
                 };
             }
 
@@ -948,8 +951,10 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
+            string saveTitle = $"{boss.Name.ToUpper()} SAVED";
+            string paddedSaveTitle = saveTitle.PadLeft((61 + saveTitle.Length) / 2).PadRight(61);
             terminal.WriteLine($"╔═══════════════════════════════════════════════════════════════╗", "bright_green");
-            terminal.WriteLine($"║                  {boss.Name.ToUpper()} SAVED                          ║", "bright_green");
+            terminal.WriteLine($"║{paddedSaveTitle}║", "bright_green");
             terminal.WriteLine($"╚═══════════════════════════════════════════════════════════════╝", "bright_green");
             terminal.WriteLine("");
 
@@ -1012,7 +1017,8 @@ namespace UsurperRemake.Systems
                 Success = true,
                 Outcome = BossOutcome.Saved,
                 God = boss.Type,
-                XPGained = xpReward
+                XPGained = xpReward,
+                ApproachType = activeCombatModifiers.ApproachType
             };
         }
 
@@ -1024,8 +1030,10 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
+            string defeatTitle = $"{boss.Name.ToUpper()} DEFEATED";
+            string paddedTitle = defeatTitle.PadLeft((61 + defeatTitle.Length) / 2).PadRight(61);
             terminal.WriteLine($"╔═══════════════════════════════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine($"║                {boss.Name.ToUpper()} DEFEATED                         ║", "bright_yellow");
+            terminal.WriteLine($"║{paddedTitle}║", "bright_yellow");
             terminal.WriteLine($"╚═══════════════════════════════════════════════════════════════╝", "bright_yellow");
             terminal.WriteLine("");
 
@@ -1097,7 +1105,8 @@ namespace UsurperRemake.Systems
                 Outcome = BossOutcome.Defeated,
                 God = boss.Type,
                 XPGained = xpReward,
-                GoldGained = goldReward
+                GoldGained = goldReward,
+                ApproachType = activeCombatModifiers.ApproachType
             };
         }
 
@@ -1201,6 +1210,7 @@ namespace UsurperRemake.Systems
         public OldGodType God { get; set; }
         public long XPGained { get; set; }
         public int GoldGained { get; set; }
+        public string ApproachType { get; set; } = "neutral";
     }
 
     #endregion

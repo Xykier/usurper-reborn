@@ -42,8 +42,7 @@ public class InnLocation : BaseLocation
         // Pascal-compatible exits from ONLINE.PAS onloc_theinn case
         PossibleExits = new List<GameLocation>
         {
-            GameLocation.MainStreet,    // loc1 - back to main street
-            GameLocation.TeamCorner     // loc2 - team corner
+            GameLocation.MainStreet    // loc1 - back to main street
         };
         
         // Inn-specific actions
@@ -428,15 +427,6 @@ public class InnLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
-        terminal.Write("C");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.Write("Team Corner                ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
         terminal.Write("W");
         terminal.SetColor("darkgray");
         terminal.Write("] ");
@@ -597,7 +587,7 @@ public class InnLocation : BaseLocation
 
         terminal.SetColor("cyan");
         terminal.WriteLine(" Areas:");
-        ShowBBSMenuRow(("C", "bright_yellow", "Team Corner"), ("W", "bright_yellow", "Train"), ("L", "bright_yellow", "Gamble"));
+        ShowBBSMenuRow(("W", "bright_yellow", "Train"), ("L", "bright_yellow", "Gamble"));
         if (recruitableCompanions.Any() || recruitedCompanions.Any())
         {
             var items = new List<(string, string, string)>();
@@ -679,11 +669,6 @@ public class InnLocation : BaseLocation
                 await OrderFood();
                 return false;
                 
-            case "C":
-                await NavigateToLocation(GameLocation.TeamCorner);
-                return true;
-
-
             case "A":
                 await ApproachCompanions();
                 return false;

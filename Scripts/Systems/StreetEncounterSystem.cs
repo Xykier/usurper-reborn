@@ -1877,9 +1877,11 @@ public class StreetEncounterSystem
                 break;
             case "Antidote":
                 player.Poison = 0;
+                player.PoisonTurns = 0;
                 break;
             case "Poison Vial":
                 player.Poison = Math.Max(player.Poison, 3 + player.Level / 5);
+                player.PoisonTurns = Math.Max(player.PoisonTurns, 10 + player.Level / 5);
                 // Poison applied to the player's weapon concept — stored as a buff
                 // The poison value on the player is repurposed here temporarily
                 break;
@@ -3011,6 +3013,13 @@ public class StreetEncounterSystem
 
             // === QUEST COMPLETION ===
             string npcNameForBounty = npc.Name ?? npc.Name2 ?? "";
+
+            // IMPORTANT: Check bounty initiator BEFORE AutoCompleteBountyForNPC, which marks
+            // the quest as Deleted. GetActiveBountyInitiator filters on !Deleted, so checking
+            // after completion would always return null — causing blood price on sanctioned kills.
+            string npcNameForBloodPrice = npc.Name2 ?? npc.Name ?? "";
+            var bountyInitiator = QuestSystem.GetActiveBountyInitiator(player.Name2, npcNameForBloodPrice);
+
             long bountyReward = QuestSystem.AutoCompleteBountyForNPC(player, npcNameForBounty);
             QuestSystem.OnNPCDefeated(player, npc);
 
@@ -3030,8 +3039,6 @@ public class StreetEncounterSystem
             // === BLOOD PRICE (adjusted by bounty type) ===
             if (realNpc != null)
             {
-                string npcNameForBloodPrice = npc.Name2 ?? npc.Name ?? "";
-                var bountyInitiator = QuestSystem.GetActiveBountyInitiator(player.Name2, npcNameForBloodPrice);
 
                 if (bountyInitiator == GameConfig.FactionInitiatorCrown
                     || bountyInitiator == "The Crown"   // King bounties

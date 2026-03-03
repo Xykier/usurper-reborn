@@ -37,7 +37,8 @@ public class MainStreetLocation : BaseLocation
             GameLocation.ReportRoom,   // loc12
             GameLocation.Healer,       // loc13
             GameLocation.AnchorRoad,   // loc14
-            GameLocation.Home          // loc15
+            GameLocation.Home,         // loc15
+            GameLocation.TeamCorner    // loc16
         };
         
         // Location actions based on Pascal main menu
@@ -287,6 +288,8 @@ public class MainStreetLocation : BaseLocation
             terminal.SetColor("darkgray");
             terminal.Write(" ["); terminal.SetColor("bright_yellow"); terminal.Write("R"); terminal.SetColor("darkgray"); terminal.Write("]");
             terminal.SetColor("white"); terminal.Write("elations   ");
+            terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("Z"); terminal.SetColor("darkgray"); terminal.Write("]");
+            terminal.SetColor("white"); terminal.Write("Team Corner");
         }
 
         // Always: Quit + Settings
@@ -473,289 +476,108 @@ public class MainStreetLocation : BaseLocation
         int tier = GetMenuTier();
         terminal.WriteLine("");
 
+        // Helper: write a colored menu key+label, padded to fixed column width
+        // Format: [K]Label padded to `col` total chars (3 for [X] + label)
+        void MI(string key, string label, string color, int col)
+        {
+            terminal.SetColor("darkgray"); terminal.Write("[");
+            terminal.SetColor("bright_yellow"); terminal.Write(key);
+            terminal.SetColor("darkgray"); terminal.Write("]");
+            terminal.SetColor(color); terminal.Write(label.PadRight(col - 3));
+        }
+        // Last item in a row (no padding)
+        void ML(string key, string label, string color)
+        {
+            terminal.SetColor("darkgray"); terminal.Write("[");
+            terminal.SetColor("bright_yellow"); terminal.Write(key);
+            terminal.SetColor("darkgray"); terminal.Write("]");
+            terminal.SetColor(color); terminal.WriteLine(label);
+        }
+
+        const int C = 15; // column width: [X](3) + 12 chars label
+
         // Row 1 - Primary locations (D/I always, T/O tier 2+)
-        terminal.SetColor("darkgray");
-        terminal.Write(" [");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("D");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("ungeons     ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("I");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("nn          ");
-
+        terminal.Write(" ");
+        MI("D", "ungeons", "white", C);
+        MI("I", "nn", "white", C);
         if (tier >= 2)
         {
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("T");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("emple       ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("O");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("ld Church");
+            MI("T", "emple", "white", C);
+            ML("O", "ld Church", "white");
         }
-        terminal.WriteLine("");
+        else
+            terminal.WriteLine("");
 
         // Row 2 - Shops (W/A/M/U always, J tier 3+)
-        terminal.SetColor("darkgray");
-        terminal.Write(" [");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("W");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("eapon Shop  ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("A");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("rmor Shop   ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("M");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("agic Shop   ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("U");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("cyan");
-        terminal.Write("Music Shop");
-
+        terminal.Write(" ");
+        MI("W", "eapon Shop", "white", C);
+        MI("A", "rmor Shop", "white", C);
+        MI("M", "agic Shop", "white", C);
         if (tier >= 3)
         {
-            terminal.Write("  ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("J");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("Auction House");
+            MI("U", "Music Shop", "cyan", C);
+            ML("J", "Auction House", "white");
         }
-        terminal.WriteLine("");
+        else
+        {
+            ML("U", "Music Shop", "cyan");
+        }
 
-        // Row 3 - Services (1/2/V always, B tier 2+)
-        terminal.SetColor("darkgray");
+        // Row 3 - Services (B tier 2+, 1/2/V always)
         terminal.Write(" ");
         if (tier >= 2)
-        {
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("B");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("ank         ");
-            terminal.SetColor("darkgray");
-        }
+            MI("B", "ank", "white", C);
+        MI("1", "Healer", "white", C);
+        MI("2", "Quest Hall", "white", C);
+        ML("V", "isit Master", "white");
 
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("1");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("Healer      ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("2");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("Quest Hall  ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("V");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.WriteLine("isit Master");
-
-        // Row 4 - Important locations (K/H tier 2+, C/L tier 3+)
+        // Row 4 - Important locations (K/H tier 2+, C/L/Z tier 3+)
         if (tier >= 2)
         {
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("K");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("Castle      ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("H");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("ome         ");
-
+            terminal.Write(" ");
+            MI("K", "Castle", "white", C);
+            MI("H", "ome", "white", C);
             if (tier >= 3)
             {
-                terminal.Write("  ");
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("C");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("white");
-                terminal.Write("hallenges   ");
-
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("L");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("white");
-                terminal.Write("odging");
+                MI("C", "hallenges", "white", C);
+                MI("L", "odging", "white", C);
+                ML("Z", "Team Corner", "white");
             }
-            terminal.WriteLine("");
+            else
+                terminal.WriteLine("");
         }
 
         terminal.WriteLine("");
 
         // Row 5 - Information (S always, N/F tier 2+)
-        terminal.SetColor("darkgray");
-        terminal.Write(" [");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("S");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("white");
-        terminal.Write("tatus       ");
-
+        terminal.Write(" ");
+        MI("S", "tatus", "white", C);
         if (tier >= 2)
         {
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("N");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("ews         ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("F");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("ame         ");
+            MI("N", "ews", "white", C);
+            ML("F", "ame", "white");
         }
-        terminal.WriteLine("");
+        else
+            terminal.WriteLine("");
 
         // Row 6 - Stats & Progress (tier 3+)
         if (tier >= 3)
         {
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("=");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("Stats       ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("P");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.Write("rogress     ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("R");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("white");
-            terminal.WriteLine("elations");
+            terminal.Write(" ");
+            MI("=", "Stats", "white", C);
+            MI("P", "rogress", "white", C);
+            ML("R", "elations", "white");
         }
 
         // Row 7 - Shady areas + Quit (Y/X tier 3+, Q/~ always)
-        terminal.SetColor("darkgray");
         terminal.Write(" ");
         if (tier >= 3)
         {
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("Y");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("gray");
-            terminal.Write("Dark Alley  ");
-
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("X");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("magenta");
-            terminal.Write("Love Street ");
-            terminal.SetColor("darkgray");
+            MI("Y", "Dark Alley", "gray", C);
+            MI("X", "Love Street", "magenta", C);
         }
-
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("Q");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("gray");
-        terminal.Write("uit Game    ");
-
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("~");
-        terminal.SetColor("darkgray");
-        terminal.Write("]");
-        terminal.SetColor("gray");
-        terminal.WriteLine("Settings");
+        MI("Q", "uit Game", "gray", C);
+        ML("~", "Settings", "gray");
 
         // Online multiplayer section (only shown in online mode)
         if (DoorMode.IsOnlineMode && OnlineChatSystem.IsActive)
@@ -868,6 +690,7 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine("  V - Visit Master");
         terminal.WriteLine("  2 - Quest Hall");
         if (tier >= 3) terminal.WriteLine("  C - Challenges");
+        if (tier >= 3) terminal.WriteLine("  Z - Team Corner");
         terminal.WriteLine("");
 
         if (tier >= 2)
@@ -1024,7 +847,12 @@ public class MainStreetLocation : BaseLocation
                 await ShowWorldEvents();
                 return false;
                 
-            // Team Area removed from Main Street - access via Inn only
+            case "Z":
+                if (currentPlayer.Level >= GameConfig.MenuTier3Level)
+                    await NavigateToTeamCorner();
+                else
+                    terminal.WriteLine("You must be level 5 or higher to access the Team Corner.", "yellow");
+                return currentPlayer.Level >= GameConfig.MenuTier3Level;
 
             // List Citizens removed - merged into Fame (F) which now shows locations
             // case "L":

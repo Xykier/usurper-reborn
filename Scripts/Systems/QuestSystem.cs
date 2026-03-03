@@ -668,8 +668,13 @@ public partial class QuestSystem
                 break;
 
             case QuestRewardType.Potions:
-                player.Healing += (int)rewardAmount;
-                terminal.WriteLine($"  Reward: {rewardAmount} healing potions!", "bright_cyan");
+                int potionRoom = (int)Math.Max(0, GameConfig.MaxHealingPotions - player.Healing);
+                int potionsAwarded = (int)Math.Min(rewardAmount, potionRoom);
+                player.Healing += potionsAwarded;
+                if (potionsAwarded < rewardAmount)
+                    terminal.WriteLine($"  Reward: {potionsAwarded} healing potions! (capped at {GameConfig.MaxHealingPotions})", "bright_cyan");
+                else
+                    terminal.WriteLine($"  Reward: {potionsAwarded} healing potions!", "bright_cyan");
                 break;
 
             case QuestRewardType.Darkness:

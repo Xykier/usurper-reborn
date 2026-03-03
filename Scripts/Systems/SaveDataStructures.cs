@@ -162,6 +162,10 @@ namespace UsurperRemake.Systems
 
         // Disabled ability IDs
         public List<string> DisabledAbilities { get; set; } = new();
+
+        // Skill proficiency (stored as int values of TrainingSystem.ProficiencyLevel)
+        public Dictionary<string, int> SkillProficiencies { get; set; } = new();
+        public Dictionary<string, int> SkillTrainingProgress { get; set; } = new();
     }
 
     public class CompanionDeathInfo
@@ -210,6 +214,7 @@ namespace UsurperRemake.Systems
         // Equipment and items
         public long Healing { get; set; }  // CRITICAL: Healing potions count
         public long ManaPotions { get; set; }  // Mana potions (bought at Magic Shop)
+        public int Antidotes { get; set; }  // Antidote potions
         public long WeapPow { get; set; }  // CRITICAL: Weapon power
         public long ArmPow { get; set; }   // CRITICAL: Armor power
         
@@ -286,6 +291,7 @@ namespace UsurperRemake.Systems
         public long Darkness { get; set; }
         public int Mental { get; set; }
         public int Poison { get; set; }
+        public int PoisonTurns { get; set; }  // Remaining turns of poison
 
         // Active status effects (StatusEffect -> remaining duration in rounds)
         public Dictionary<int, int> ActiveStatuses { get; set; } = new();
@@ -674,6 +680,10 @@ namespace UsurperRemake.Systems
 
         // Dynamic equipment that this NPC has equipped (dungeon loot, etc.)
         public List<DynamicEquipmentData> DynamicEquipment { get; set; } = new();
+
+        // Skill proficiency (stored as int values of TrainingSystem.ProficiencyLevel)
+        public Dictionary<string, int> SkillProficiencies { get; set; } = new();
+        public Dictionary<string, int> SkillTrainingProgress { get; set; } = new();
     }
 
     /// <summary>
@@ -1176,6 +1186,7 @@ namespace UsurperRemake.Systems
         public string NPCId { get; set; } = "";
         public string NPCName { get; set; } = "";
         public DateTime MarriedDate { get; set; }
+        public int MarriedGameDay { get; set; }
         public int LoveLevel { get; set; }
         public bool AcceptsPolyamory { get; set; }
         public bool KnowsAboutOthers { get; set; }
@@ -1191,7 +1202,9 @@ namespace UsurperRemake.Systems
         public string NPCId { get; set; } = "";
         public string NPCName { get; set; } = "";
         public DateTime MarriedDate { get; set; }
+        public int MarriedGameDay { get; set; }
         public DateTime DivorceDate { get; set; }
+        public int DivorceGameDay { get; set; }
         public int ChildrenTogether { get; set; }
         public string DivorceReason { get; set; } = "";
         public bool PlayerInitiated { get; set; }

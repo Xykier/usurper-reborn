@@ -309,7 +309,7 @@ public static class TrainingSystem
             {
                 NaturalRoll = 0,
                 Modifier = totalMod,
-                Total = 0,
+                Total = totalMod,
                 TargetDC = baseDC,
                 Success = false,
                 IsCriticalFailure = true,
@@ -466,13 +466,32 @@ public static class TrainingSystem
     }
 
     /// <summary>
+    /// Get the proficiency cap for a character based on their type.
+    /// Players can reach Legendary, companions Superb, NPCs Expert.
+    /// </summary>
+    public static int GetProficiencyCapForCharacter(Character character)
+    {
+        if (character.IsCompanion)
+            return GameConfig.CompanionProficiencyCap;
+        if (character is NPC)
+            return GameConfig.NPCProficiencyCap;
+        return (int)ProficiencyLevel.Legendary; // Players have no cap
+    }
+
+    /// <summary>
     /// Try to improve skill through combat use
     /// </summary>
-    public static bool TryImproveFromUse(Character character, string skillId, Random? random = null)
+    /// <param name="maxLevel">Optional proficiency cap (use GetProficiencyCapForCharacter)</param>
+    public static bool TryImproveFromUse(Character character, string skillId, Random? random = null, int maxLevel = (int)ProficiencyLevel.Legendary)
     {
         random ??= new Random();
 
         var currentLevel = GetSkillProficiency(character, skillId);
+
+        // Enforce proficiency cap
+        if ((int)currentLevel >= maxLevel)
+            return false;
+
         int chance = GetCombatImprovementChance(currentLevel);
 
         if (random.Next(100) < chance)

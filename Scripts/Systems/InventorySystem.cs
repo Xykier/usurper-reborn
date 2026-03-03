@@ -200,6 +200,13 @@ namespace UsurperRemake.Systems
                 {
                     terminal.Write($" ({stats})");
                 }
+
+                // Show armor weight class tag
+                if (item.WeightClass != ArmorWeightClass.None && slot.IsArmorSlot())
+                {
+                    terminal.SetColor(item.WeightClass.GetWeightColor());
+                    terminal.Write($" [{item.WeightClass}]");
+                }
                 terminal.WriteLine("");
             }
             else

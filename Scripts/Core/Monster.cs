@@ -105,6 +105,7 @@ public class Monster
     public int FearDuration { get; set; } = 0;
     public bool IsStunned { get; set; } = false;
     public int StunDuration { get; set; } = 0;
+    public int StunImmunityRounds { get; set; } = 0;  // Prevents re-stun immediately after recovery
     public bool IsSlowed { get; set; } = false;
     public int SlowDuration { get; set; } = 0;
 

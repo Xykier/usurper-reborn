@@ -877,6 +877,10 @@ public class CharacterCreationSystem
         if (race == CharacterRace.Troll) AddText("Heals HP each round", "gray");
         else if (race == CharacterRace.Gnoll) AddText("Chance to poison foes", "gray");
 
+        // ── Armor restriction for small races ──
+        if (GameConfig.IsSmallRace(race))
+            AddText("No Heavy armor (Small)", "red");
+
         // Pad remaining rows with blanks (18 = CONTENT_ROWS for BBS fit)
         while (lines.Count < 18)
             AddBlank();
@@ -978,6 +982,12 @@ public class CharacterCreationSystem
             _ => "[gray]None"
         };
         CardLine(pad, W, $"  [cyan]Special:  {special}");
+
+        // ── Armor restriction for small races ──
+        if (GameConfig.IsSmallRace(race))
+        {
+            CardLine(pad, W, "  [yellow]Size:     [red]Small (cannot wear Heavy armor)");
+        }
 
         CardBlank(pad, W);
 
@@ -1358,6 +1368,21 @@ public class CharacterCreationSystem
             manaColor = "gray";
         }
         AddText(manaText, manaColor);
+
+        // ── Armor ──
+        string armorInfo = GameConfig.GetMaxArmorWeight(characterClass) switch
+        {
+            ArmorWeightClass.Light => "Armor: Light only",
+            ArmorWeightClass.Medium => "Armor: Light & Medium",
+            _ => "Armor: All types"
+        };
+        string armorColor = GameConfig.GetMaxArmorWeight(characterClass) switch
+        {
+            ArmorWeightClass.Light => "cyan",
+            ArmorWeightClass.Medium => "yellow",
+            _ => "bright_green"
+        };
+        AddText(armorInfo, armorColor);
 
         // ── Strengths ──
         string strengths = GetClassStrengths(characterClass);
@@ -2188,6 +2213,9 @@ public class CharacterCreationSystem
         character.BardSongsLeft = 5;
         character.PrisonEscapes = 2;
         
+        // Give class-appropriate starting weapon
+        GiveStartingWeapon(character);
+
         // Disease status (all false by default)
         character.Blind = false;
         character.Plague = false;
@@ -2198,6 +2226,45 @@ public class CharacterCreationSystem
         
         // Set last on date to current (Pascal: packed_date)
         character.LastOn = DateTimeOffset.Now.ToUnixTimeSeconds();
+    }
+
+    /// <summary>
+    /// Give new characters a class-appropriate starting weapon so they can use their abilities from level 1.
+    /// Magicians/Sages need a Staff for spells, Assassins need a Dagger for Backstab, etc.
+    /// </summary>
+    private void GiveStartingWeapon(Character character)
+    {
+        var (name, weaponType, handedness, power) = character.Class switch
+        {
+            CharacterClass.Magician => ("Wooden Staff", WeaponType.Staff, WeaponHandedness.TwoHanded, 3),
+            CharacterClass.Sage => ("Wooden Staff", WeaponType.Staff, WeaponHandedness.TwoHanded, 3),
+            CharacterClass.Assassin => ("Rusty Dagger", WeaponType.Dagger, WeaponHandedness.OneHanded, 4),
+            CharacterClass.Ranger => ("Short Bow", WeaponType.Bow, WeaponHandedness.TwoHanded, 5),
+            CharacterClass.Warrior => ("Dull Sword", WeaponType.Sword, WeaponHandedness.OneHanded, 5),
+            CharacterClass.Paladin => ("Dull Sword", WeaponType.Sword, WeaponHandedness.OneHanded, 5),
+            CharacterClass.Barbarian => ("Crude Axe", WeaponType.Axe, WeaponHandedness.OneHanded, 5),
+            CharacterClass.Cleric => ("Wooden Staff", WeaponType.Staff, WeaponHandedness.TwoHanded, 3),
+            CharacterClass.Bard => ("Dull Sword", WeaponType.Sword, WeaponHandedness.OneHanded, 4),
+            CharacterClass.Jester => ("Rusty Dagger", WeaponType.Dagger, WeaponHandedness.OneHanded, 4),
+            CharacterClass.Alchemist => ("Rusty Dagger", WeaponType.Dagger, WeaponHandedness.OneHanded, 4),
+            _ => ("Dull Sword", WeaponType.Sword, WeaponHandedness.OneHanded, 5),
+        };
+
+        var weapon = new Equipment
+        {
+            Id = 1, // Starting weapon ID
+            Name = name,
+            Description = $"A basic {name.ToLower()} for new adventurers.",
+            Slot = EquipmentSlot.MainHand,
+            WeaponType = weaponType,
+            Handedness = handedness,
+            WeaponPower = power,
+            Value = 50,
+            MinLevel = 1,
+            Rarity = EquipmentRarity.Common,
+        };
+
+        character.EquipItem(weapon, EquipmentSlot.MainHand, out _);
     }
 
     /// <summary>

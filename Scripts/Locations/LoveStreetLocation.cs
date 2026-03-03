@@ -1846,7 +1846,9 @@ public class LoveStreetLocation : BaseLocation
             {
                 var npc = NPCSpawnSystem.Instance?.ActiveNPCs?.FirstOrDefault(n => n.ID == spouse.NPCId);
                 var name = npc?.Name ?? (!string.IsNullOrEmpty(spouse.NPCName) ? spouse.NPCName : spouse.NPCId);
-                var days = (DateTime.Now - spouse.MarriedDate).Days;
+                var days = spouse.MarriedGameDay > 0
+                    ? Math.Max(0, DailySystemManager.Instance.CurrentDay - spouse.MarriedGameDay)
+                    : (DateTime.Now - spouse.MarriedDate).Days; // Fallback for old saves
                 terminal.WriteLine($" <3 {currentPlayer.Name2} & {name} ({days} days, {spouse.Children} children)");
                 count++;
             }
@@ -2374,7 +2376,9 @@ public class LoveStreetLocation : BaseLocation
             {
                 var npc = NPCSpawnSystem.Instance?.ActiveNPCs?.FirstOrDefault(n => n.ID == spouse.NPCId);
                 var name = npc?.Name ?? (!string.IsNullOrEmpty(spouse.NPCName) ? spouse.NPCName : spouse.NPCId);
-                var days = (DateTime.Now - spouse.MarriedDate).Days;
+                var days = spouse.MarriedGameDay > 0
+                    ? Math.Max(0, DailySystemManager.Instance.CurrentDay - spouse.MarriedGameDay)
+                    : (DateTime.Now - spouse.MarriedDate).Days; // Fallback for old saves
                 terminal.WriteLine($"   - {name} (married {days} days, {spouse.Children} children)");
             }
         }

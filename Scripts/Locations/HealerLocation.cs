@@ -134,7 +134,7 @@ public class HealerLocation : BaseLocation
         // Menu rows
         ShowBBSMenuRow(("H", "bright_yellow", "Heal HP"), ("F", "bright_yellow", "Full Heal"), ("B", "bright_yellow", "Buy Potions"), ("M", "bright_yellow", "Mana Pots"));
         ShowBBSMenuRow(("P", "bright_yellow", "Poison Cure"), ("C", "bright_yellow", "Cure Disease"), ("D", "bright_yellow", "Decurse"));
-        ShowBBSMenuRow(("A", "bright_yellow", "Addiction"), ("S", "bright_yellow", "Status"), ("R", "bright_yellow", "Return"));
+        ShowBBSMenuRow(("N", "bright_yellow", "Buy Antidotes"), ("A", "bright_yellow", "Addiction"), ("S", "bright_yellow", "Status"), ("R", "bright_yellow", "Return"));
         ShowBBSFooter();
     }
 
@@ -158,6 +158,9 @@ public class HealerLocation : BaseLocation
             case "M":
                 await BuyManaPotions();
                 return false; // Stay in location
+            case "N":
+                await BuyAntidotes();
+                return false;
             case "P":
                 await CurePoison();
                 return false; // Stay in location
@@ -721,6 +724,71 @@ public class HealerLocation : BaseLocation
     }
 
     /// <summary>
+    /// Buy antidotes for later use
+    /// </summary>
+    private async Task BuyAntidotes()
+    {
+        var player = GetCurrentPlayer();
+        int antidoteBaseCost = 75;
+        var (_, _, antidotePriceWithTax) = CityControlSystem.CalculateHealingTaxedPrice(antidoteBaseCost);
+
+        terminal.WriteLine("");
+        terminal.SetColor("cyan");
+        terminal.WriteLine($"\"{Manager} pulls out small green vials.\"");
+        terminal.SetColor("gray");
+        terminal.WriteLine($"\"Antidotes — {antidotePriceWithTax} gold each. Cures poison on the spot.\"");
+        terminal.WriteLine("");
+
+        int maxCanCarry = player.MaxAntidotes - player.Antidotes;
+        if (maxCanCarry <= 0)
+        {
+            terminal.WriteLine($"You're carrying the maximum number of antidotes! ({player.MaxAntidotes})", "red");
+            await terminal.PressAnyKey();
+            return;
+        }
+
+        long maxAfford = antidotePriceWithTax > 0 ? player.Gold / antidotePriceWithTax : 0;
+        terminal.WriteLine($"You currently have {player.Antidotes}/{player.MaxAntidotes} antidotes.", "gray");
+        terminal.WriteLine($"You can afford up to {Math.Min(maxAfford, maxCanCarry)} antidotes.", "gray");
+        terminal.WriteLine("");
+
+        var input = await terminal.GetInput("How many antidotes to buy (0 to cancel)? ");
+        if (!int.TryParse(input, out int quantity) || quantity <= 0)
+        {
+            terminal.WriteLine("\"Come back when you need supplies.\"", "cyan");
+            await Task.Delay(1000);
+            return;
+        }
+
+        quantity = Math.Min(quantity, maxCanCarry);
+        long cost = quantity * antidoteBaseCost;
+        var (_, _, totalWithTax) = CityControlSystem.CalculateHealingTaxedPrice(cost);
+
+        if (player.Gold < totalWithTax)
+        {
+            terminal.WriteLine("You can't afford that many!", "red");
+            await terminal.PressAnyKey();
+            return;
+        }
+
+        CityControlSystem.Instance.DisplayTaxBreakdown(terminal, "Antidotes", cost);
+
+        player.Gold -= totalWithTax;
+        player.Statistics.RecordPurchase(totalWithTax);
+        CityControlSystem.Instance.ProcessSaleTax(cost);
+        player.Antidotes += quantity;
+
+        terminal.WriteLine("");
+        terminal.WriteLine($"{Manager} hands you {quantity} antidote{(quantity > 1 ? "s" : "")}.", "gray");
+        terminal.WriteLine($"You now have {player.Antidotes} antidotes.", "green");
+        terminal.WriteLine($"Cost: {totalWithTax:N0} gold", "yellow");
+        terminal.SetColor("gray");
+        terminal.WriteLine("Use /antidote or [D] in the dungeon potion menu to cure poison.");
+
+        await terminal.PressAnyKey();
+    }
+
+    /// <summary>
     /// Cure poison
     /// </summary>
     private async Task CurePoison()
@@ -771,6 +839,7 @@ public class HealerLocation : BaseLocation
         player.Statistics.RecordGoldSpent(poisonTotalWithTax);
         CityControlSystem.Instance.ProcessSaleTax(cost);
         player.Poison = 0;
+        player.PoisonTurns = 0;
 
         terminal.WriteLine("");
         terminal.WriteLine($"{Manager} mixes a glowing green antidote...", "gray");

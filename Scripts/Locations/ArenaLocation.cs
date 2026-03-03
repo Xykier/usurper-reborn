@@ -392,6 +392,7 @@ public class ArenaLocation : BaseLocation
             // Resurrect at Inn with half HP (prevents standard death handler)
             currentPlayer.HP = Math.Max(1, currentPlayer.MaxHP / 2);
             currentPlayer.Poison = 0;
+            currentPlayer.PoisonTurns = 0;
 
             terminal.WriteLine("");
             terminal.SetColor("bright_red");

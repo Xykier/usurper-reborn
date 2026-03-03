@@ -295,6 +295,10 @@ public partial class CombatEngine
                 }
             }
 
+            // Check for escape before processing status effects — escaped players shouldn't take DoT
+            if (globalEscape)
+                break;
+
             // Process status effects (tick durations, apply DoT, remove expired)
             foreach (var (msg, color) in attacker.ProcessStatusEffects())
                 terminal.WriteLine(msg, color);
@@ -311,7 +315,7 @@ public partial class CombatEngine
                     if (tcEntry[key] > 0) tcEntry[key]--;
 
             // Check for combat end conditions
-            if (!attacker.IsAlive || !defender.IsAlive || globalEscape)
+            if (!attacker.IsAlive || !defender.IsAlive)
                 break;
         }
         
@@ -1112,12 +1116,19 @@ public partial class CombatEngine
                 player, result.CurrentRound * GameConfig.MinutesPerCombatRound);
         }
 
-        // Fatigue increment from combat (single-player only)
+        // Fatigue increment from combat (single-player only), scaled by armor weight
         if (!UsurperRemake.BBS.DoorMode.IsOnlineMode)
         {
-            int fatigueCost = result.Outcome == CombatOutcome.PlayerDied
+            int baseFatigueCost = result.Outcome == CombatOutcome.PlayerDied
                 ? GameConfig.FatigueCostCombatLoss
                 : GameConfig.FatigueCostCombat;
+            float armorFatigueMult = player.GetArmorWeightTier() switch
+            {
+                ArmorWeightClass.Light => GameConfig.LightArmorFatigueMult,
+                ArmorWeightClass.Medium => GameConfig.MediumArmorFatigueMult,
+                _ => GameConfig.HeavyArmorFatigueMult
+            };
+            int fatigueCost = Math.Max(1, (int)(baseFatigueCost * armorFatigueMult));
             player.Fatigue = Math.Min(100, player.Fatigue + fatigueCost);
         }
 
@@ -2893,7 +2904,7 @@ public partial class CombatEngine
                 break;
 
             case PoisonType.NightshadeExtract:
-                if (!target.IsStunned)
+                if (!target.IsStunned && target.StunImmunityRounds <= 0)
                 {
                     target.IsStunned = true;
                     terminal.SetColor("dark_magenta");
@@ -2921,7 +2932,7 @@ public partial class CombatEngine
                 break;
 
             case PoisonType.WidowsKiss:
-                if (!target.IsStunned)
+                if (!target.IsStunned && target.StunImmunityRounds <= 0)
                 {
                     target.IsStunned = true;
                     terminal.SetColor("bright_magenta");
@@ -3188,6 +3199,7 @@ public partial class CombatEngine
         if (monster.StunRounds > 0)
         {
             monster.StunRounds--;
+            if (monster.StunRounds <= 0) monster.StunImmunityRounds = 1;
             terminal.WriteLine($"{monster.Name} is stunned and cannot act!", "cyan");
             await Task.Delay(GetCombatDelay(600));
             return; // Skip action
@@ -3197,6 +3209,7 @@ public partial class CombatEngine
         if (monster.Stunned)
         {
             monster.Stunned = false; // One-round stun
+            monster.StunImmunityRounds = 1;
             terminal.WriteLine($"{monster.Name} is stunned and cannot act!", "cyan");
             await Task.Delay(GetCombatDelay(600));
             return;
@@ -3251,10 +3264,15 @@ public partial class CombatEngine
             if (monster.StunDuration <= 0)
             {
                 monster.IsStunned = false;
+                monster.StunImmunityRounds = 1; // Brief immunity prevents stunlock
             }
             await Task.Delay(GetCombatDelay(600));
             return;
         }
+
+        // Tick down stun immunity (monster is NOT stunned but can't be re-stunned yet)
+        if (monster.StunImmunityRounds > 0)
+            monster.StunImmunityRounds--;
 
         // Check if monster is frozen (from Frost Bomb)
         if (monster.IsFrozen)
@@ -4576,9 +4594,13 @@ public partial class CombatEngine
                 await Task.Delay(GetCombatDelay(500));
         }
 
+        // Teammate can improve basic attack proficiency through combat use (silent — no message)
+        int profCap = TrainingSystem.GetProficiencyCapForCharacter(teammate);
+        TrainingSystem.TryImproveFromUse(teammate, "basic_attack", random, profCap);
+
         await Task.Delay(GetCombatDelay(1000));
     }
-    
+
     /// <summary>
     /// Determine combat outcome and apply rewards/penalties
     /// </summary>
@@ -5224,9 +5246,17 @@ public partial class CombatEngine
         {
             long lightningDamage = Math.Max(1, (long)(damage * GameConfig.LightningEnchantDamageMultiplier));
             target.HP = Math.Max(0, target.HP - lightningDamage);
-            target.StunRounds = Math.Max(target.StunRounds, 1);
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"Lightning arcs from your strike! {lightningDamage} shock damage! {target.Name} is stunned! (Thunderstrike)");
+            if (target.StunImmunityRounds > 0)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine($"Lightning arcs from your strike! {lightningDamage} shock damage! {target.Name} resists the stun! (Thunderstrike)");
+            }
+            else
+            {
+                target.StunRounds = Math.Max(target.StunRounds, 1);
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine($"Lightning arcs from your strike! {lightningDamage} shock damage! {target.Name} is stunned! (Thunderstrike)");
+            }
             result.TotalDamageDealt += lightningDamage;
             attacker.Statistics?.RecordDamageDealt(lightningDamage, false);
         }
@@ -5308,9 +5338,17 @@ public partial class CombatEngine
         {
             long lightningDamage = Math.Max(1, (long)(damage * GameConfig.LightningEnchantDamageMultiplier));
             target.HP -= lightningDamage;
-            target.StunRounds = Math.Max(target.StunRounds, 1);
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"  Lightning arcs! {lightningDamage} shock damage to {target.Name}! Stunned! (Thunderstrike)");
+            if (target.StunImmunityRounds > 0)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine($"  Lightning arcs! {lightningDamage} shock damage to {target.Name}! Resists stun! (Thunderstrike)");
+            }
+            else
+            {
+                target.StunRounds = Math.Max(target.StunRounds, 1);
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine($"  Lightning arcs! {lightningDamage} shock damage to {target.Name}! Stunned! (Thunderstrike)");
+            }
             attacker.Statistics?.RecordDamageDealt(lightningDamage, false);
         }
 
@@ -6813,6 +6851,7 @@ public partial class CombatEngine
             }
             else
             {
+                var inferredWeight = ShopItemGenerator.InferArmorWeightClass(lootItem.Name);
                 equipment = Equipment.CreateArmor(
                     id: 10000 + random.Next(10000),
                     name: lootItem.Name,
@@ -6822,6 +6861,7 @@ public partial class CombatEngine
                     value: lootItem.Value,
                     rarity: ConvertRarityToEquipmentRarity(LootGenerator.GetItemRarity(lootItem))
                 );
+                equipment.WeightClass = inferredWeight;
             }
         }
 
@@ -8225,6 +8265,49 @@ public partial class CombatEngine
                     }
                     continue; // Invalid or cancelled, show menu again
 
+                // Tactical actions with target selection (same keys as single-monster combat)
+                case "P":
+                    action.Type = CombatActionType.PowerAttack;
+                    action.TargetIndex = await GetTargetSelection(monsters, allowRandom: true);
+                    return (action, false);
+
+                case "E":
+                    action.Type = CombatActionType.PreciseStrike;
+                    action.TargetIndex = await GetTargetSelection(monsters, allowRandom: true);
+                    return (action, false);
+
+                case "K":
+                    action.Type = CombatActionType.Backstab;
+                    action.TargetIndex = await GetTargetSelection(monsters, allowRandom: true);
+                    return (action, false);
+
+                case "T":
+                    action.Type = CombatActionType.Taunt;
+                    action.TargetIndex = await GetTargetSelection(monsters, allowRandom: true);
+                    return (action, false);
+
+                case "W":
+                    action.Type = CombatActionType.Disarm;
+                    action.TargetIndex = await GetTargetSelection(monsters, allowRandom: true);
+                    return (action, false);
+
+                case "L":
+                    action.Type = CombatActionType.Hide;
+                    return (action, false);
+
+                case "G":
+                    if (player.Class == CharacterClass.Barbarian && !player.IsRaging)
+                    {
+                        action.Type = CombatActionType.Rage;
+                        return (action, false);
+                    }
+                    terminal.WriteLine("Invalid action, please try again", "yellow");
+                    await Task.Delay(GetCombatDelay(1000));
+                    continue;
+
+                case "":
+                    continue;  // Empty Enter — silently re-prompt
+
                 default:
                     terminal.WriteLine("Invalid action, please try again", "yellow");
                     await Task.Delay(GetCombatDelay(1000));
@@ -9036,7 +9119,7 @@ public partial class CombatEngine
 
         // Off-hand follow-up for melee attack abilities when dual-wielding
         // Power Strike etc. empower the main hand — the off-hand still gets its normal swing
-        if (ability.Type == ClassAbilitySystem.AbilityType.Attack && abilityResult.Damage > 0 && isPlayer && player.IsDualWielding
+        if (ability.Type == ClassAbilitySystem.AbilityType.Attack && abilityResult.Damage > 0 && player.IsDualWielding
             && abilityResult.SpecialEffect != "aoe" && abilityResult.SpecialEffect != "aoe_taunt")
         {
             var offHandTarget = (target != null && target.IsAlive) ? target : GetRandomLivingMonster(monsters);
@@ -9116,9 +9199,17 @@ public partial class CombatEngine
             case "stun":
                 if (target != null && target.IsAlive && random.Next(100) < 60)
                 {
-                    target.Stunned = true;
-                    terminal.SetColor("yellow");
-                    terminal.WriteLine($"{target.Name} is stunned!");
+                    if (target.StunImmunityRounds > 0)
+                    {
+                        terminal.SetColor("yellow");
+                        terminal.WriteLine($"{target.Name} resists the stun!");
+                    }
+                    else
+                    {
+                        target.Stunned = true;
+                        terminal.SetColor("yellow");
+                        terminal.WriteLine($"{target.Name} is stunned!");
+                    }
                 }
                 break;
 
@@ -9652,10 +9743,18 @@ public partial class CombatEngine
             case "legendary":
                 if (target != null && target.IsAlive)
                 {
-                    target.IsStunned = true;
-                    target.StunDuration = 1;
-                    terminal.SetColor("bright_yellow");
-                    terminal.WriteLine($"LEGENDARY SHOT! {target.Name} staggers from the devastating hit!");
+                    if (target.StunImmunityRounds > 0)
+                    {
+                        terminal.SetColor("bright_yellow");
+                        terminal.WriteLine($"LEGENDARY SHOT! {target.Name} withstands the staggering hit!");
+                    }
+                    else
+                    {
+                        target.IsStunned = true;
+                        target.StunDuration = 1;
+                        terminal.SetColor("bright_yellow");
+                        terminal.WriteLine($"LEGENDARY SHOT! {target.Name} staggers from the devastating hit!");
+                    }
                 }
                 break;
 
@@ -9766,6 +9865,7 @@ public partial class CombatEngine
                 // Party heal 150 + cleanse debuffs
                 player.HP = Math.Min(player.MaxHP, player.HP + abilityResult.Healing);
                 player.Poison = 0;
+                player.PoisonTurns = 0;
                 player.RemoveStatus(StatusEffect.Poisoned);
                 player.RemoveStatus(StatusEffect.Bleeding);
                 player.RemoveStatus(StatusEffect.Burning);
@@ -9945,7 +10045,7 @@ public partial class CombatEngine
                         m.WeakenRounds = Math.Max(m.WeakenRounds, abilityResult.Duration);
                         m.IsMarked = true;
                         m.MarkedDuration = Math.Max(m.MarkedDuration, abilityResult.Duration);
-                        if (random.Next(100) < 25) m.Stunned = true;
+                        if (random.Next(100) < 25 && m.StunImmunityRounds <= 0) m.Stunned = true;
                         terminal.SetColor("magenta");
                         terminal.WriteLine($"Dissonance rattles {m.Name}! (Weakened, Vulnerable{(m.Stunned ? ", STUNNED!" : "")})");
                     }
@@ -10182,12 +10282,20 @@ public partial class CombatEngine
                 // Target cannot act for 2 rounds (boss: 1)
                 if (target != null && target.IsAlive)
                 {
-                    int dur = target.IsBoss ? 1 : (abilityResult.Duration > 0 ? abilityResult.Duration : 2);
-                    target.Stunned = true;
-                    target.IsStunned = true;
-                    target.StunDuration = Math.Max(target.StunDuration, dur);
-                    terminal.SetColor("bright_magenta");
-                    terminal.WriteLine($"{target.Name} is frozen in time for {dur} round{(dur > 1 ? "s" : "")}!");
+                    if (target.StunImmunityRounds > 0)
+                    {
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine($"{target.Name} resists the temporal prison!");
+                    }
+                    else
+                    {
+                        int dur = target.IsBoss ? 1 : (abilityResult.Duration > 0 ? abilityResult.Duration : 2);
+                        target.Stunned = true;
+                        target.IsStunned = true;
+                        target.StunDuration = Math.Max(target.StunDuration, dur);
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine($"{target.Name} is frozen in time for {dur} round{(dur > 1 ? "s" : "")}!");
+                    }
                 }
                 break;
 
@@ -10432,6 +10540,7 @@ public partial class CombatEngine
                 }
                 player.HP = player.MaxHP;
                 player.Poison = 0;
+                player.PoisonTurns = 0;
                 player.Blind = false;
                 player.RemoveStatus(StatusEffect.Poisoned);
                 player.RemoveStatus(StatusEffect.Bleeding);
@@ -10990,9 +11099,16 @@ public partial class CombatEngine
 
             case "stun":
             case "lightning":
-                target.IsStunned = true;
-                target.StunDuration = duration > 0 ? duration : 1;
-                terminal.WriteLine($"{target.Name} is stunned!", "bright_yellow");
+                if (target.StunImmunityRounds > 0)
+                {
+                    terminal.WriteLine($"{target.Name} resists the stun!", "yellow");
+                }
+                else
+                {
+                    target.IsStunned = true;
+                    target.StunDuration = duration > 0 ? duration : 1;
+                    terminal.WriteLine($"{target.Name} is stunned!", "bright_yellow");
+                }
                 break;
 
             case "slow":
@@ -11020,9 +11136,16 @@ public partial class CombatEngine
                 break;
 
             case "web":
-                target.IsStunned = true;
-                target.StunDuration = duration > 0 ? duration : 2;
-                terminal.WriteLine($"{target.Name} is entangled in sticky webs!", "white");
+                if (target.StunImmunityRounds > 0)
+                {
+                    terminal.WriteLine($"{target.Name} breaks free of the webs!", "white");
+                }
+                else
+                {
+                    target.IsStunned = true;
+                    target.StunDuration = duration > 0 ? duration : 2;
+                    terminal.WriteLine($"{target.Name} is entangled in sticky webs!", "white");
+                }
                 break;
 
             case "confusion":
@@ -11142,10 +11265,17 @@ public partial class CombatEngine
                     }
                     else if (effectRoll < 70)
                     {
-                        terminal.WriteLine($"{target.Name} is pacified by the holy light!", "bright_green");
-                        target.IsStunned = true;
-                        target.StunDuration = 3 + random.Next(1, 4);
-                        target.IsFriendly = true;
+                        if (target.StunImmunityRounds > 0)
+                        {
+                            terminal.WriteLine($"{target.Name} resists the holy light!", "bright_green");
+                        }
+                        else
+                        {
+                            terminal.WriteLine($"{target.Name} is pacified by the holy light!", "bright_green");
+                            target.IsStunned = true;
+                            target.StunDuration = 3 + random.Next(1, 4);
+                            target.IsFriendly = true;
+                        }
                     }
                     else
                     {
@@ -11678,6 +11808,10 @@ public partial class CombatEngine
                     target = monsters.Where(m => m.IsAlive).OrderBy(m => m.HP).FirstOrDefault();
                 }
             }
+
+            // Teammate can improve basic attack proficiency through combat use (silent — no message)
+            int profCap = TrainingSystem.GetProficiencyCapForCharacter(teammate);
+            TrainingSystem.TryImproveFromUse(teammate, "basic_attack", random, profCap);
         }
     }
 
@@ -14232,8 +14366,15 @@ public partial class CombatEngine
             case "stun":
                 if (monster != null && random.Next(100) < 60)
                 {
-                    monster.Stunned = true;
-                    terminal.WriteLine($"{monster.Name} is stunned!", "yellow");
+                    if (monster.StunImmunityRounds > 0)
+                    {
+                        terminal.WriteLine($"{monster.Name} resists the stun!", "yellow");
+                    }
+                    else
+                    {
+                        monster.Stunned = true;
+                        terminal.WriteLine($"{monster.Name} is stunned!", "yellow");
+                    }
                 }
                 break;
 
@@ -14630,10 +14771,18 @@ public partial class CombatEngine
             case "legendary":
                 if (monster != null && monster.IsAlive)
                 {
-                    monster.IsStunned = true;
-                    monster.StunDuration = 1;
-                    terminal.SetColor("bright_yellow");
-                    terminal.WriteLine($"LEGENDARY SHOT! {monster.Name} staggers from the devastating hit!");
+                    if (monster.StunImmunityRounds > 0)
+                    {
+                        terminal.SetColor("bright_yellow");
+                        terminal.WriteLine($"LEGENDARY SHOT! {monster.Name} withstands the staggering hit!");
+                    }
+                    else
+                    {
+                        monster.IsStunned = true;
+                        monster.StunDuration = 1;
+                        terminal.SetColor("bright_yellow");
+                        terminal.WriteLine($"LEGENDARY SHOT! {monster.Name} staggers from the devastating hit!");
+                    }
                 }
                 break;
 
@@ -15708,14 +15857,14 @@ public partial class CombatEngine
         // Handle special effects
         if (!string.IsNullOrEmpty(spellResult.SpecialEffect))
         {
-            HandleSpecialSpellEffect(caster, target, spellResult.SpecialEffect);
+            HandleSpecialSpellEffect(caster, target, spellResult.SpecialEffect, spellResult.Duration);
         }
     }
-    
+
     /// <summary>
     /// Handle special spell effects
     /// </summary>
-    private void HandleSpecialSpellEffect(Character caster, Monster? target, string effect)
+    private void HandleSpecialSpellEffect(Character caster, Monster? target, string effect, int duration)
     {
         switch (effect.ToLower())
         {
@@ -15723,16 +15872,16 @@ public partial class CombatEngine
                 if (target != null)
                 {
                     target.Poisoned = true;
-                    target.PoisonRounds = 5;
+                    target.PoisonRounds = duration > 0 ? duration : 5;
                     terminal.WriteLine($"{target.Name} is poisoned!", "dark_green");
                 }
                 break;
-                
+
             case "sleep":
                 if (target != null)
                 {
                     target.IsSleeping = true;
-                    target.SleepDuration = 3;
+                    target.SleepDuration = duration > 0 ? duration : 3;
                     terminal.WriteLine($"{target.Name} falls into a magical slumber!", "cyan");
                 }
                 break;
@@ -15741,7 +15890,7 @@ public partial class CombatEngine
                 if (target != null)
                 {
                     target.IsFrozen = true;
-                    target.FrozenDuration = 2;
+                    target.FrozenDuration = duration > 0 ? duration : 2;
                     terminal.WriteLine($"{target.Name} is frozen solid!", "bright_cyan");
                 }
                 break;
@@ -15750,8 +15899,24 @@ public partial class CombatEngine
                 if (target != null)
                 {
                     target.IsFeared = true;
-                    target.FearDuration = 3;
+                    target.FearDuration = duration > 0 ? duration : 3;
                     terminal.WriteLine($"{target.Name} cowers in fear!", "yellow");
+                }
+                break;
+
+            case "web":
+                if (target != null)
+                {
+                    if (target.StunImmunityRounds > 0)
+                    {
+                        terminal.WriteLine($"{target.Name} breaks free of the webs!", "white");
+                    }
+                    else
+                    {
+                        target.IsStunned = true;
+                        target.StunDuration = duration > 0 ? duration : 2;
+                        terminal.WriteLine($"{target.Name} is entangled in sticky webs!", "white");
+                    }
                 }
                 break;
                 
@@ -15823,12 +15988,20 @@ public partial class CombatEngine
                         else if (effectRoll < 70)
                         {
                             // Monster becomes pacified (won't attack for several rounds)
-                            terminal.SetColor("bright_green");
-                            terminal.WriteLine($"{target.Name} is pacified by the holy light!");
-                            terminal.WriteLine("It gazes at you with newfound respect...");
-                            target.IsStunned = true;
-                            target.StunDuration = 3 + random.Next(1, 4); // Stunned (won't attack) for 3-6 rounds
-                            target.IsFriendly = true; // Mark as temporarily friendly
+                            if (target.StunImmunityRounds > 0)
+                            {
+                                terminal.SetColor("bright_green");
+                                terminal.WriteLine($"{target.Name} resists the holy light!");
+                            }
+                            else
+                            {
+                                terminal.SetColor("bright_green");
+                                terminal.WriteLine($"{target.Name} is pacified by the holy light!");
+                                terminal.WriteLine("It gazes at you with newfound respect...");
+                                target.IsStunned = true;
+                                target.StunDuration = 3 + random.Next(1, 4); // Stunned (won't attack) for 3-6 rounds
+                                target.IsFriendly = true; // Mark as temporarily friendly
+                            }
                         }
                         else
                         {
@@ -15889,7 +16062,7 @@ public partial class CombatEngine
                 if (caster.LoversBane) { caster.LoversBane = false; curedAnything = true; }
 
                 // Clear poison counter
-                if (caster.Poison > 0) { caster.Poison = 0; curedAnything = true; }
+                if (caster.Poison > 0) { caster.Poison = 0; caster.PoisonTurns = 0; curedAnything = true; }
 
                 if (curedAnything)
                 {
@@ -16065,7 +16238,7 @@ public partial class CombatEngine
             case "cure_disease":
                 if (caster.HasStatus(StatusEffect.Poisoned)) caster.RemoveStatus(StatusEffect.Poisoned);
                 if (caster.HasStatus(StatusEffect.Diseased)) caster.RemoveStatus(StatusEffect.Diseased);
-                if (caster.Poison > 0) caster.Poison = 0;
+                if (caster.Poison > 0) { caster.Poison = 0; caster.PoisonTurns = 0; }
                 terminal.WriteLine($"{caster.DisplayName} is purified!", "bright_green");
                 break;
         }

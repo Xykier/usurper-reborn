@@ -3171,6 +3171,7 @@ public partial class GameEngine
             // Equipment and items (CRITICAL FIXES)
             Healing = playerData.Healing,     // POTIONS
             ManaPotions = playerData.ManaPotions, // MANA POTIONS
+            Antidotes = playerData.Antidotes,     // ANTIDOTES
             WeapPow = playerData.WeapPow,     // WEAPON POWER
             ArmPow = playerData.ArmPow,       // ARMOR POWER
 
@@ -3205,6 +3206,7 @@ public partial class GameEngine
             Darkness = playerData.Darkness,
             Mental = playerData.Mental,
             Poison = playerData.Poison,
+            PoisonTurns = playerData.PoisonTurns,
 
             // Active status effects (convert int keys back to StatusEffect enum)
             ActiveStatuses = playerData.ActiveStatuses?.ToDictionary(
@@ -4289,6 +4291,17 @@ public partial class GameEngine
             npc.EmergentRole = data.EmergentRole ?? "";
             npc.RoleStabilityTicks = data.RoleStabilityTicks;
 
+            // Restore skill proficiency
+            if (data.SkillProficiencies?.Count > 0)
+            {
+                npc.SkillProficiencies = data.SkillProficiencies.ToDictionary(
+                    kvp => kvp.Key, kvp => (TrainingSystem.ProficiencyLevel)kvp.Value);
+            }
+            if (data.SkillTrainingProgress?.Count > 0)
+            {
+                npc.SkillTrainingProgress = new Dictionary<string, int>(data.SkillTrainingProgress);
+            }
+
             // Migrate: Assign faction to NPCs that don't have one (legacy save compatibility)
             if (!npc.NPCFaction.HasValue)
             {
@@ -4816,6 +4829,7 @@ public partial class GameEngine
 
         // Clear any negative status effects
         currentPlayer.Poison = 0;
+        currentPlayer.PoisonTurns = 0;
 
         terminal.SetColor("cyan");
         terminal.WriteLine("You wake up at the Inn, nursed back to health by the innkeeper.");

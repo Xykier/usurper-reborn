@@ -145,13 +145,13 @@ public static class StatEffectsSystem
     /// Spell damage multiplier from Intelligence
     /// Uses soft cap with diminishing returns so Magicians scale into endgame
     /// without uncapped exponential damage:
-    /// - Below INT 85: full scaling at 0.04 per point (reaches 4.0x)
+    /// - Below INT 85: full scaling at 0.05 per point (reaches 4.75x)
     /// - Above INT 85: diminished scaling at 0.015 per point
     /// - Hard ceiling at 8.0x
     /// </summary>
     public static float GetSpellDamageMultiplier(long intelligence)
     {
-        const float fullScalingRate = 0.04f;
+        const float fullScalingRate = 0.05f;
         const float diminishedRate = 0.015f;
         const long softCapThreshold = 85;
         const float hardCeiling = 8.0f;
@@ -419,6 +419,17 @@ public static class StatEffectsSystem
         long effectiveAgility = defender.Agility + drugEffects.AgilityBonus - drugEffects.AgilityPenalty;
         effectiveAgility = Math.Max(0, effectiveAgility);
         int dodgeChance = GetDodgeChance(effectiveAgility);
+
+        // Armor weight dodge bonus (Light = +10%, Medium = +5%, Heavy = +0%)
+        float armorDodgeBonus = defender.GetArmorWeightTier() switch
+        {
+            ArmorWeightClass.Light => GameConfig.LightArmorDodgeBonus,
+            ArmorWeightClass.Medium => GameConfig.MediumArmorDodgeBonus,
+            _ => GameConfig.HeavyArmorDodgeBonus
+        };
+        dodgeChance += (int)(armorDodgeBonus * 100);
+        dodgeChance = Math.Min(dodgeChance, 45); // Cap at 45% with armor bonus (base cap was 35%)
+
         return _random.Next(100) < dodgeChance;
     }
 

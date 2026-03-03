@@ -652,6 +652,18 @@ namespace UsurperRemake.Systems
                 charWrapper.CompanionId = companion.Id;
                 charWrapper.IsCompanion = true;
 
+                // Copy proficiency from Companion to Character wrapper
+                if (companion.SkillProficiencies.Count > 0)
+                {
+                    foreach (var kvp in companion.SkillProficiencies)
+                        charWrapper.SkillProficiencies[kvp.Key] = (TrainingSystem.ProficiencyLevel)kvp.Value;
+                }
+                if (companion.SkillTrainingProgress.Count > 0)
+                {
+                    foreach (var kvp in companion.SkillTrainingProgress)
+                        charWrapper.SkillTrainingProgress[kvp.Key] = kvp.Value;
+                }
+
                 result.Add(charWrapper);
             }
 
@@ -759,6 +771,23 @@ namespace UsurperRemake.Systems
             SyncCompanionHP(charWrapper);
             SyncCompanionPotions(charWrapper);
             SyncCompanionEquipment(charWrapper);
+            SyncCompanionProficiency(charWrapper);
+        }
+
+        /// <summary>
+        /// Sync companion proficiency from Character wrapper back to Companion object
+        /// </summary>
+        private void SyncCompanionProficiency(Character charWrapper)
+        {
+            if (charWrapper.IsCompanion && charWrapper.CompanionId.HasValue)
+            {
+                if (companions.TryGetValue(charWrapper.CompanionId.Value, out var companion))
+                {
+                    companion.SkillProficiencies = charWrapper.SkillProficiencies.ToDictionary(
+                        kvp => kvp.Key, kvp => (int)kvp.Value);
+                    companion.SkillTrainingProgress = new Dictionary<string, int>(charWrapper.SkillTrainingProgress);
+                }
+            }
         }
 
         /// <summary>
@@ -1437,7 +1466,9 @@ namespace UsurperRemake.Systems
                     BaseStatsSpeed = c.BaseStats.Speed,
                     BaseStatsHealingPower = c.BaseStats.HealingPower,
                     EquippedItemsSave = c.EquippedItems.ToDictionary(kvp => (int)kvp.Key, kvp => kvp.Value),
-                    DisabledAbilities = c.DisabledAbilities.ToList()
+                    DisabledAbilities = c.DisabledAbilities.ToList(),
+                    SkillProficiencies = c.SkillProficiencies?.Count > 0 ? new Dictionary<string, int>(c.SkillProficiencies) : new(),
+                    SkillTrainingProgress = c.SkillTrainingProgress?.Count > 0 ? new Dictionary<string, int>(c.SkillTrainingProgress) : new()
                 }).ToList(),
                 ActiveCompanions = activeCompanions.ToList(),
                 FallenCompanions = fallenCompanions.Values.ToList()
@@ -1575,6 +1606,14 @@ namespace UsurperRemake.Systems
                         foreach (var id in save.DisabledAbilities)
                             companion.DisabledAbilities.Add(id);
                     }
+
+                    // Restore skill proficiency
+                    companion.SkillProficiencies = save.SkillProficiencies?.Count > 0
+                        ? new Dictionary<string, int>(save.SkillProficiencies)
+                        : new();
+                    companion.SkillTrainingProgress = save.SkillTrainingProgress?.Count > 0
+                        ? new Dictionary<string, int>(save.SkillTrainingProgress)
+                        : new();
                 }
             }
 
@@ -2088,6 +2127,10 @@ namespace UsurperRemake.Systems
         // Companion AI will skip any ability whose Id is in this set
         public HashSet<string> DisabledAbilities { get; set; } = new();
 
+        // Skill proficiency (stored as int values of TrainingSystem.ProficiencyLevel)
+        public Dictionary<string, int> SkillProficiencies { get; set; } = new();
+        public Dictionary<string, int> SkillTrainingProgress { get; set; } = new();
+
         public List<CompanionEvent> History { get; set; } = new();
 
         public void AddHistory(CompanionEvent evt)
@@ -2173,6 +2216,10 @@ namespace UsurperRemake.Systems
 
         // Disabled ability IDs
         public List<string> DisabledAbilities { get; set; } = new();
+
+        // Skill proficiency (stored as int values of TrainingSystem.ProficiencyLevel)
+        public Dictionary<string, int> SkillProficiencies { get; set; } = new();
+        public Dictionary<string, int> SkillTrainingProgress { get; set; } = new();
     }
 
     #endregion

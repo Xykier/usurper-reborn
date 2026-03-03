@@ -27,8 +27,11 @@ public class Character
     public long Defence { get; set; }               // defence
     public long Healing { get; set; }               // healing potions
     public long ManaPotions { get; set; }            // mana potions (bought at Magic Shop)
+    public int Antidotes { get; set; }               // antidotes (cure poison)
     public int MaxPotions => 20 + (Level - 1);      // max potions = 20 + (level - 1)
     public int MaxManaPotions => 20 + (Level - 1);   // max mana potions (scales with level like healing potions)
+    public int MaxAntidotes => 5 + Level / 10;       // max antidotes (5-15 based on level)
+    public int PoisonTurns { get; set; }             // remaining turns of poison (0 = not poisoned)
     public bool Allowed { get; set; }               // allowed to play
     public long MaxHP { get; set; }                 // max hitpoints
     public long LastOn { get; set; }                // laston, date
@@ -274,9 +277,41 @@ public class Character
     public string MercenaryName { get; set; } = ""; // For syncing death back to RoyalMercenaries list
 
     // Combat Stamina System - resource for special abilities
-    // Formula: MaxCombatStamina = 50 + (Stamina stat * 2) + (Level * 3)
+    // Formula: MaxCombatStamina = 50 + (Stamina stat * 2) + (Level * 3) + armor weight bonus
     public long CurrentCombatStamina { get; set; } = 100;
-    public long MaxCombatStamina => 50 + (Stamina * 2) + (Level * 3);
+    public long MaxCombatStamina
+    {
+        get
+        {
+            int armorBonus = GetArmorWeightTier() switch
+            {
+                ArmorWeightClass.Light => GameConfig.LightArmorStaminaBonus,
+                ArmorWeightClass.Medium => GameConfig.MediumArmorStaminaBonus,
+                _ => GameConfig.HeavyArmorStaminaBonus
+            };
+            return 50 + (Stamina * 2) + (Level * 3) + armorBonus;
+        }
+    }
+
+    /// <summary>
+    /// Get the heaviest armor weight class among all equipped armor pieces.
+    /// Unarmored characters count as Light (no penalty).
+    /// </summary>
+    public ArmorWeightClass GetArmorWeightTier()
+    {
+        var heaviest = ArmorWeightClass.None;
+        if (EquippedItems == null || EquippedItems.Count == 0) return ArmorWeightClass.Light;
+
+        foreach (var kvp in EquippedItems)
+        {
+            if (kvp.Value <= 0) continue;
+            if (!kvp.Key.IsArmorSlot()) continue;
+            var equip = EquipmentDatabase.GetById(kvp.Value);
+            if (equip != null && equip.WeightClass > heaviest)
+                heaviest = equip.WeightClass;
+        }
+        return heaviest == ArmorWeightClass.None ? ArmorWeightClass.Light : heaviest;
+    }
 
     /// <summary>
     /// Initialize combat stamina to full at start of combat
@@ -288,11 +323,17 @@ public class Character
 
     /// <summary>
     /// Regenerate stamina per combat round
-    /// Base regen: 5 + (Stamina stat / 10)
+    /// Base regen: 5 + (Stamina stat / 10) + armor weight bonus
     /// </summary>
     public int RegenerateCombatStamina()
     {
-        int regen = 5 + (int)(Stamina / 10);
+        int armorRegenBonus = GetArmorWeightTier() switch
+        {
+            ArmorWeightClass.Light => GameConfig.LightArmorStaminaRegen,
+            ArmorWeightClass.Medium => GameConfig.MediumArmorStaminaRegen,
+            _ => GameConfig.HeavyArmorStaminaRegen
+        };
+        int regen = 5 + (int)(Stamina / 10) + armorRegenBonus;
         long oldStamina = CurrentCombatStamina;
         CurrentCombatStamina = Math.Min(CurrentCombatStamina + regen, MaxCombatStamina);
         return (int)(CurrentCombatStamina - oldStamina);

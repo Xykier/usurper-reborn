@@ -594,9 +594,9 @@ public static class ClassAbilitySystem
             Description = "Strike from the shadows for critical damage.",
             LevelRequired = 1,
             StaminaCost = 20,
-            Cooldown = 1,
+            Cooldown = 2,
             Type = AbilityType.Attack,
-            BaseDamage = 40,  // Low cooldown, scales with STR+DEX
+            BaseDamage = 40,  // Usable every other round, scales with STR+DEX
             SpecialEffect = "critical",
             RequiredWeaponTypes = new[] { WeaponType.Dagger },
             AvailableToClasses = new[] { CharacterClass.Assassin }
@@ -1846,11 +1846,14 @@ public static class ClassAbilitySystem
         if (cooldowns.TryGetValue(abilityId, out int remainingCooldown) && remainingCooldown > 0)
             return false;
 
-        // Check weapon requirement
+        // Check weapon requirement (accept required weapon in either hand for dual-wielding)
         if (ability.RequiredWeaponTypes != null && ability.RequiredWeaponTypes.Length > 0)
         {
             var mainHand = character.GetEquipment(EquipmentSlot.MainHand);
-            if (mainHand == null || !ability.RequiredWeaponTypes.Contains(mainHand.WeaponType))
+            var offHand = character.GetEquipment(EquipmentSlot.OffHand);
+            bool hasRequired = (mainHand != null && ability.RequiredWeaponTypes.Contains(mainHand.WeaponType))
+                            || (offHand != null && ability.RequiredWeaponTypes.Contains(offHand.WeaponType));
+            if (!hasRequired)
                 return false;
         }
 
@@ -1874,7 +1877,10 @@ public static class ClassAbilitySystem
         if (ability.RequiredWeaponTypes != null && ability.RequiredWeaponTypes.Length > 0)
         {
             var mainHand = character.GetEquipment(EquipmentSlot.MainHand);
-            if (mainHand == null || !ability.RequiredWeaponTypes.Contains(mainHand.WeaponType))
+            var offHand = character.GetEquipment(EquipmentSlot.OffHand);
+            bool hasRequired = (mainHand != null && ability.RequiredWeaponTypes.Contains(mainHand.WeaponType))
+                            || (offHand != null && ability.RequiredWeaponTypes.Contains(offHand.WeaponType));
+            if (!hasRequired)
             {
                 var names = string.Join("/", ability.RequiredWeaponTypes.Select(w => w.ToString()));
                 return $"Requires {names}";
@@ -1995,9 +2001,10 @@ public static class ClassAbilitySystem
         if (result.Damage > 0) result.Damage = (int)(result.Damage * profMult);
         if (result.Healing > 0) result.Healing = (int)(result.Healing * profMult);
 
-        // Training through use — small chance to improve proficiency
+        // Training through use — small chance to improve proficiency (capped for NPCs/companions)
         var prevLevel = proficiency;
-        if (TrainingSystem.TryImproveFromUse(user, abilityId, random))
+        int abilityProfCap = TrainingSystem.GetProficiencyCapForCharacter(user);
+        if (TrainingSystem.TryImproveFromUse(user, abilityId, random, abilityProfCap))
         {
             var newLevel = TrainingSystem.GetSkillProficiency(user, abilityId);
             result.SkillImproved = true;

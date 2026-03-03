@@ -231,7 +231,7 @@ namespace UsurperRemake.Systems
                         {
                             player.Gold -= 200;
                             player.HP = player.MaxHP;
-                            if (player.Poison > 0) player.Poison = 0;
+                            if (player.Poison > 0) { player.Poison = 0; player.PoisonTurns = 0; }
                             terminal.SetColor("bright_green");
                             terminal.WriteLine("You sleep deeply in the back room.");
                             terminal.WriteLine("You awake fully refreshed!");
@@ -2555,6 +2555,7 @@ namespace UsurperRemake.Systems
                         terminal.SetColor("red");
                         terminal.WriteLine("POISON! You feel terrible!");
                         player.Poison += 3;
+                        player.PoisonTurns = Math.Max(player.PoisonTurns, 10 + player.Level / 5);
                         break;
                     case 3:
                         player.Intelligence += 5;
@@ -2797,6 +2798,7 @@ namespace UsurperRemake.Systems
             player.HP = player.MaxHP;
             player.Mana = player.MaxMana;
             player.Poison = 0;
+            player.PoisonTurns = 0;
             terminal.SetColor("green");
             terminal.WriteLine("You drink deeply. All ailments cured!");
             await terminal.PressAnyKey();

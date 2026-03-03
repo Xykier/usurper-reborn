@@ -141,18 +141,18 @@ public class LocationManager
             GameLocation.Home,         // loc15 – your personal dwelling
             GameLocation.Arena,        // loc16 – PvP arena (online only)
             GameLocation.Dormitory,    // loc17 – lodging
-            GameLocation.MusicShop     // loc18 – music shop
+            GameLocation.MusicShop,    // loc18 – music shop
+            GameLocation.TeamCorner    // loc19 – team corner
         };
         
         navigationTable[GameLocation.TheInn] = new List<GameLocation>
         {
-            GameLocation.MainStreet,   // loc1
-            GameLocation.TeamCorner    // loc2
+            GameLocation.MainStreet   // loc1
         };
 
         navigationTable[GameLocation.TeamCorner] = new List<GameLocation>
         {
-            GameLocation.TheInn       // loc1
+            GameLocation.MainStreet   // loc1
         };
         
         navigationTable[GameLocation.Church] = new List<GameLocation>
@@ -402,6 +402,7 @@ public class LocationManager
 
         // Clear any negative status effects
         player.Poison = 0;
+        player.PoisonTurns = 0;
 
         terminal.SetColor("cyan");
         terminal.WriteLine("You wake up at the Inn, nursed back to health by the innkeeper.");

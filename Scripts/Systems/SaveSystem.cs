@@ -361,6 +361,7 @@ namespace UsurperRemake.Systems
                 // Equipment and items (CRITICAL FIXES)
                 Healing = player.Healing,     // POTIONS
                 ManaPotions = player.ManaPotions, // MANA POTIONS
+                Antidotes = player.Antidotes,     // ANTIDOTES
                 WeapPow = player.WeapPow,     // WEAPON POWER
                 ArmPow = player.ArmPow,       // ARMOR POWER
                 
@@ -511,6 +512,7 @@ namespace UsurperRemake.Systems
                 Darkness = player.Darkness,
                 Mental = player.Mental,
                 Poison = player.Poison,
+                PoisonTurns = player.PoisonTurns,
 
                 // Active status effects (convert enum keys to int)
                 ActiveStatuses = player.ActiveStatuses?.ToDictionary(
@@ -1098,7 +1100,12 @@ namespace UsurperRemake.Systems
                             Thorns = equip.Thorns,
                             HPRegen = equip.HPRegen,
                             ManaRegen = equip.ManaRegen
-                        }).ToList() ?? new List<DynamicEquipmentData>()
+                        }).ToList() ?? new List<DynamicEquipmentData>(),
+
+                    // Skill proficiency
+                    SkillProficiencies = npc.SkillProficiencies?.ToDictionary(
+                        kvp => kvp.Key, kvp => (int)kvp.Value) ?? new Dictionary<string, int>(),
+                    SkillTrainingProgress = npc.SkillTrainingProgress ?? new Dictionary<string, int>()
                 });
             }
 
@@ -1563,7 +1570,9 @@ namespace UsurperRemake.Systems
                     BaseStatsSpeed = c.BaseStatsSpeed,
                     BaseStatsHealingPower = c.BaseStatsHealingPower,
                     EquippedItemsSave = c.EquippedItemsSave,
-                    DisabledAbilities = c.DisabledAbilities
+                    DisabledAbilities = c.DisabledAbilities,
+                    SkillProficiencies = c.SkillProficiencies ?? new(),
+                    SkillTrainingProgress = c.SkillTrainingProgress ?? new()
                 }).ToList();
 
                 data.ActiveCompanionIds = companionData.ActiveCompanions.Select(c => (int)c).ToList();
@@ -2003,7 +2012,9 @@ namespace UsurperRemake.Systems
                             BaseStatsSpeed = c.BaseStatsSpeed,
                             BaseStatsHealingPower = c.BaseStatsHealingPower,
                             EquippedItemsSave = c.EquippedItemsSave ?? new Dictionary<int, int>(),
-                            DisabledAbilities = c.DisabledAbilities ?? new List<string>()
+                            DisabledAbilities = c.DisabledAbilities ?? new List<string>(),
+                            SkillProficiencies = c.SkillProficiencies ?? new(),
+                            SkillTrainingProgress = c.SkillTrainingProgress ?? new()
                         }).ToList() ?? new List<CompanionSaveData>(),
 
                         ActiveCompanions = data.ActiveCompanionIds?.Select(id => (CompanionId)id).ToList() ?? new List<CompanionId>(),

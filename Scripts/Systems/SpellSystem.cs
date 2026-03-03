@@ -112,11 +112,11 @@ public static class SpellSystem
         [CharacterClass.Magician] = new Dictionary<int, SpellInfo>
         {
             // --- EARLY TIER (Levels 1-25) - Apprentice Magic ---
-            [1] = new SpellInfo(1, "Magic Missile", "Steel arrows of force strike the target. Damage: 4-7. Duration: 1 turn.", 5, 1, "Exmamarie", false, "Attack"),
-            [2] = new SpellInfo(2, "Arcane Shield", "A shimmering barrier deflects attacks. Protection: +8. Duration: whole fight.", 8, 2, "Exmasumarie", false, "Buff"),
-            [3] = new SpellInfo(3, "Spark", "A jolt of electricity stuns and damages. Damage: 8-12. Duration: 1 turn.", 10, 3, "Sparkarie", false, "Attack"),
-            [4] = new SpellInfo(4, "Sleep", "Lull the target into magical slumber. Effect: target cannot act. Duration: varies.", 15, 4, "Exdamarie", false, "Debuff"),
-            [5] = new SpellInfo(5, "Frost Touch", "Chill your enemy to the bone. Damage: 15-22. Duration: 1 turn.", 18, 5, "Frostarie", false, "Attack"),
+            [1] = new SpellInfo(1, "Magic Missile", "Steel arrows of force strike the target. Damage: 18-28. Duration: 1 turn.", 4, 1, "Exmamarie", false, "Attack"),
+            [2] = new SpellInfo(2, "Arcane Shield", "A shimmering barrier deflects attacks. Protection: +8. Duration: whole fight.", 7, 2, "Exmasumarie", false, "Buff"),
+            [3] = new SpellInfo(3, "Spark", "A jolt of electricity stuns and damages. Damage: 28-40. Duration: 1 turn.", 8, 3, "Sparkarie", false, "Attack"),
+            [4] = new SpellInfo(4, "Sleep", "Lull the target into magical slumber. Effect: target cannot act. Duration: varies.", 12, 4, "Exdamarie", false, "Debuff"),
+            [5] = new SpellInfo(5, "Frost Touch", "Chill your enemy to the bone. Damage: 40-58. Duration: 1 turn.", 14, 5, "Frostarie", false, "Attack"),
             [6] = new SpellInfo(6, "Web", "Conjure sticky strands to trap your foe. Effect: cannot move. Duration: varies.", 22, 6, "Exmasesamamarie", false, "Debuff"),
             [7] = new SpellInfo(7, "Haste", "Accelerate time around yourself. Extra attacks per round. Duration: whole fight.", 25, 7, "Quicksilvarie", false, "Buff"),
 
@@ -543,8 +543,9 @@ public static class SpellSystem
                 result.SpecialEffect = "fail";
             }
 
-            // Can still learn from failure
-            if (TrainingSystem.TryImproveFromUse(caster, skillId, random))
+            // Can still learn from failure (capped for NPCs/companions)
+            int spellProfCap = TrainingSystem.GetProficiencyCapForCharacter(caster);
+            if (TrainingSystem.TryImproveFromUse(caster, skillId, random, spellProfCap))
             {
                 var newLevel = TrainingSystem.GetSkillProficiency(caster, skillId);
                 result.SkillImproved = true;
@@ -579,8 +580,9 @@ public static class SpellSystem
         // Execute spell effects based on class and level
         ExecuteSpellEffect(caster, spellLevel, target, allTargets, result);
 
-        // Chance to improve spell proficiency from use
-        if (TrainingSystem.TryImproveFromUse(caster, skillId, random))
+        // Chance to improve spell proficiency from use (capped for NPCs/companions)
+        int spellProfCapSuccess = TrainingSystem.GetProficiencyCapForCharacter(caster);
+        if (TrainingSystem.TryImproveFromUse(caster, skillId, random, spellProfCapSuccess))
         {
             var newLevel = TrainingSystem.GetSkillProficiency(caster, skillId);
             result.SkillImproved = true;
@@ -889,8 +891,8 @@ public static class SpellSystem
         switch (spellLevel)
         {
             // --- EARLY TIER (Levels 1-25) ---
-            case 1: // Magic Missile - Base: 10-18 damage
-                int baseDamage1 = 10 + random.Next(9);
+            case 1: // Magic Missile - Base: 18-28 damage
+                int baseDamage1 = 18 + random.Next(11);
                 result.Damage = ScaleSpellEffect(baseDamage1, caster, random, profMult);
                 result.Message += $" Magic missiles strike {target?.Name2 ?? "the target"} for {result.Damage} damage!";
                 break;
@@ -902,8 +904,8 @@ public static class SpellSystem
                 result.Message += $" A shimmering shield surrounds {caster.Name2}! (+{result.ProtectionBonus} defense)";
                 break;
 
-            case 3: // Spark - Base: 18-28 damage
-                int baseDamage3 = 18 + random.Next(11);
+            case 3: // Spark - Base: 28-40 damage
+                int baseDamage3 = 28 + random.Next(13);
                 result.Damage = ScaleSpellEffect(baseDamage3, caster, random, profMult);
                 result.SpecialEffect = "lightning";
                 result.Message += $" Sparks jolt {target?.Name2 ?? "the target"} for {result.Damage} damage!";
@@ -918,8 +920,8 @@ public static class SpellSystem
                 }
                 break;
 
-            case 5: // Frost Touch - Base: 28-42 damage
-                int baseDamage5 = 28 + random.Next(15);
+            case 5: // Frost Touch - Base: 40-58 damage
+                int baseDamage5 = 40 + random.Next(19);
                 result.Damage = ScaleSpellEffect(baseDamage5, caster, random, profMult);
                 result.SpecialEffect = "frost";
                 result.Message += $" Frost chills {target?.Name2 ?? "the target"} for {result.Damage} damage!";

@@ -967,7 +967,10 @@ public class DevMenuLocation : BaseLocation
                 case "7":
                     var poisonInput = await terminal.GetInput("Enter poison level (0-100): ");
                     if (int.TryParse(poisonInput, out int poison))
+                    {
                         currentPlayer.Poison = Math.Clamp(poison, 0, 100);
+                        currentPlayer.PoisonTurns = poison > 0 ? 10 + poison / 5 : 0;
+                    }
                     break;
                 case "C":
                     currentPlayer.Blind = false;
@@ -977,6 +980,7 @@ public class DevMenuLocation : BaseLocation
                     currentPlayer.Leprosy = false;
                     currentPlayer.LoversBane = false;
                     currentPlayer.Poison = 0;
+                    currentPlayer.PoisonTurns = 0;
                     terminal.WriteLine("All diseases cured!", "bright_green");
                     await Task.Delay(1000);
                     break;
@@ -988,6 +992,7 @@ public class DevMenuLocation : BaseLocation
                     currentPlayer.Leprosy = true;
                     currentPlayer.LoversBane = true;
                     currentPlayer.Poison = 100;
+                    currentPlayer.PoisonTurns = 30;
                     terminal.WriteLine("All diseases inflicted!", "red");
                     await Task.Delay(1000);
                     break;
@@ -2003,6 +2008,7 @@ public class DevMenuLocation : BaseLocation
         currentPlayer.Leprosy = false;
         currentPlayer.LoversBane = false;
         currentPlayer.Poison = 0;
+        currentPlayer.PoisonTurns = 0;
         currentPlayer.ActiveDrug = DrugType.None;
         currentPlayer.Addict = 0;
 
@@ -2031,6 +2037,7 @@ public class DevMenuLocation : BaseLocation
         currentPlayer.Leprosy = false;
         currentPlayer.LoversBane = false;
         currentPlayer.Poison = 0;
+        currentPlayer.PoisonTurns = 0;
 
         // Clear negative status effects
         currentPlayer.ClearAllStatuses();

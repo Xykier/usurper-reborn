@@ -93,6 +93,17 @@ public enum ArmorType
 }
 
 /// <summary>
+/// Armor weight class determines mobility, stamina, and fatigue trade-offs
+/// </summary>
+public enum ArmorWeightClass
+{
+    None = 0,       // Accessories, weapons, unarmored
+    Light = 1,      // Cloth, Leather — casters, rogues
+    Medium = 2,     // Chain, Scale — hybrids, rangers
+    Heavy = 3       // Plate — tanks, warriors
+}
+
+/// <summary>
 /// Equipment rarity affects stats and visuals
 /// </summary>
 public enum EquipmentRarity
@@ -173,5 +184,34 @@ public static class WeaponHandednessExtensions
         WeaponHandedness.TwoHanded => "Two-Handed",
         WeaponHandedness.OffHandOnly => "Off-Hand",
         _ => ""
+    };
+}
+
+public static class ArmorTypeExtensions
+{
+    /// <summary>
+    /// Map ArmorType to ArmorWeightClass
+    /// </summary>
+    public static ArmorWeightClass GetWeightClass(this ArmorType armorType) => armorType switch
+    {
+        ArmorType.Cloth => ArmorWeightClass.Light,
+        ArmorType.Leather => ArmorWeightClass.Light,
+        ArmorType.Chain => ArmorWeightClass.Medium,
+        ArmorType.Scale => ArmorWeightClass.Medium,
+        ArmorType.Plate => ArmorWeightClass.Heavy,
+        ArmorType.Magic => ArmorWeightClass.Light,
+        ArmorType.Artifact => ArmorWeightClass.Medium,
+        _ => ArmorWeightClass.None
+    };
+
+    /// <summary>
+    /// Get display color for weight class
+    /// </summary>
+    public static string GetWeightColor(this ArmorWeightClass weight) => weight switch
+    {
+        ArmorWeightClass.Light => "cyan",
+        ArmorWeightClass.Medium => "yellow",
+        ArmorWeightClass.Heavy => "red",
+        _ => "white"
     };
 }

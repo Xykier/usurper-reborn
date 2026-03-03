@@ -25,8 +25,11 @@ public partial class MagicShopLocation : BaseLocation
         return Math.Max(100, 100 + (playerLevel * 50));
     }
     
-    // Available magic items for sale
-    private static List<Item> _magicInventory = new List<Item>();
+    // Accessory category browsing state (matches weapon/armor shop pattern)
+    private enum AccessoryCategory { Rings, Necklaces }
+    private AccessoryCategory? _currentAccessoryCategory = null;
+    private int _accessoryPage = 0;
+    private const int AccessoryItemsPerPage = 15;
 
     private Random random = new Random();
     
@@ -39,8 +42,6 @@ public partial class MagicShopLocation : BaseLocation
         "A dark and dusty boutique filled with mysterious magical items."
     )
     {
-        InitializeMagicInventory();
-
         // Add shop owner NPC
         var shopOwner = CreateShopOwner();
         npcs.Add(shopOwner);
@@ -65,6 +66,11 @@ public partial class MagicShopLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (_currentAccessoryCategory.HasValue)
+        {
+            ShowAccessoryCategoryItems(_currentAccessoryCategory.Value);
+            return;
+        }
         if (IsBBSSession) { DisplayLocationBBS(); return; }
         DisplayMagicShopMenu(currentPlayer);
     }
@@ -94,7 +100,7 @@ public partial class MagicShopLocation : BaseLocation
         // Menu rows - Shopping
         terminal.SetColor("cyan");
         terminal.WriteLine(" Shopping:");
-        ShowBBSMenuRow(("A", "bright_yellow", "ccessories"), ("S", "bright_yellow", "ell"), ("I", "bright_yellow", "dentify"));
+        ShowBBSMenuRow(("1", "bright_yellow", " Rings"), ("2", "bright_yellow", " Necklaces"), ("S", "bright_yellow", "ell"), ("I", "bright_yellow", "dentify"));
 
         // Potions & Scrolls
         terminal.SetColor("cyan");
@@ -146,219 +152,8 @@ public partial class MagicShopLocation : BaseLocation
         return owner;
     }
     
-    private void InitializeMagicInventory()
-    {
-        _magicInventory.Clear();
+    // Legacy static inventory removed in v0.49.2 — replaced by procedural inventory via ShopItemGenerator
 
-        // ═══════════════════════════════════════════════════════════════════
-        // RINGS - Varied magical rings for different builds and purposes
-        // ═══════════════════════════════════════════════════════════════════
-
-        // Basic Rings (Affordable starter items)
-        AddMagicItem("Copper Ring", MagicItemType.Fingers, 500, dexterity: 1);
-        AddMagicItem("Silver Band", MagicItemType.Fingers, 800, wisdom: 1, mana: 5);
-        AddMagicItem("Iron Ring", MagicItemType.Fingers, 600, strength: 1, defense: 1);
-        AddMagicItem("Jade Ring", MagicItemType.Fingers, 1000, wisdom: 2);
-
-        // Combat Rings
-        AddMagicItem("Ring of Dexterity", MagicItemType.Fingers, 1800, dexterity: 4);
-        AddMagicItem("Ring of Might", MagicItemType.Fingers, 2000, strength: 4, attack: 2);
-        AddMagicItem("Ring of Protection", MagicItemType.Fingers, 2800, defense: 3, magicRes: 10);
-        AddMagicItem("Warrior's Signet", MagicItemType.Fingers, 3500, strength: 3, dexterity: 3, attack: 3);
-        AddMagicItem("Berserker's Band", MagicItemType.Fingers, 4500, strength: 6, attack: 5, defense: -2);
-        AddMagicItem("Ring of the Champion", MagicItemType.Fingers, 8000, strength: 5, dexterity: 5, defense: 3, attack: 4);
-
-        // Magic Rings
-        AddMagicItem("Mana Ring", MagicItemType.Fingers, 2200, mana: 15, wisdom: 2);
-        AddMagicItem("Sage's Ring", MagicItemType.Fingers, 3500, wisdom: 4, mana: 18);
-        AddMagicItem("Archmage's Band", MagicItemType.Fingers, 6500, wisdom: 6, mana: 30, magicRes: 15);
-        AddMagicItem("Ring of Spellweaving", MagicItemType.Fingers, 7500, mana: 40, wisdom: 5, dexterity: 2);
-        AddMagicItem("Master's Ring", MagicItemType.Fingers, 12000, wisdom: 8, mana: 50, dexterity: 4, magicRes: 20);
-
-        // Ocean-Themed Rings (Lore items)
-        AddMagicItem("Tidecaller's Ring", MagicItemType.Fingers, 5000, mana: 25, wisdom: 4,
-            description: "A ring carved from pale blue coral, pulsing with the rhythm of distant waves.");
-        AddMagicItem("Ring of the Deep", MagicItemType.Fingers, 7000, dexterity: 4, magicRes: 25, mana: 20,
-            description: "From the lightless depths where the Ocean's dreams are darkest.");
-        AddMagicItem("Wavecrest Signet", MagicItemType.Fingers, 9000, strength: 4, dexterity: 4, wisdom: 4,
-            description: "The crest depicts a wave rising - or is it falling? The perspective shifts.");
-        AddMagicItem("Fragment Ring", MagicItemType.Fingers, 15000, wisdom: 10, mana: 45, magicRes: 30,
-            description: "Contains a droplet that never evaporates. It whispers of forgotten origins.");
-
-        // Alignment-Specific Rings
-        AddMagicItem("Ring of Radiance", MagicItemType.Fingers, 5500, wisdom: 5, mana: 20, goodOnly: true,
-            description: "Glows softly in the presence of true virtue.");
-        AddMagicItem("Paladin's Seal", MagicItemType.Fingers, 7500, strength: 4, defense: 4, magicRes: 20, goodOnly: true);
-        AddMagicItem("Ring of Shadows", MagicItemType.Fingers, 4200, dexterity: 6, evilOnly: true);
-        AddMagicItem("Nightbane Ring", MagicItemType.Fingers, 6000, dexterity: 5, attack: 4, evilOnly: true,
-            description: "Forged in darkness, it hungers for the light of others.");
-        AddMagicItem("Soulthief's Band", MagicItemType.Fingers, 9500, mana: 35, wisdom: 6, attack: 3, evilOnly: true);
-
-        // Cursed Rings (Powerful but dangerous)
-        AddMagicItem("Ring of Obsession", MagicItemType.Fingers, 3000, strength: 8, wisdom: -3, cursed: true,
-            description: "It will not come off. It does not want to come off.");
-        AddMagicItem("Withering Band", MagicItemType.Fingers, 4000, mana: 40, strength: -4, cursed: true);
-        AddMagicItem("Ring of the Drowned", MagicItemType.Fingers, 6000, magicRes: 40, wisdom: 8, dexterity: -3, cursed: true,
-            description: "Those who wear it hear the ocean calling them to return.");
-        AddMagicItem("Betrayer's Signet", MagicItemType.Fingers, 8000, dexterity: 10, attack: 6, defense: -5, cursed: true);
-
-        // Healing/Utility Rings
-        AddMagicItem("Ring of Vitality", MagicItemType.Fingers, 3200, defense: 2, cureType: CureType.Plague);
-        AddMagicItem("Ring of Purity", MagicItemType.Fingers, 4500, cureType: CureType.All, magicRes: 10, goodOnly: true);
-        AddMagicItem("Antidote Ring", MagicItemType.Fingers, 2500, cureType: CureType.Plague, dexterity: 2);
-
-        // ═══════════════════════════════════════════════════════════════════
-        // AMULETS & NECKLACES - Powerful neck slot items
-        // ═══════════════════════════════════════════════════════════════════
-
-        // Basic Amulets
-        AddMagicItem("Copper Medallion", MagicItemType.Neck, 600, defense: 1, wisdom: 1);
-        AddMagicItem("Silver Pendant", MagicItemType.Neck, 900, mana: 8, magicRes: 5);
-        AddMagicItem("Wooden Talisman", MagicItemType.Neck, 400, defense: 2);
-
-        // Protective Amulets
-        AddMagicItem("Amulet of Warding", MagicItemType.Neck, 2500, defense: 4, magicRes: 10);
-        AddMagicItem("Pendant of Protection", MagicItemType.Neck, 3500, defense: 5, magicRes: 15);
-        AddMagicItem("Guardian's Medallion", MagicItemType.Neck, 5000, defense: 6, magicRes: 20, strength: 2);
-        AddMagicItem("Amulet of the Fortress", MagicItemType.Neck, 8500, defense: 10, magicRes: 25, strength: -2);
-        AddMagicItem("Shield of the Ancients", MagicItemType.Neck, 15000, defense: 12, magicRes: 35, wisdom: 4);
-
-        // Magical Amulets
-        AddMagicItem("Amulet of Wisdom", MagicItemType.Neck, 2500, wisdom: 3, mana: 10);
-        AddMagicItem("Crystal Pendant", MagicItemType.Neck, 4000, wisdom: 4, mana: 15, dexterity: 2);
-        AddMagicItem("Starfire Amulet", MagicItemType.Neck, 6500, wisdom: 6, mana: 25, magicRes: 15);
-        AddMagicItem("Amulet of the Arcane", MagicItemType.Neck, 10000, wisdom: 8, mana: 40, magicRes: 20);
-        AddMagicItem("Pendant of Infinite Depths", MagicItemType.Neck, 18000, wisdom: 10, mana: 60, magicRes: 30,
-            description: "Looking into its gem is like staring into a bottomless pool.");
-
-        // Ocean-Themed Amulets (Lore items)
-        AddMagicItem("Teardrop of Manwe", MagicItemType.Neck, 12000, wisdom: 8, mana: 35, magicRes: 25,
-            description: "A crystallized tear from the Creator, shed in the first moment of separation.");
-        AddMagicItem("Wavecaller's Pendant", MagicItemType.Neck, 7500, wisdom: 5, mana: 30, dexterity: 3,
-            description: "The waves respond to those who wear this. Or perhaps they always did.");
-        AddMagicItem("Amulet of the Depths", MagicItemType.Neck, 9500, defense: 5, magicRes: 30, wisdom: 6,
-            description: "From where the pressure is so great that even light surrenders.");
-        AddMagicItem("Tidebinder's Chain", MagicItemType.Neck, 11000, strength: 5, dexterity: 5, mana: 25,
-            description: "Each link represents a binding - of water, of will, of memory.");
-        AddMagicItem("Heart of the Ocean", MagicItemType.Neck, 25000, wisdom: 12, mana: 50, magicRes: 40, defense: 8,
-            description: "It beats. Slowly. In rhythm with something vast and patient.");
-        AddMagicItem("Dreamer's Medallion", MagicItemType.Neck, 20000, wisdom: 10, mana: 45, strength: 4, dexterity: 4,
-            description: "The inscription reads: 'You are the Ocean, dreaming of waves.'");
-
-        // Alignment-Specific Amulets
-        AddMagicItem("Holy Symbol", MagicItemType.Neck, 4000, cureType: CureType.All, magicRes: 15, goodOnly: true);
-        AddMagicItem("Amulet of Divine Grace", MagicItemType.Neck, 8000, wisdom: 6, mana: 25, defense: 4, goodOnly: true,
-            description: "Blessed by those who remember the light before separation.");
-        AddMagicItem("Medallion of the Pure", MagicItemType.Neck, 12000, cureType: CureType.All, wisdom: 8, defense: 6, goodOnly: true);
-        AddMagicItem("Dark Medallion", MagicItemType.Neck, 4500, mana: 25, attack: 3, evilOnly: true);
-        AddMagicItem("Pendant of Shadows", MagicItemType.Neck, 7000, dexterity: 6, attack: 4, magicRes: 15, evilOnly: true);
-        AddMagicItem("Amulet of the Void", MagicItemType.Neck, 14000, mana: 40, wisdom: 7, magicRes: 25, evilOnly: true,
-            description: "Darkness given form. It drinks light and gives nothing back.");
-
-        // Cursed Amulets
-        AddMagicItem("Choker of Binding", MagicItemType.Neck, 5000, strength: 10, dexterity: -4, cursed: true,
-            description: "It tightens when you try to remove it.");
-        AddMagicItem("Medallion of Madness", MagicItemType.Neck, 6500, wisdom: 12, mana: 40, defense: -5, cursed: true,
-            description: "The voices it shares are ancient beyond measure.");
-        AddMagicItem("Amulet of the Drowned God", MagicItemType.Neck, 10000, mana: 50, magicRes: 35, wisdom: -5, cursed: true,
-            description: "A god died wearing this. Part of them remains.");
-        AddMagicItem("Pendant of Eternal Hunger", MagicItemType.Neck, 8000, strength: 8, attack: 6, wisdom: -6, cursed: true);
-
-        // Healing Amulets
-        AddMagicItem("Amulet of Restoration", MagicItemType.Neck, 3500, cureType: CureType.Blindness, wisdom: 2);
-        AddMagicItem("Healer's Pendant", MagicItemType.Neck, 5500, cureType: CureType.All, mana: 15, wisdom: 3);
-        AddMagicItem("Plague Ward", MagicItemType.Neck, 2800, cureType: CureType.Plague, defense: 2);
-        AddMagicItem("Purity Medallion", MagicItemType.Neck, 6000, cureType: CureType.All, defense: 4, magicRes: 15);
-
-        // ═══════════════════════════════════════════════════════════════════
-        // BELTS & GIRDLES - Waist slot items
-        // ═══════════════════════════════════════════════════════════════════
-
-        // Basic Belts
-        AddMagicItem("Leather Belt", MagicItemType.Waist, 300, defense: 1);
-        AddMagicItem("Studded Belt", MagicItemType.Waist, 600, defense: 2, strength: 1);
-        AddMagicItem("Cloth Sash", MagicItemType.Waist, 400, mana: 5, dexterity: 1);
-
-        // Strength Belts
-        AddMagicItem("Belt of Strength", MagicItemType.Waist, 2000, strength: 3, attack: 2);
-        AddMagicItem("Girdle of Giant Strength", MagicItemType.Waist, 5000, strength: 6, attack: 3, dexterity: -1);
-        AddMagicItem("Champion's Belt", MagicItemType.Waist, 8000, strength: 5, attack: 4, defense: 3);
-        AddMagicItem("Titan's Girdle", MagicItemType.Waist, 15000, strength: 10, attack: 6, defense: 4, dexterity: -2);
-
-        // Dexterity Belts
-        AddMagicItem("Girdle of Dexterity", MagicItemType.Waist, 2300, dexterity: 5, defense: 2);
-        AddMagicItem("Acrobat's Sash", MagicItemType.Waist, 4000, dexterity: 6, attack: 2);
-        AddMagicItem("Shadowdancer's Belt", MagicItemType.Waist, 7000, dexterity: 8, defense: 3, attack: 3);
-
-        // Magic Belts
-        AddMagicItem("Mage's Belt", MagicItemType.Waist, 3200, mana: 20, wisdom: 3);
-        AddMagicItem("Sorcerer's Sash", MagicItemType.Waist, 5500, mana: 30, wisdom: 5, magicRes: 10);
-        AddMagicItem("Arcane Girdle", MagicItemType.Waist, 9000, mana: 45, wisdom: 7, magicRes: 20);
-
-        // Ocean-Themed Belts (Lore items)
-        AddMagicItem("Tideweaver's Sash", MagicItemType.Waist, 6000, mana: 25, dexterity: 4, wisdom: 3,
-            description: "Woven from kelp that grows where the Ocean dreams most vividly.");
-        AddMagicItem("Belt of the Current", MagicItemType.Waist, 8500, dexterity: 7, strength: 3, attack: 3,
-            description: "Move with the current, not against it. The water remembers the way.");
-        AddMagicItem("Depthwalker's Girdle", MagicItemType.Waist, 12000, defense: 8, magicRes: 25, strength: 4,
-            description: "Those who journey to the depths must carry their own pressure.");
-
-        // Alignment Belts
-        AddMagicItem("Crusader's Belt", MagicItemType.Waist, 6000, strength: 4, defense: 4, attack: 3, goodOnly: true);
-        AddMagicItem("Belt of Righteous Fury", MagicItemType.Waist, 10000, strength: 6, attack: 5, defense: 2, goodOnly: true);
-        AddMagicItem("Assassin's Sash", MagicItemType.Waist, 5500, dexterity: 7, attack: 4, defense: -1, evilOnly: true);
-        AddMagicItem("Belt of Dark Power", MagicItemType.Waist, 9000, strength: 5, mana: 25, attack: 4, evilOnly: true);
-
-        // Cursed Belts
-        AddMagicItem("Cursed Girdle", MagicItemType.Waist, 5000, strength: -2, dexterity: 8, cursed: true);
-        AddMagicItem("Belt of Burden", MagicItemType.Waist, 4000, defense: 10, dexterity: -6, cursed: true,
-            description: "Heavy. So heavy. Like carrying the weight of worlds.");
-        AddMagicItem("Parasite Sash", MagicItemType.Waist, 6000, mana: 35, strength: -3, defense: -2, cursed: true);
-
-        // Healing Belts
-        AddMagicItem("Belt of Health", MagicItemType.Waist, 3800, cureType: CureType.All, defense: 3);
-        AddMagicItem("Girdle of Wellness", MagicItemType.Waist, 5000, cureType: CureType.Plague, strength: 3, defense: 3);
-        AddMagicItem("Healer's Sash", MagicItemType.Waist, 4200, cureType: CureType.All, mana: 15, wisdom: 2);
-    }
-
-    // Description parameter for lore items
-    private void AddMagicItem(string name, MagicItemType type, int value,
-        int strength = 0, int defense = 0, int attack = 0, int dexterity = 0,
-        int wisdom = 0, int mana = 0, int magicRes = 0, CureType cureType = CureType.None,
-        bool goodOnly = false, bool evilOnly = false, bool cursed = false,
-        string description = "")
-    {
-        var item = new Item();
-        item.Name = name;
-        item.Value = value;
-        item.Type = ObjType.Magic;
-        item.MagicType = type;
-        item.IsShopItem = true;
-        if (!string.IsNullOrEmpty(description))
-            item.Description[0] = description;
-
-        // Set base stats
-        item.Strength = strength;
-        item.Defence = defense;
-        item.Attack = attack;
-        item.Dexterity = dexterity;
-        item.Wisdom = wisdom;
-
-        // Set magic properties
-        item.MagicProperties.Mana = mana;
-        item.MagicProperties.Wisdom = wisdom;
-        item.MagicProperties.Dexterity = dexterity;
-        item.MagicProperties.MagicResistance = magicRes;
-        item.MagicProperties.DiseaseImmunity = cureType;
-
-        // Set restrictions
-        item.OnlyForGood = goodOnly;
-        item.OnlyForEvil = evilOnly;
-        item.IsCursed = cursed;
-
-        _magicInventory.Add(item);
-    }
-    
     // Track daily love spell usage (NPC name -> times used today)
     private static HashSet<string> _bindingOfSoulsUsedToday = new();
     private static int _lastDailyResetDay = -1;
@@ -405,14 +200,24 @@ public partial class MagicShopLocation : BaseLocation
     {
         ResetDailyTracking();
 
+        // If browsing a category, route to category handler
+        if (_currentAccessoryCategory.HasValue)
+            return await ProcessAccessoryCategoryChoice(choice, player);
+
         switch (choice)
         {
-            case "A":
-                await BuyAccessory(player);
+            case "1":
+                _currentAccessoryCategory = AccessoryCategory.Rings;
+                _accessoryPage = 0;
+                RequestRedisplay();
+                return false;
+            case "2":
+                _currentAccessoryCategory = AccessoryCategory.Necklaces;
+                _accessoryPage = 0;
+                RequestRedisplay();
                 return false;
             case "S":
-                SellItem(player);
-                await terminal.WaitForKey();
+                await SellAccessory(player);
                 return false;
             case "E":
                 await EnchantEquipment(player);
@@ -525,9 +330,10 @@ public partial class MagicShopLocation : BaseLocation
         // Menu options - two-column layout
         DisplayMessage("  ═══ Shopping ═══                      ═══ Enchanting ═══", "cyan");
         terminal.WriteLine("");
-        WriteMenuRow("A", "bright_yellow", "ccessories (Rings/Necklaces)", "E", "bright_yellow", "nchant Equipment");
-        WriteMenuRow("S", "bright_yellow", "ell Item", "W", "bright_yellow", " Remove Enchantment");
-        WriteMenuRow("I", "bright_yellow", "dentify Item", "C", "bright_yellow", "urse Removal");
+        WriteMenuRow("1", "bright_yellow", " Rings", "E", "bright_yellow", "nchant Equipment");
+        WriteMenuRow("2", "bright_yellow", " Necklaces", "W", "bright_yellow", " Remove Enchantment");
+        WriteMenuRow("S", "bright_yellow", "ell Accessories", "C", "bright_yellow", "urse Removal");
+        WriteMenuRow("I", "bright_yellow", "dentify Item", " ", "darkgray", "");
         terminal.WriteLine("");
         DisplayMessage("  ═══ Potions & Scrolls ═══             ═══ Arcane Arts ═══", "cyan");
         terminal.WriteLine("");
@@ -558,110 +364,6 @@ public partial class MagicShopLocation : BaseLocation
     
     // Legacy curio listing/buying methods removed in v0.26.0 - replaced by modern Accessory Shop [A]
     
-    private void SellItem(Character player)
-    {
-        DisplayMessage("");
-
-        if (player.Inventory.Count == 0)
-        {
-            DisplayMessage("You have nothing to sell.", "gray");
-            return;
-        }
-
-        // Get Shadows faction fence bonus modifier (1.0 normal, 1.2 with Shadows)
-        var fenceModifier = FactionSystem.Instance.GetFencePriceModifier();
-        bool hasFenceBonus = fenceModifier > 1.0f;
-
-        if (hasFenceBonus)
-        {
-            DisplayMessage("  [Shadows Bonus: +20% sell prices]", "bright_magenta");
-            DisplayMessage("");
-        }
-
-        DisplayMessage("Your inventory:", "cyan");
-        for (int i = 0; i < player.Inventory.Count; i++)
-        {
-            var item = player.Inventory[i];
-            long displayPrice = (long)((item.Value / 2) * fenceModifier);
-            DisplayMessage($"{i + 1}. {item.Name} (worth {displayPrice:N0} gold)", "white");
-        }
-
-        DisplayMessage("");
-        DisplayMessage("Enter item # to sell ([A]ll magic items, 0 to cancel): ", "yellow", false);
-        string input = terminal.GetInputSync("").Trim().ToUpper();
-
-        if (input == "A")
-        {
-            var sellable = player.Inventory
-                .Where(i => i.IsIdentified && !i.IsCursed &&
-                       (i.Type == ObjType.Magic || i.MagicType != MagicItemType.None ||
-                        i.Type == ObjType.Fingers || i.Type == ObjType.Neck || i.Type == ObjType.Waist))
-                .ToList();
-
-            if (sellable.Count == 0)
-            {
-                DisplayMessage("No sellable magic items in your backpack.", "gray");
-                return;
-            }
-
-            long totalGold = sellable.Sum(i => (long)((i.Value / 2) * fenceModifier));
-            DisplayMessage($"Sell {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {totalGold:N0} gold? (Y/N): ", "yellow", false);
-            var bulkConfirm = terminal.GetInputSync("").Trim().ToUpper();
-
-            if (bulkConfirm == "Y")
-            {
-                foreach (var item in sellable)
-                    player.Inventory.Remove(item);
-                player.Gold += totalGold;
-                player.Statistics.RecordSale(totalGold);
-                DisplayMessage("");
-                DisplayMessage("Deal!", "green");
-                DisplayMessage($"Sold {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for {totalGold:N0} gold.", "gray");
-            }
-            return;
-        }
-
-        if (int.TryParse(input, out int itemIndex) && itemIndex > 0 && itemIndex <= player.Inventory.Count)
-        {
-            var item = player.Inventory[itemIndex - 1];
-
-            // Check if cursed
-            if (item.IsCursed)
-            {
-                DisplayMessage("");
-                DisplayMessage($"The {item.Name} is CURSED and cannot be sold!", "red");
-                DisplayMessage("Visit the Healer to have the curse removed.", "gray");
-                return;
-            }
-
-            long sellPrice = (long)((item.Value / 2) * fenceModifier); // Apply faction bonus
-
-            // Check if shop wants this item type
-            // Accept: Magic items, items with MagicType set, and accessory types (rings, amulets, belts)
-            if (item.Type == ObjType.Magic || item.MagicType != MagicItemType.None ||
-                item.Type == ObjType.Fingers || item.Type == ObjType.Neck || item.Type == ObjType.Waist)
-            {
-                DisplayMessage($"Sell {item.Name} for {sellPrice:N0} gold? (Y/N): ", "yellow", false);
-                var confirm = terminal.GetInputSync("").ToUpper();
-                DisplayMessage("");
-
-                if (confirm == "Y")
-                {
-                    player.Inventory.RemoveAt(itemIndex - 1);
-                    player.Gold += sellPrice;
-                    player.Statistics.RecordSale(sellPrice);
-                    DisplayMessage("Deal!", "green");
-                    DisplayMessage($"You sold the {item.Name} for {sellPrice:N0} gold.", "gray");
-                }
-            }
-            else
-            {
-                DisplayMessage($"'{_ownerName} examines the {item.Name} and shakes their head.'", "gray");
-                DisplayMessage("'I only deal in magical goods - rings, amulets, belts, and the like.'", "cyan");
-                DisplayMessage("'Try the weapon or armor shops for mundane items.'", "cyan");
-            }
-        }
-    }
     
     private void IdentifyItem(Character player)
     {
@@ -1238,13 +940,6 @@ public partial class MagicShopLocation : BaseLocation
     // Note: SetIdentificationCost is no longer used - identification cost now scales dynamically with player level
     // See GetIdentificationCost() method
     
-    /// <summary>
-    /// Get available magic items for external systems
-    /// </summary>
-    public static List<Item> GetMagicInventory()
-    {
-        return new List<Item>(_magicInventory);
-    }
     
     private void DisplayMessage(string message, string color = "white", bool newLine = true)
     {
@@ -1985,352 +1680,508 @@ public partial class MagicShopLocation : BaseLocation
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // MODERN ACCESSORY SHOP - Buy rings/necklaces from Equipment system
+    // PROCEDURAL ACCESSORY SHOP - Rings/Necklaces from ShopItemGenerator
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private async Task BuyAccessory(Character player)
+    /// <summary>
+    /// Get filtered shop items for the given accessory category
+    /// </summary>
+    private List<Equipment> GetShopItemsForCategory(AccessoryCategory category)
     {
-        terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ Ravanella's Accessories ═══");
-        terminal.WriteLine("");
-        terminal.SetColor("yellow");
-        terminal.Write($"  Gold: ");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine($"{player.Gold:N0}");
-        terminal.WriteLine("");
+        var allItems = category == AccessoryCategory.Rings
+            ? EquipmentDatabase.GetShopRings()
+            : EquipmentDatabase.GetShopNecklaces();
 
-        terminal.SetColor("bright_cyan");
-        terminal.Write("  1");
-        terminal.SetColor("darkgray");
-        terminal.Write(") ");
-        terminal.SetColor("white");
-        terminal.Write("Rings        ");
-        terminal.SetColor("gray");
-        terminal.WriteLine("- Magical rings for your fingers");
-
-        terminal.SetColor("bright_cyan");
-        terminal.Write("  2");
-        terminal.SetColor("darkgray");
-        terminal.Write(") ");
-        terminal.SetColor("white");
-        terminal.Write("Necklaces    ");
-        terminal.SetColor("gray");
-        terminal.WriteLine("- Enchanted amulets and pendants");
-
-        terminal.SetColor("bright_cyan");
-        terminal.Write("  3");
-        terminal.SetColor("darkgray");
-        terminal.Write(") ");
-        terminal.SetColor("white");
-        terminal.Write("Belts        ");
-        terminal.SetColor("gray");
-        terminal.WriteLine("- Mystical sashes and girdles");
-
-        terminal.WriteLine("");
-        terminal.SetColor("darkgray");
-        terminal.Write("  0");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(") Back");
-        terminal.WriteLine("");
-
-        var catInput = await terminal.GetInput("Choose category: ");
-        if (!int.TryParse(catInput, out int cat) || cat < 1 || cat > 3)
-            return;
-
-        EquipmentSlot targetSlot = cat switch
-        {
-            1 => EquipmentSlot.LFinger,
-            2 => EquipmentSlot.Neck,
-            _ => EquipmentSlot.Waist
-        };
-        string categoryName = cat switch { 1 => "Rings", 2 => "Necklaces", _ => "Belts" };
-
-        // Get base equipment only (exclude dynamic/enchanted items with ID >= 100000)
-        var items = EquipmentDatabase.GetBySlot(targetSlot)
-            .Where(e => e.MinLevel <= player.Level && !e.IsUnique && e.Id < 100000)
-            .OrderBy(e => e.Value)
+        int playerLevel = currentPlayer?.Level ?? 1;
+        return allItems
+            .Where(e => e.MinLevel <= playerLevel + 15 && e.MinLevel >= Math.Max(1, playerLevel - 20))
             .ToList();
+    }
 
-        // For rings, also include RFinger items
-        if (cat == 1)
+    /// <summary>
+    /// Display paginated accessory items for the selected category
+    /// </summary>
+    private void ShowAccessoryCategoryItems(AccessoryCategory category)
+    {
+        var player = currentPlayer;
+        var items = GetShopItemsForCategory(category);
+        string categoryName = category == AccessoryCategory.Rings ? "Rings" : "Necklaces";
+
+        int totalPages = Math.Max(1, (items.Count + AccessoryItemsPerPage - 1) / AccessoryItemsPerPage);
+        if (_accessoryPage >= totalPages) _accessoryPage = totalPages - 1;
+
+        terminal.ClearScreen();
+
+        // Header
+        terminal.SetColor("bright_yellow");
+        terminal.WriteLine($"═══ {categoryName} ═══");
+        terminal.WriteLine("");
+
+        // Gold + item count + page
+        terminal.SetColor("yellow");
+        terminal.Write("  Gold: ");
+        terminal.SetColor("bright_yellow");
+        terminal.Write($"{player.Gold:N0}");
+        terminal.SetColor("gray");
+        terminal.WriteLine($"     {items.Count} items available - Page {_accessoryPage + 1}/{totalPages}");
+        terminal.WriteLine("");
+
+        // Show currently equipped item
+        Equipment? currentItem = null;
+        if (category == AccessoryCategory.Rings)
         {
-            items.AddRange(EquipmentDatabase.GetBySlot(EquipmentSlot.RFinger)
-                .Where(e => e.MinLevel <= player.Level && !e.IsUnique && e.Id < 100000)
-                .OrderBy(e => e.Value));
-            items = items.DistinctBy(e => e.Id).OrderBy(e => e.Value).ToList();
+            var lf = player.GetEquipment(EquipmentSlot.LFinger);
+            var rf = player.GetEquipment(EquipmentSlot.RFinger);
+            if (lf != null)
+            {
+                terminal.SetColor("cyan");
+                terminal.Write("  L.Finger: ");
+                terminal.SetColor("bright_white");
+                terminal.Write(lf.Name);
+                var lfStats = GetAccessoryBonusDescription(lf);
+                if (!string.IsNullOrEmpty(lfStats)) { terminal.SetColor("green"); terminal.Write($"  {lfStats}"); }
+                terminal.WriteLine("");
+            }
+            if (rf != null)
+            {
+                terminal.SetColor("cyan");
+                terminal.Write("  R.Finger: ");
+                terminal.SetColor("bright_white");
+                terminal.Write(rf.Name);
+                var rfStats = GetAccessoryBonusDescription(rf);
+                if (!string.IsNullOrEmpty(rfStats)) { terminal.SetColor("green"); terminal.Write($"  {rfStats}"); }
+                terminal.WriteLine("");
+            }
+            currentItem = lf ?? rf;
         }
-
-        if (items.Count == 0)
+        else
         {
-            DisplayMessage("No items available for your level.", "gray");
-            await terminal.WaitForKey();
-            return;
-        }
-
-        // Get currently equipped item for comparison
-        Equipment? currentItem = cat switch
-        {
-            1 => player.GetEquipment(EquipmentSlot.LFinger) ?? player.GetEquipment(EquipmentSlot.RFinger),
-            2 => player.GetEquipment(EquipmentSlot.Neck),
-            _ => player.GetEquipment(EquipmentSlot.Waist)
-        };
-
-        int perPage = 15;
-        int totalPages = (items.Count + perPage - 1) / perPage;
-        int page = 0;
-
-        while (true)
-        {
-            terminal.ClearScreen();
-
-            // Header
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"═══ {categoryName} ═══");
-            terminal.WriteLine("");
-
-            // Gold display
-            terminal.SetColor("yellow");
-            terminal.Write("  Gold: ");
-            terminal.SetColor("bright_yellow");
-            terminal.Write($"{player.Gold:N0}");
-            terminal.SetColor("gray");
-            terminal.WriteLine($"     {items.Count} items available - Page {page + 1}/{totalPages}");
-            terminal.WriteLine("");
-
-            // Show currently equipped item
+            currentItem = player.GetEquipment(EquipmentSlot.Neck);
             if (currentItem != null)
             {
                 terminal.SetColor("cyan");
                 terminal.Write("  Equipped: ");
                 terminal.SetColor("bright_white");
-                terminal.Write($"{currentItem.Name}");
-                terminal.SetColor("gray");
-                terminal.Write("  ");
+                terminal.Write(currentItem.Name);
                 var eqStats = GetAccessoryBonusDescription(currentItem);
-                if (!string.IsNullOrEmpty(eqStats))
-                {
-                    terminal.SetColor("green");
-                    terminal.Write(eqStats);
-                }
-                terminal.WriteLine("");
+                if (!string.IsNullOrEmpty(eqStats)) { terminal.SetColor("green"); terminal.Write($"  {eqStats}"); }
                 terminal.WriteLine("");
             }
+        }
+        terminal.WriteLine("");
 
-            // Column header
-            terminal.SetColor("bright_blue");
-            terminal.WriteLine("  #   Name                        Lvl  Price       Bonuses");
+        // Column header
+        terminal.SetColor("bright_blue");
+        terminal.WriteLine("  #   Name                        Lvl  Price       Bonuses");
+        terminal.SetColor("darkgray");
+        terminal.WriteLine("─────────────────────────────────────────────────────────────────────────");
+        if (currentItem != null)
+        {
             terminal.SetColor("darkgray");
-            terminal.WriteLine("─────────────────────────────────────────────────────────────────────────");
+            terminal.Write("  ");
+            terminal.SetColor("bright_green");
+            terminal.Write("[+]");
+            terminal.SetColor("darkgray");
+            terminal.Write(" upgrade  ");
+            terminal.SetColor("red");
+            terminal.Write("[-]");
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(" downgrade vs equipped");
+        }
 
-            // Items on this page
-            int start = page * perPage;
-            int end = Math.Min(start + perPage, items.Count);
+        // Items on this page
+        int start = _accessoryPage * AccessoryItemsPerPage;
+        int end = Math.Min(start + AccessoryItemsPerPage, items.Count);
 
-            for (int i = start; i < end; i++)
+        for (int i = start; i < end; i++)
+        {
+            var item = items[i];
+            long price = ApplyAllPriceModifiers(item.Value, player);
+            bool canAfford = player.Gold >= price;
+            bool meetsLevel = player.Level >= item.MinLevel;
+            bool canBuy = canAfford && meetsLevel;
+            int displayNum = i - start + 1;
+
+            // Number
+            terminal.SetColor(canBuy ? "bright_cyan" : "darkgray");
+            terminal.Write($" {displayNum,2}. ");
+
+            // Name (colored by rarity if affordable, dim if not)
+            terminal.SetColor(canBuy ? item.GetRarityColor() : "darkgray");
+            terminal.Write($"{item.Name,-26}");
+
+            // Level requirement
+            if (item.MinLevel > 1)
             {
-                var item = items[i];
-                long price = ApplyAllPriceModifiers(item.Value, player);
-                bool canAfford = player.Gold >= price;
-                bool meetsLevel = player.Level >= item.MinLevel;
-                bool canBuy = canAfford && meetsLevel;
-                int displayNum = i - start + 1;
-
-                // Number
+                terminal.SetColor(!meetsLevel ? "red" : (canBuy ? "bright_cyan" : "darkgray"));
+                terminal.Write($"{item.MinLevel,3}  ");
+            }
+            else
+            {
                 terminal.SetColor(canBuy ? "bright_cyan" : "darkgray");
-                terminal.Write($" {displayNum,2}. ");
+                terminal.Write($"{"—",3}  ");
+            }
 
-                // Name (colored by rarity if affordable, dim if not)
-                terminal.SetColor(canBuy ? item.GetRarityColor() : "darkgray");
-                terminal.Write($"{item.Name,-26}");
+            // Price
+            terminal.SetColor(canBuy ? "yellow" : "darkgray");
+            terminal.Write($"{price,10:N0}  ");
 
-                // Level requirement
-                if (item.MinLevel > 1)
+            // Bonus stats
+            var bonuses = GetAccessoryBonusDescription(item);
+            if (!string.IsNullOrEmpty(bonuses))
+            {
+                terminal.SetColor(canBuy ? "green" : "darkgray");
+                terminal.Write(bonuses);
+            }
+
+            // Upgrade indicator
+            if (canBuy && currentItem != null)
+            {
+                int itemScore = GetAccessoryScore(item);
+                int currentScore = GetAccessoryScore(currentItem);
+                if (itemScore > currentScore)
                 {
-                    terminal.SetColor(!meetsLevel ? "red" : (canBuy ? "bright_cyan" : "darkgray"));
-                    terminal.Write($"{item.MinLevel,3}  ");
+                    terminal.SetColor("bright_green");
+                    terminal.Write(" [+]");
                 }
-                else
+                else if (itemScore < currentScore)
                 {
-                    terminal.SetColor(canBuy ? "bright_cyan" : "darkgray");
-                    terminal.Write($"{"—",3}  ");
+                    terminal.SetColor("red");
+                    terminal.Write(" [-]");
                 }
-
-                // Price
-                terminal.SetColor(canBuy ? "yellow" : "darkgray");
-                terminal.Write($"{price,10:N0}  ");
-
-                // Bonus stats (compact, inline)
-                var bonuses = GetAccessoryBonusDescription(item);
-                if (!string.IsNullOrEmpty(bonuses))
-                {
-                    terminal.SetColor(canBuy ? "green" : "darkgray");
-                    terminal.Write(bonuses);
-                }
-
-                // Upgrade indicator
-                if (canBuy && currentItem != null)
-                {
-                    int itemScore = GetAccessoryScore(item);
-                    int currentScore = GetAccessoryScore(currentItem);
-                    if (itemScore > currentScore)
-                    {
-                        terminal.SetColor("bright_green");
-                        terminal.Write(" [+]");
-                    }
-                    else if (itemScore < currentScore)
-                    {
-                        terminal.SetColor("red");
-                        terminal.Write(" [-]");
-                    }
-                }
-
-                terminal.WriteLine("");
             }
 
             terminal.WriteLine("");
+        }
 
-            // Navigation bar
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("#");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.Write("Buy   ");
+        terminal.WriteLine("");
 
-            if (page > 0)
-            {
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("P");
-                terminal.SetColor("darkgray");
-                terminal.Write("] Prev   ");
-            }
+        // Navigation bar
+        terminal.SetColor("darkgray");
+        terminal.Write("  [");
+        terminal.SetColor("bright_yellow");
+        terminal.Write("#");
+        terminal.SetColor("darkgray");
+        terminal.Write("]Buy  ");
 
-            if (page < totalPages - 1)
-            {
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("N");
-                terminal.SetColor("darkgray");
-                terminal.Write("] Next   ");
-            }
-
+        if (_accessoryPage > 0)
+        {
             terminal.SetColor("darkgray");
             terminal.Write("[");
             terminal.SetColor("bright_yellow");
-            terminal.Write("Q");
+            terminal.Write("P");
             terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("red");
-            terminal.WriteLine("Back");
-            terminal.WriteLine("");
+            terminal.Write("]Prev  ");
+        }
 
-            var nav = await terminal.GetInput("> ");
-            var navUpper = nav.ToUpper();
+        if (_accessoryPage < totalPages - 1)
+        {
+            terminal.SetColor("darkgray");
+            terminal.Write("[");
+            terminal.SetColor("bright_yellow");
+            terminal.Write("N");
+            terminal.SetColor("darkgray");
+            terminal.Write("]Next  ");
+        }
 
-            if (navUpper == "N" && page < totalPages - 1) { page++; continue; }
-            if (navUpper == "P" && page > 0) { page--; continue; }
-            if (navUpper == "Q" || navUpper == "0") break;
+        terminal.SetColor("darkgray");
+        terminal.Write("[");
+        terminal.SetColor("bright_yellow");
+        terminal.Write("S");
+        terminal.SetColor("darkgray");
+        terminal.Write("]Sell  ");
 
-            // Page-relative numbering: user types 1-15 for items on current page
-            if (int.TryParse(nav, out int displayIdx) && displayIdx >= 1 && displayIdx <= (end - start))
+        terminal.SetColor("darkgray");
+        terminal.Write("[");
+        terminal.SetColor("bright_yellow");
+        terminal.Write("B");
+        terminal.SetColor("darkgray");
+        terminal.Write("]");
+        terminal.SetColor("red");
+        terminal.WriteLine("Back");
+        terminal.WriteLine("");
+
+        ShowStatusLine();
+    }
+
+    /// <summary>
+    /// Handle input while browsing an accessory category
+    /// </summary>
+    private async Task<bool> ProcessAccessoryCategoryChoice(string choice, Character player)
+    {
+        switch (choice)
+        {
+            case "R":
+                await NavigateToLocation(GameLocation.MainStreet);
+                return true;
+
+            case "B":
+            case "X":
+                _currentAccessoryCategory = null;
+                _accessoryPage = 0;
+                RequestRedisplay();
+                return false;
+
+            case "P":
+                if (_accessoryPage > 0) _accessoryPage--;
+                RequestRedisplay();
+                return false;
+
+            case "N":
             {
-                int actualIdx = start + displayIdx - 1;
-                var item = items[actualIdx];
-                long price = ApplyAllPriceModifiers(item.Value, player);
-                var (accKingTax, accCityTax, accTotalWithTax) = CityControlSystem.CalculateTaxedPrice(price);
+                var items = GetShopItemsForCategory(_currentAccessoryCategory!.Value);
+                int totalPages = Math.Max(1, (items.Count + AccessoryItemsPerPage - 1) / AccessoryItemsPerPage);
+                if (_accessoryPage < totalPages - 1) _accessoryPage++;
+                RequestRedisplay();
+                return false;
+            }
 
-                if (player.Gold < accTotalWithTax)
-                {
-                    DisplayMessage("You can't afford that!", "red");
-                    await terminal.WaitForKey();
-                    continue;
-                }
+            case "S":
+                await SellAccessory(player);
+                return false;
 
-                // Check alignment restrictions
-                if (item.RequiresGood && player.Darkness > player.Chivalry)
+            default:
+                if (int.TryParse(choice, out int itemNum) && itemNum >= 1 && _currentAccessoryCategory.HasValue)
                 {
-                    DisplayMessage("This item requires a good alignment.", "red");
-                    await terminal.WaitForKey();
-                    continue;
+                    await BuyAccessoryItem(_currentAccessoryCategory.Value, itemNum, player);
                 }
-                if (item.RequiresEvil && player.Chivalry > player.Darkness)
-                {
-                    DisplayMessage("This item requires an evil alignment.", "red");
-                    await terminal.WaitForKey();
-                    continue;
-                }
+                return false;
+        }
+    }
 
-                // Show item detail before purchase
-                terminal.WriteLine("");
-                terminal.SetColor("bright_white");
-                terminal.WriteLine($"  {item.Name}");
-                terminal.SetColor("gray");
-                terminal.Write($"  Rarity: ");
-                terminal.SetColor(item.GetRarityColor());
-                terminal.Write($"{item.Rarity}");
-                if (item.MinLevel > 0)
+    /// <summary>
+    /// Purchase a specific accessory item by page-relative index
+    /// </summary>
+    private async Task BuyAccessoryItem(AccessoryCategory category, int itemIndex, Character player)
+    {
+        var items = GetShopItemsForCategory(category);
+        int actualIdx = _accessoryPage * AccessoryItemsPerPage + itemIndex - 1;
+        if (actualIdx < 0 || actualIdx >= items.Count) return;
+
+        var item = items[actualIdx];
+        long price = ApplyAllPriceModifiers(item.Value, player);
+        var (kingTax, cityTax, totalWithTax) = CityControlSystem.CalculateTaxedPrice(price);
+
+        if (player.Gold < totalWithTax)
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine("  You can't afford that!");
+            await terminal.WaitForKey();
+            return;
+        }
+
+        if (player.Level < item.MinLevel)
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine($"  Requires level {item.MinLevel}.");
+            await terminal.WaitForKey();
+            return;
+        }
+
+        // Show item detail before purchase
+        terminal.WriteLine("");
+        terminal.SetColor("bright_white");
+        terminal.WriteLine($"  {item.Name}");
+        terminal.SetColor("gray");
+        terminal.Write($"  Rarity: ");
+        terminal.SetColor(item.GetRarityColor());
+        terminal.Write($"{item.Rarity}");
+        if (item.MinLevel > 0)
+        {
+            terminal.SetColor("gray");
+            terminal.Write($"   Level: {item.MinLevel}+");
+        }
+        terminal.WriteLine("");
+        var detailStats = GetAccessoryDetailedStats(item);
+        if (!string.IsNullOrEmpty(detailStats))
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine($"  {detailStats}");
+        }
+        terminal.WriteLine("");
+
+        CityControlSystem.Instance.DisplayTaxBreakdown(terminal, item.Name, price);
+        var buyConfirm = await terminal.GetInput($"  Buy for {totalWithTax:N0} gold? (Y/N): ");
+        if (buyConfirm.Trim().ToUpper() != "Y") return;
+
+        player.Gold -= totalWithTax;
+
+        // For rings, prompt which finger if both are occupied
+        EquipmentSlot? targetSlot = null;
+        if (category == AccessoryCategory.Rings)
+        {
+            var lf = player.GetEquipment(EquipmentSlot.LFinger);
+            var rf = player.GetEquipment(EquipmentSlot.RFinger);
+            if (lf != null && rf != null)
+            {
+                terminal.SetColor("cyan");
+                terminal.WriteLine($"  Both ring slots are occupied:");
+                terminal.SetColor("white");
+                terminal.WriteLine($"    [L] Left:  {lf.Name}");
+                terminal.WriteLine($"    [R] Right: {rf.Name}");
+                var fingerChoice = await terminal.GetInput("  Replace which? (L/R): ");
+                targetSlot = fingerChoice.Trim().ToUpper() == "R"
+                    ? EquipmentSlot.RFinger
+                    : EquipmentSlot.LFinger;
+            }
+        }
+
+        if (player.EquipItem(item, targetSlot, out string msg))
+        {
+            player.RecalculateStats();
+            terminal.SetColor("bright_green");
+            terminal.WriteLine($"  You now wear the {item.Name}!");
+        }
+        else
+        {
+            terminal.SetColor("yellow");
+            terminal.WriteLine($"  Purchased {item.Name}. {msg}");
+        }
+
+        player.Statistics?.RecordPurchase(totalWithTax);
+        player.Statistics?.RecordAccessoryPurchase(totalWithTax);
+        CityControlSystem.Instance.ProcessSaleTax(price);
+        TelemetrySystem.Instance.TrackShopTransaction("magic_shop", "buy_accessory", item.Name, totalWithTax, player.Level, player.Gold);
+
+        // Check for equipment quest completion
+        QuestSystem.OnEquipmentPurchased(player, item);
+
+        // Check accessory collection achievement
+        if (player.GetEquipment(EquipmentSlot.LFinger) != null &&
+            player.GetEquipment(EquipmentSlot.RFinger) != null &&
+            player.GetEquipment(EquipmentSlot.Neck) != null)
+            AchievementSystem.TryUnlock(player, "accessory_collector");
+
+        await SaveSystem.Instance.AutoSave(player);
+        await terminal.WaitForKey();
+    }
+
+    /// <summary>
+    /// Sell accessories from inventory (with Sell All option)
+    /// </summary>
+    private async Task SellAccessory(Character player)
+    {
+        terminal.ClearScreen();
+        terminal.SetColor("bright_yellow");
+        terminal.WriteLine("═══ Sell Accessories ═══");
+        terminal.WriteLine("");
+
+        // Find sellable accessories in inventory (non-equipped items)
+        var sellable = new List<(Equipment item, long sellPrice)>();
+        var fenceModifier = FactionSystem.Instance.GetFencePriceModifier();
+
+        foreach (var invItem in player.Inventory)
+        {
+            // Check if this is an accessory (ring, necklace, or magic item)
+            if (invItem.Type == ObjType.Magic || invItem.Type == ObjType.Fingers || invItem.Type == ObjType.Neck)
+            {
+                // Convert Item to Equipment for price calculation
+                long sellPrice = (long)(Math.Max(1, invItem.Value / 2) * fenceModifier);
+                // Use a temporary Equipment for display
+                var equip = new Equipment { Name = invItem.Name, Value = invItem.Value };
+                sellable.Add((equip, sellPrice));
+            }
+        }
+
+        // Also check for any Equipment-type accessories in inventory via equipped items scan
+        // (accessories picked up from dungeon loot are Equipment objects stored differently)
+
+        if (sellable.Count == 0)
+        {
+            terminal.SetColor("gray");
+            terminal.WriteLine("  You have no accessories to sell.");
+            await terminal.WaitForKey();
+            return;
+        }
+
+        if (fenceModifier > 1.0f)
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine($"  Shadows Fence Bonus: {(int)((fenceModifier - 1.0f) * 100)}% better prices!");
+            terminal.WriteLine("");
+        }
+
+        for (int i = 0; i < sellable.Count; i++)
+        {
+            var (item, sellPrice) = sellable[i];
+            terminal.SetColor("bright_cyan");
+            terminal.Write($"  {i + 1,2}. ");
+            terminal.SetColor("white");
+            terminal.Write($"{item.Name,-30}");
+            terminal.SetColor("yellow");
+            terminal.WriteLine($" - Sell for {sellPrice:N0} gold");
+        }
+
+        terminal.WriteLine("");
+        terminal.SetColor("gray");
+        terminal.Write("  Sell which piece? (");
+        terminal.SetColor("bright_yellow");
+        terminal.Write("[A]");
+        terminal.SetColor("gray");
+        terminal.Write("ll, ");
+        terminal.SetColor("bright_yellow");
+        terminal.Write("0");
+        terminal.SetColor("gray");
+        terminal.WriteLine(" to cancel): ");
+
+        var input = await terminal.GetInput("  > ");
+        var upper = input.Trim().ToUpper();
+
+        if (upper == "0" || upper == "Q" || upper == "B") return;
+
+        if (upper == "A")
+        {
+            long totalGold = sellable.Sum(s => s.sellPrice);
+            terminal.SetColor("yellow");
+            terminal.Write($"  Sell {sellable.Count} item{(sellable.Count > 1 ? "s" : "")} for ");
+            terminal.SetColor("bright_yellow");
+            terminal.Write($"{totalGold:N0}");
+            terminal.SetColor("yellow");
+            terminal.Write(" gold? (Y/N): ");
+            var confirm = await terminal.GetInput("");
+            if (confirm.Trim().ToUpper() == "Y")
+            {
+                // Remove all sold items from inventory (reverse to preserve indices)
+                int soldCount = 0;
+                for (int i = player.Inventory.Count - 1; i >= 0; i--)
                 {
-                    terminal.SetColor("gray");
-                    terminal.Write($"   Level: {item.MinLevel}+");
+                    var invItem = player.Inventory[i];
+                    if (invItem.Type == ObjType.Magic || invItem.Type == ObjType.Fingers || invItem.Type == ObjType.Neck)
+                    {
+                        long sellPrice = (long)(Math.Max(1, invItem.Value / 2) * fenceModifier);
+                        player.Gold += sellPrice;
+                        player.Statistics?.RecordSale(sellPrice);
+                        player.Inventory.RemoveAt(i);
+                        soldCount++;
+                    }
                 }
-                terminal.WriteLine("");
-                var detailStats = GetAccessoryDetailedStats(item);
-                if (!string.IsNullOrEmpty(detailStats))
+                terminal.SetColor("bright_green");
+                terminal.WriteLine($"  Sold {soldCount} accessories for {totalGold:N0} gold!");
+                await SaveSystem.Instance.AutoSave(player);
+            }
+        }
+        else if (int.TryParse(input, out int idx) && idx >= 1 && idx <= sellable.Count)
+        {
+            var (item, sellPrice) = sellable[idx - 1];
+            // Find and remove the actual inventory item
+            for (int i = 0; i < player.Inventory.Count; i++)
+            {
+                var invItem = player.Inventory[i];
+                if ((invItem.Type == ObjType.Magic || invItem.Type == ObjType.Fingers || invItem.Type == ObjType.Neck)
+                    && invItem.Name == item.Name)
                 {
+                    player.Gold += sellPrice;
+                    player.Statistics?.RecordSale(sellPrice);
+                    player.Inventory.RemoveAt(i);
                     terminal.SetColor("bright_green");
-                    terminal.WriteLine($"  {detailStats}");
-                }
-                terminal.WriteLine("");
-
-                CityControlSystem.Instance.DisplayTaxBreakdown(terminal, item.Name, price);
-                var buyConfirm = await terminal.GetInput($"  Buy for {accTotalWithTax:N0} gold? (Y/N): ");
-                if (buyConfirm.ToUpper() == "Y")
-                {
-                    player.Gold -= accTotalWithTax;
-                    if (player.EquipItem(item, out string msg))
-                    {
-                        player.RecalculateStats();
-                        terminal.SetColor("bright_green");
-                        terminal.WriteLine($"  You now wear the {item.Name}!");
-
-                        // Update current item reference for comparison display
-                        currentItem = cat switch
-                        {
-                            1 => player.GetEquipment(EquipmentSlot.LFinger) ?? player.GetEquipment(EquipmentSlot.RFinger),
-                            2 => player.GetEquipment(EquipmentSlot.Neck),
-                            _ => player.GetEquipment(EquipmentSlot.Waist)
-                        };
-                    }
-                    else
-                    {
-                        terminal.SetColor("yellow");
-                        terminal.WriteLine($"  Purchased {item.Name}. {msg}");
-                    }
-
-                    player.Statistics?.RecordPurchase(accTotalWithTax);
-                    player.Statistics?.RecordAccessoryPurchase(accTotalWithTax);
-                    CityControlSystem.Instance.ProcessSaleTax(price);
-                    TelemetrySystem.Instance.TrackShopTransaction("magic_shop", "buy_accessory", item.Name, accTotalWithTax, player.Level, player.Gold);
-
-                    // Check for equipment quest completion
-                    QuestSystem.OnEquipmentPurchased(player, item);
-
-                    // Check accessory collection achievement
-                    if (player.GetEquipment(EquipmentSlot.LFinger) != null &&
-                        player.GetEquipment(EquipmentSlot.RFinger) != null &&
-                        player.GetEquipment(EquipmentSlot.Neck) != null)
-                        AchievementSystem.TryUnlock(player, "accessory_collector");
-
-                    await terminal.WaitForKey();
+                    terminal.WriteLine($"  Sold {item.Name} for {sellPrice:N0} gold!");
+                    await SaveSystem.Instance.AutoSave(player);
+                    break;
                 }
             }
         }
+
+        await terminal.WaitForKey();
     }
 
     /// <summary>

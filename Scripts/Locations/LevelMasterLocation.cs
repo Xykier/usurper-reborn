@@ -603,9 +603,10 @@ public class LevelMasterLocation : BaseLocation
                 player.BaseIntelligence += 4;
                 player.BaseWisdom += 3;
                 player.BaseMaxMana += 15;
-                player.BaseMaxHP += 3;
+                player.BaseMaxHP += 6;
                 player.BaseStrength += 1;
-                player.BaseConstitution += 1;
+                player.BaseDefence += 1;
+                player.BaseConstitution += 2;
                 break;
 
             case CharacterClass.Cleric:
@@ -621,8 +622,10 @@ public class LevelMasterLocation : BaseLocation
                 player.BaseIntelligence += 5;
                 player.BaseWisdom += 4;
                 player.BaseMaxMana += 18;
-                player.BaseMaxHP += 2;
+                player.BaseMaxHP += 5;
                 player.BaseStrength += 1;
+                player.BaseDefence += 1;
+                player.BaseConstitution += 1;
                 break;
 
             case CharacterClass.Alchemist:
@@ -1085,11 +1088,29 @@ public class LevelMasterLocation : BaseLocation
             .Where(c => !c.IsDead && c.Level < GameConfig.MaxLevel)
             .ToList() ?? new System.Collections.Generic.List<Companion>();
 
+        // Find player's spouse (if married to an NPC)
+        var spouseName = RelationshipSystem.GetSpouseName(currentPlayer);
+        NPC? spouseNpc = null;
+        if (!string.IsNullOrEmpty(spouseName))
+        {
+            spouseNpc = NPCSpawnSystem.Instance?.GetNPCByName(spouseName);
+            if (spouseNpc != null && (spouseNpc.IsDead || spouseNpc.Level >= GameConfig.MaxLevel))
+                spouseNpc = null;
+        }
+
         // Build combined list of shareable allies
         var shareableAllies = new System.Collections.Generic.List<(string Name, int Level, long Experience, bool IsCompanion, object Data)>();
 
+        // Add spouse first (most personal relationship)
+        if (spouseNpc != null)
+        {
+            shareableAllies.Add((spouseNpc.Name, spouseNpc.Level, spouseNpc.Experience, false, spouseNpc));
+        }
+
         foreach (var npc in npcTeammates)
         {
+            // Skip spouse if already added (could also be on the same team)
+            if (spouseNpc != null && npc.Name == spouseNpc.Name) continue;
             shareableAllies.Add((npc.Name, npc.Level, npc.Experience, false, npc));
         }
 
@@ -1124,7 +1145,8 @@ public class LevelMasterLocation : BaseLocation
         {
             var ally = shareableAllies[i];
             long xpToNext = GetExperienceForLevel(ally.Level + 1) - ally.Experience;
-            string allyType = ally.IsCompanion ? " [Companion]" : "";
+            string allyType = ally.IsCompanion ? " [Companion]"
+                : (spouseNpc != null && ally.Name == spouseNpc.Name) ? " [Spouse]" : "";
             terminal.WriteLine($"{i + 1}. {ally.Name}{allyType} - Level {ally.Level} ({xpToNext:N0} XP to next level)");
         }
 

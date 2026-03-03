@@ -9,7 +9,7 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.49.1";
+    public const string Version = "0.49.2";
     public const string VersionName = "Swords and Lutes";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
@@ -668,6 +668,11 @@ public static partial class GameConfig
 
     // Training Respec (v0.43.3)
     public const int RespecBaseGoldCost = 4000;               // Base gold cost to reset skill proficiency
+
+    // NPC/Companion proficiency caps
+    public const int NPCProficiencyCap = 5;                    // Expert — NPCs can't exceed this
+    public const int CompanionProficiencyCap = 6;              // Superb — companions can reach one tier higher than NPCs
+    public const double NPCGymProficiencyChance = 0.30;        // 30% chance to also train a skill proficiency at the Gym
     public const int RespecGoldPerLevel = 1000;               // Additional gold cost per player level
 
     // Home Overhaul (v0.44.0)
@@ -720,6 +725,50 @@ public static partial class GameConfig
     // Servants' Quarters
     public const int ServantsDailyGoldBase = 100;              // Base daily gold income
     public const int ServantsDailyGoldPerLevel = 10;           // Additional gold per player level
+
+    // Armor Weight Class System (v0.49.1)
+    public const int LightArmorStaminaBonus = 20;           // +20 max combat stamina
+    public const int MediumArmorStaminaBonus = 10;           // +10 max combat stamina
+    public const int HeavyArmorStaminaBonus = 0;             // no stamina bonus
+    public const int LightArmorStaminaRegen = 2;             // +2 stamina regen/round
+    public const int MediumArmorStaminaRegen = 1;            // +1 stamina regen/round
+    public const int HeavyArmorStaminaRegen = 0;             // no regen bonus
+    public const float LightArmorDodgeBonus = 0.10f;         // +10% dodge chance
+    public const float MediumArmorDodgeBonus = 0.05f;        // +5% dodge chance
+    public const float HeavyArmorDodgeBonus = 0.0f;          // no dodge bonus
+    public const float LightArmorFatigueMult = 0.70f;        // -30% fatigue gain
+    public const float MediumArmorFatigueMult = 1.0f;        // normal fatigue
+    public const float HeavyArmorFatigueMult = 1.25f;        // +25% fatigue gain
+
+    /// <summary>
+    /// Get maximum armor weight class a character class can equip.
+    /// Casters = Light only, Hybrids = Light+Medium, Tanks+Prestige = All.
+    /// </summary>
+    public static ArmorWeightClass GetMaxArmorWeight(CharacterClass charClass)
+    {
+        return charClass switch
+        {
+            // Casters: Light only
+            CharacterClass.Magician => ArmorWeightClass.Light,
+            CharacterClass.Sage => ArmorWeightClass.Light,
+            // Hybrids: Light + Medium
+            CharacterClass.Assassin => ArmorWeightClass.Medium,
+            CharacterClass.Bard => ArmorWeightClass.Medium,
+            CharacterClass.Jester => ArmorWeightClass.Medium,
+            CharacterClass.Alchemist => ArmorWeightClass.Medium,
+            CharacterClass.Ranger => ArmorWeightClass.Medium,
+            // Tanks & Prestige: All armor types
+            _ => ArmorWeightClass.Heavy,
+        };
+    }
+
+    /// <summary>
+    /// Check if a race is small (cannot wear Heavy armor).
+    /// </summary>
+    public static bool IsSmallRace(CharacterRace race)
+    {
+        return race == CharacterRace.Hobbit || race == CharacterRace.Gnome;
+    }
 
     // Single-Player Time-of-Day System (v0.48.5)
     public const int MinutesPerAction = 10;         // Game-minutes per player action (menu choice, etc.)
@@ -1289,8 +1338,8 @@ Voidreaver   - Void consumer. Extreme glass cannon. Requires Usurper ending.
         // Humans can be anything - jack of all trades
         // [CharacterRace.Human] = no restrictions
 
-        // Hobbits: Small, not strong - can't be heavy melee classes
-        [CharacterRace.Hobbit] = new[] { CharacterClass.Barbarian, CharacterClass.Paladin },
+        // Hobbits: Small folk - too small for berserker rage
+        [CharacterRace.Hobbit] = new[] { CharacterClass.Barbarian },
 
         // Elves: Graceful and magical - poor at brute force classes
         [CharacterRace.Elf] = new[] { CharacterClass.Barbarian },
@@ -1314,8 +1363,8 @@ Voidreaver   - Void consumer. Extreme glass cannon. Requires Usurper ending.
             CharacterClass.Bard
         },
 
-        // Gnomes: Small and clever, poor at heavy combat
-        [CharacterRace.Gnome] = new[] { CharacterClass.Barbarian, CharacterClass.Paladin },
+        // Gnomes: Small and clever - too small for berserker rage
+        [CharacterRace.Gnome] = new[] { CharacterClass.Barbarian },
 
         // Gnolls: Pack hunters, limited intellect
         [CharacterRace.Gnoll] = new[] {
@@ -1330,12 +1379,12 @@ Voidreaver   - Void consumer. Extreme glass cannon. Requires Usurper ending.
     // Restriction reasons for player feedback
     public static readonly Dictionary<CharacterRace, string> RaceRestrictionReasons = new()
     {
-        [CharacterRace.Hobbit] = "Hobbits are too small for heavy armor and brutal combat styles.",
+        [CharacterRace.Hobbit] = "Hobbits are too small for the berserker's brutal raging combat style.",
         [CharacterRace.Elf] = "Elves find brute-force fighting distasteful and beneath them.",
         [CharacterRace.Dwarf] = "Dwarves distrust arcane magic, preferring steel to spells.",
         [CharacterRace.Troll] = "Trolls lack the intelligence and discipline for most classes.",
-        [CharacterRace.Orc] = "Orcs are too aggressive and impatient for scholarly or holy pursuits.",
-        [CharacterRace.Gnome] = "Gnomes are too small to wield heavy weapons effectively.",
+        [CharacterRace.Orc] = "Orcs lack the discipline for knightly codes, arcane study, or artistic performance.",
+        [CharacterRace.Gnome] = "Gnomes are too small for the berserker's brutal raging combat style.",
         [CharacterRace.Gnoll] = "Gnolls lack the intellect for complex magic or holy devotion."
     };
 

@@ -780,6 +780,16 @@ public class WeaponShopLocation : BaseLocation
             return;
         }
 
+        // Check level requirement
+        if (currentPlayer.Level < item.MinLevel)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("red");
+            terminal.WriteLine($"{item.Name} requires level {item.MinLevel} (you are level {currentPlayer.Level})!");
+            await Pause();
+            return;
+        }
+
         // Warning for 2H weapons if shield equipped
         if (item.Handedness == WeaponHandedness.TwoHanded && currentPlayer.HasShieldEquipped)
         {

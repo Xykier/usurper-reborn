@@ -28,7 +28,7 @@ public class TeamCornerLocation : BaseLocation
         // Pascal-compatible exits
         PossibleExits = new List<GameLocation>
         {
-            GameLocation.TheInn  // Can return to the Inn
+            GameLocation.MainStreet  // Can return to Main Street
         };
 
         // Team Corner actions
@@ -125,7 +125,7 @@ public class TeamCornerLocation : BaseLocation
         terminal.SetColor("yellow");
         terminal.WriteLine("Navigation:");
         terminal.SetColor("white");
-        WriteMenuOption("R", "Return to Inn", "S", "Status");
+        WriteMenuOption("R", "Return to Main Street", "S", "Status");
         terminal.WriteLine("");
     }
 
@@ -196,7 +196,7 @@ public class TeamCornerLocation : BaseLocation
         {
             ShowBBSMenuRow(("W", "bright_yellow", "RecruitAlly"), ("B", "bright_yellow", "TeamBattle"), ("H", "bright_yellow", "HQ"));
         }
-        ShowBBSMenuRow(("R", "bright_yellow", "ReturnInn"));
+        ShowBBSMenuRow(("R", "bright_yellow", "MainStreet"));
 
         ShowBBSFooter();
     }
@@ -293,7 +293,7 @@ public class TeamCornerLocation : BaseLocation
                 return false;
 
             case "R":
-                await NavigateToLocation(GameLocation.TheInn);
+                await NavigateToLocation(GameLocation.MainStreet);
                 return true;
 
             case "S":

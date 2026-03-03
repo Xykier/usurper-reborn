@@ -151,7 +151,7 @@ public static class SteamIntegration
             {
                 // Store stats to sync with Steam
                 Steamworks.SteamUserStats.StoreStats();
-                DebugLogger.Instance?.LogInfo("STEAM", $"Achievement unlocked on Steam: {achievementId}");
+                DebugLogger.Instance?.LogWarning("STEAM", $"ACHIEVEMENT UNLOCKED on Steam: {achievementId}");
                 return true;
             }
             else
@@ -309,6 +309,7 @@ public static class SteamIntegration
     /// <summary>
     /// Update a Steam stat (integer value).
     /// Stats must be configured in Steamworks dashboard.
+    /// NOTE: Does NOT call StoreStats() — caller must batch-store after setting all stats.
     /// </summary>
     public static bool SetStat(string statName, int value)
     {
@@ -319,8 +320,11 @@ public static class SteamIntegration
         {
             if (Steamworks.SteamUserStats.SetStat(statName, value))
             {
-                Steamworks.SteamUserStats.StoreStats();
                 return true;
+            }
+            else
+            {
+                DebugLogger.Instance?.LogWarning("STEAM", $"SetStat({statName}, {value}) returned false");
             }
         }
         catch (Exception ex)
@@ -386,6 +390,19 @@ public static class SteamIntegration
 #if STEAM_BUILD
         try
         {
+            // Skip sync for brand-new characters with no meaningful stats.
+            // Pushing all-zero stats to Steam still triggers server-side achievement
+            // evaluation, which can cause spurious unlocks if any achievement
+            // thresholds are misconfigured as 0 on the Steamworks dashboard.
+            if (stats.TotalMonstersKilled == 0 && stats.TotalBossesKilled == 0 &&
+                stats.TotalDamageDealt == 0 && stats.HighestLevelReached <= 1 &&
+                stats.DeepestDungeonLevel == 0 && stats.TotalGoldEarned == 0 &&
+                stats.TotalPlayTime.TotalMinutes < 1)
+            {
+                DebugLogger.Instance?.LogInfo("STEAM", "Stat sync skipped - brand-new character with no meaningful stats");
+                return false;
+            }
+
             bool anySet = false;
 
             // Combat stats
@@ -416,10 +433,16 @@ public static class SteamIntegration
             int playTimeMinutes = (int)stats.TotalPlayTime.TotalMinutes;
             anySet |= SetStat(StatNames.PlayTimeMinutes, playTimeMinutes);
 
+            // Single batch StoreStats() call — triggers Steam server-side
+            // achievement evaluation exactly once instead of per-stat.
             if (anySet)
             {
                 Steamworks.SteamUserStats.StoreStats();
-                DebugLogger.Instance?.LogInfo("STEAM", "Player stats synced to Steam");
+                DebugLogger.Instance?.LogInfo("STEAM",
+                    $"Player stats synced to Steam (kills={stats.TotalMonstersKilled}, " +
+                    $"bosses={stats.TotalBossesKilled}, level={stats.HighestLevelReached}, " +
+                    $"dungeon={stats.DeepestDungeonLevel}, damage={stats.TotalDamageDealt}, " +
+                    $"gold_earned={stats.TotalGoldEarned}, playtime={playTimeMinutes}min)");
             }
 
             return anySet;

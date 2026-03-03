@@ -1203,55 +1203,61 @@ public class BankLocation : BaseLocation
 
         await Task.Delay(1500);
 
-        // Create monsters for guards
+        // Create monsters for guards — scaled to be tougher than same-level dungeon monsters.
+        // Bank guards are elite professionals; robbing a bank should be a serious challenge.
+        // Reference: dungeon monsters use 50*level + level^1.2*15 for HP.
         var monsters = new List<Monster>();
+        int level = currentPlayer.Level;
 
-        // Captain
+        // Captain — roughly 1.5x a same-level dungeon monster
+        long captainHP = (long)(75 * level + Math.Pow(level, 1.2) * 20);
         var captain = new Monster
         {
             Name = "Captain of the Guard",
-            HP = 100 + (currentPlayer.Level * 5),
-            MaxHP = 100 + (currentPlayer.Level * 5),
-            Strength = 30 + currentPlayer.Level,
-            Defence = 20 + (currentPlayer.Level / 2),
-            WeapPow = 25,
-            ArmPow = 15,
+            HP = captainHP,
+            MaxHP = captainHP,
+            Strength = 15 + (int)(level * 2.5),
+            Defence = 10 + (int)(level * 1.5),
+            WeapPow = 10 + level,
+            ArmPow = 8 + level / 2,
             WeaponName = "Broadsword",
             ArmorName = "Chainmail"
         };
         monsters.Add(captain);
 
-        // Regular guards
+        // Regular guards — roughly equal to same-level dungeon monsters
         for (int i = 1; i < guardCount; i++)
         {
+            long guardHP = (long)(50 * level + Math.Pow(level, 1.2) * 12);
             var guard = new Monster
             {
                 Name = "Bank Guard",
-                HP = 60 + (currentPlayer.Level * 3),
-                MaxHP = 60 + (currentPlayer.Level * 3),
-                Strength = 20 + (currentPlayer.Level / 2),
-                Defence = 12 + (currentPlayer.Level / 3),
-                WeapPow = 15,
-                ArmPow = 10,
+                HP = guardHP,
+                MaxHP = guardHP,
+                Strength = 10 + level * 2,
+                Defence = 8 + level,
+                WeapPow = 8 + level * 3 / 4,
+                ArmPow = 5 + level / 3,
                 WeaponName = "Halberd",
                 ArmorName = "Ringmail"
             };
             monsters.Add(guard);
         }
 
-        // Possible pitbull
+        // Possible pitbull — scales with player level
         var random = new Random();
         if (random.Next(2) == 0)
         {
+            long dogHP = (long)(30 * level + Math.Pow(level, 1.1) * 10);
             var dog = new Monster
             {
                 Name = "Guard Pitbull",
-                HP = 80,
-                MaxHP = 80,
-                Strength = 35,
-                Defence = 5,
-                WeapPow = 40,
-                ArmPow = 5,
+                HP = dogHP,
+                MaxHP = dogHP,
+                Strength = 10 + (int)(level * 1.8),
+                Defence = 3 + level / 2,
+                WeapPow = 12 + level,
+                ArmPow = 3 + level / 4,
                 WeaponName = "Savage Jaws",
                 ArmorName = "Thick Hide"
             };

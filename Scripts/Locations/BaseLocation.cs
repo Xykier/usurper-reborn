@@ -1197,6 +1197,11 @@ public abstract class BaseLocation
         if (currentPlayer == null || currentPlayer.Poison <= 0)
             return;
 
+        // Migration: old saves have Poison > 0 but PoisonTurns == 0
+        // Give them a reasonable duration based on poison intensity
+        if (currentPlayer.PoisonTurns <= 0)
+            currentPlayer.PoisonTurns = Math.Max(5, currentPlayer.Poison * 2);
+
         // Poison damage scales with poison level and player level
         // Base damage: 2-5 HP per turn, plus level scaling, plus poison intensity
         var random = new Random();
@@ -1212,9 +1217,15 @@ public abstract class BaseLocation
         // Apply damage
         currentPlayer.HP -= totalDamage;
 
-        // Show poison damage message
+        // Tick down poison duration
+        currentPlayer.PoisonTurns--;
+
+        // Show poison damage message with remaining turns
         terminal.SetColor("magenta");
-        terminal.WriteLine($"The poison courses through your veins! (-{totalDamage} HP)");
+        if (currentPlayer.PoisonTurns > 0)
+            terminal.WriteLine($"The poison courses through your veins! (-{totalDamage} HP, {currentPlayer.PoisonTurns} turns left)");
+        else
+            terminal.WriteLine($"The poison courses through your veins! (-{totalDamage} HP)");
 
         // Check if player died from poison
         if (currentPlayer.HP <= 0)
@@ -1224,18 +1235,16 @@ public abstract class BaseLocation
             terminal.WriteLine("The poison has claimed your life!");
             await Task.Delay(1500);
         }
+        else if (currentPlayer.PoisonTurns <= 0)
+        {
+            // Poison has expired
+            currentPlayer.Poison = 0;
+            terminal.SetColor("green");
+            terminal.WriteLine("The poison has finally left your system!");
+            await Task.Delay(800);
+        }
         else
         {
-            // Small chance (5%) for poison to naturally wear off slightly each turn
-            if (new Random().Next(100) < 5)
-            {
-                currentPlayer.Poison = Math.Max(0, currentPlayer.Poison - 1);
-                if (currentPlayer.Poison == 0)
-                {
-                    terminal.SetColor("green");
-                    terminal.WriteLine("The poison has finally left your system!");
-                }
-            }
             await Task.Delay(500);
         }
     }
@@ -1877,12 +1886,15 @@ public abstract class BaseLocation
         terminal.SetColor("white");
         terminal.Write("Bug");
 
-        terminal.SetColor("darkgray");
-        terminal.Write("  type ");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("look");
-        terminal.SetColor("darkgray");
-        terminal.Write(" to redraw menu");
+        if (UsurperRemake.BBS.DoorMode.IsMudServerMode)
+        {
+            terminal.SetColor("darkgray");
+            terminal.Write("  type ");
+            terminal.SetColor("bright_yellow");
+            terminal.Write("look");
+            terminal.SetColor("darkgray");
+            terminal.Write(" to redraw menu");
+        }
 
         terminal.WriteLine("");
         terminal.WriteLine("");
@@ -2209,6 +2221,32 @@ public abstract class BaseLocation
             case "herb":
             case "herbs":
                 await HomeLocation.UseHerbMenu(currentPlayer, terminal);
+                return (true, false);
+
+            case "antidote":
+                if (currentPlayer.Antidotes > 0 && currentPlayer.Poison > 0)
+                {
+                    currentPlayer.Antidotes--;
+                    currentPlayer.Poison = 0;
+                    currentPlayer.PoisonTurns = 0;
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine("You drink an antidote — the poison drains from your body!");
+                    terminal.SetColor("gray");
+                    terminal.WriteLine($"Antidotes remaining: {currentPlayer.Antidotes}/{currentPlayer.MaxAntidotes}");
+                    await Task.Delay(1500);
+                }
+                else if (currentPlayer.Antidotes > 0)
+                {
+                    terminal.SetColor("yellow");
+                    terminal.WriteLine("You're not poisoned.");
+                    await Task.Delay(1000);
+                }
+                else
+                {
+                    terminal.SetColor("red");
+                    terminal.WriteLine("You don't have any antidotes. Buy them from dungeon merchants or the healer.");
+                    await Task.Delay(1000);
+                }
                 return (true, false);
 
             case "bug":
@@ -7344,6 +7382,11 @@ public abstract class BaseLocation
         else if (invItem.Type == ObjType.Shield)
             handedness = WeaponHandedness.OffHandOnly;
 
+        // Infer weight class for armor pieces
+        var weightClass = ArmorWeightClass.None;
+        if (slot.IsArmorSlot() && invItem.Type != ObjType.Weapon && invItem.Type != ObjType.Shield)
+            weightClass = ShopItemGenerator.InferArmorWeightClass(invItem.Name);
+
         var equipment = new Equipment
         {
             Name = invItem.Name,
@@ -7351,6 +7394,7 @@ public abstract class BaseLocation
             Handedness = handedness,
             WeaponPower = invItem.Attack,
             ArmorClass = invItem.Armor,
+            WeightClass = weightClass,
             ShieldBonus = invItem.Type == ObjType.Shield ? invItem.Armor : 0,
             DefenceBonus = invItem.Defence,
             StrengthBonus = invItem.Strength,

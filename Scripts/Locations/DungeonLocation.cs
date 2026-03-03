@@ -1274,6 +1274,288 @@ public class DungeonLocation : BaseLocation
         }
 
         await Task.Delay(3000);
+
+        // Auto-return to town with reaction scene for resolved encounters (not Manwe — has own ending)
+        if (result.God != OldGodType.Manwe &&
+            result.Outcome != BossOutcome.Fled &&
+            result.Outcome != BossOutcome.PlayerDefeated)
+        {
+            await ShowTownReactionScene(result, player, term);
+            throw new LocationExitException(GameLocation.MainStreet);
+        }
+    }
+
+    /// <summary>
+    /// Cinematic scene when the player emerges from the dungeon after an Old God encounter.
+    /// Townsfolk react based on the god encountered, the outcome, and the player's approach.
+    /// </summary>
+    private async Task ShowTownReactionScene(BossEncounterResult result, Character player, TerminalEmulator term)
+    {
+        var godData = OldGodsData.GetGodBossData(result.God);
+        var playerName = player.Name2 ?? player.Name1;
+
+        term.Clear();
+        term.WriteLine("");
+
+        // Beat 1: Emergence from the dungeon
+        term.WriteLine("  You climb the final steps out of the darkness.", "white");
+        await Task.Delay(1500);
+        term.WriteLine("  Sunlight blinds you. The air tastes different up here — clean, alive.", "bright_yellow");
+        await Task.Delay(1500);
+        term.WriteLine("");
+
+        term.WriteLine("  Word has already spread.", "gray");
+        await Task.Delay(1200);
+
+        string outcomeWord = result.Outcome switch
+        {
+            BossOutcome.Defeated => "slain",
+            BossOutcome.Saved => "saved",
+            BossOutcome.Allied => "allied with",
+            BossOutcome.Spared => "shown mercy to",
+            _ => "faced"
+        };
+        term.WriteLine($"  They know what you did down there. You {outcomeWord} {godData.Name}.", "gray");
+        await Task.Delay(2000);
+        term.WriteLine("");
+
+        // Beat 2: Crowd reactions
+        var reactions = GetTownReactionLines(result.God, result.Outcome, result.ApproachType, godData);
+        foreach (var (line, color) in reactions)
+        {
+            term.WriteLine($"  {line}", color);
+            await Task.Delay(1800);
+        }
+
+        term.WriteLine("");
+        await Task.Delay(1000);
+
+        // Beat 3: Closing reflection
+        string closing = result.Outcome switch
+        {
+            BossOutcome.Defeated => "The crowd parts as you walk toward the square. No one meets your eyes for long.",
+            BossOutcome.Saved => "You walk into the square and, for the first time in a while, the town feels lighter.",
+            BossOutcome.Allied => "You walk into the square. People whisper, but none dare speak against you.",
+            BossOutcome.Spared => "You walk into the square. Some nod with quiet respect. Others look away.",
+            _ => "You walk into the square."
+        };
+        term.WriteLine($"  {closing}", "white");
+        await Task.Delay(2000);
+
+        term.WriteLine("");
+        await term.PressAnyKey();
+    }
+
+    /// <summary>
+    /// Get crowd reaction lines based on god, outcome, and dialogue approach.
+    /// Returns tuples of (text, color).
+    /// </summary>
+    private List<(string text, string color)> GetTownReactionLines(
+        OldGodType god, BossOutcome outcome, string approach, OldGodBossData godData)
+    {
+        var lines = new List<(string, string)>();
+
+        switch (god)
+        {
+            case OldGodType.Maelketh:
+                if (outcome == BossOutcome.Defeated)
+                {
+                    if (approach == "aggressive" || approach == "enraged")
+                    {
+                        lines.Add(("The crowd parts before you. A veteran mutters under his breath.", "gray"));
+                        lines.Add(("\"Killed a god of war with pure rage. What does that make them?\"", godData.ThemeColor));
+                        lines.Add(("Children are hurried indoors. Shutters close.", "gray"));
+                    }
+                    else if (approach == "humble" || approach == "teaching")
+                    {
+                        lines.Add(("Children peek from behind their mothers as you emerge.", "gray"));
+                        lines.Add(("\"They say you bowed before the god of war... and still won.\"", "white"));
+                        lines.Add(("An old soldier salutes you — the first real salute in years.", "bright_yellow"));
+                    }
+                    else
+                    {
+                        lines.Add(("The crowd stares in disbelief. The god of war is gone.", "gray"));
+                        lines.Add(("A blacksmith sets down his hammer. \"No more blood-forged blades, then.\"", "white"));
+                    }
+                }
+                else if (outcome == BossOutcome.Saved)
+                {
+                    lines.Add(("An old soldier weeps openly in the street.", "gray"));
+                    lines.Add(("\"Maelketh remembers honor. The endless wars can finally end.\"", "bright_green"));
+                    lines.Add(("Someone starts a hymn. Others join, hesitantly at first, then with conviction.", "bright_cyan"));
+                }
+                else // Allied/Spared
+                {
+                    lines.Add(("The crowd watches you with cautious respect.", "gray"));
+                    lines.Add(("\"They faced the god of war and walked away. On their own terms.\"", "white"));
+                }
+                break;
+
+            case OldGodType.Veloura:
+                if (outcome == BossOutcome.Defeated)
+                {
+                    if (approach == "aggressive")
+                    {
+                        lines.Add(("A couple clutches each other tightly as you pass.", "gray"));
+                        lines.Add(("\"They killed the goddess of love. What happens to us now?\"", godData.ThemeColor));
+                        lines.Add(("The flower seller on the corner silently packs up her stall.", "gray"));
+                    }
+                    else if (approach == "merciful" || approach == "diplomatic" || approach == "reluctant")
+                    {
+                        lines.Add(("The crowd is quiet. A woman places a flower at the dungeon entrance.", "gray"));
+                        lines.Add(("\"It had to be done,\" someone says. Nobody argues. Nobody agrees.", "white"));
+                    }
+                    else
+                    {
+                        lines.Add(("The town feels colder somehow, even in the sunlight.", "gray"));
+                        lines.Add(("A bard stops mid-song, unable to remember the words to a love ballad.", "white"));
+                    }
+                }
+                else if (outcome == BossOutcome.Saved)
+                {
+                    lines.Add(("The temple bells ring out across the town.", "bright_yellow"));
+                    lines.Add(("\"Love itself has been reborn!\" someone shouts from a rooftop.", "bright_magenta"));
+                    lines.Add(("Strangers embrace in the street. Old grudges seem to soften.", "bright_cyan"));
+                }
+                else
+                {
+                    lines.Add(("People seem warmer to each other as you walk through town.", "gray"));
+                    lines.Add(("A young couple catches your eye and bows their heads in thanks.", "white"));
+                }
+                break;
+
+            case OldGodType.Thorgrim:
+                if (outcome == BossOutcome.Defeated)
+                {
+                    if (approach == "defiant")
+                    {
+                        lines.Add(("The magistrate watches from his window, face pale.", "gray"));
+                        lines.Add(("Guards shift their grips on their spears as you pass.", godData.ThemeColor));
+                        lines.Add(("\"If they can defy the god of law... what stops them defying ours?\"", "white"));
+                    }
+                    else if (approach == "honorable" || approach == "cunning")
+                    {
+                        lines.Add(("The town judge removes his hat as you pass.", "gray"));
+                        lines.Add(("\"Justice was served today, by one who understands it.\"", "bright_yellow"));
+                    }
+                    else
+                    {
+                        lines.Add(("The courthouse flag flies at half mast.", "gray"));
+                        lines.Add(("Lawyers and judges whisper nervously. The law feels less certain today.", "white"));
+                    }
+                }
+                else if (outcome == BossOutcome.Saved)
+                {
+                    lines.Add(("The town lines up in formal rows to bow as you enter.", "gray"));
+                    lines.Add(("\"Thorgrim's law is restored. The courts will remember this day.\"", "bright_cyan"));
+                    lines.Add(("A sense of order settles over the town like a warm blanket.", "bright_green"));
+                }
+                else
+                {
+                    lines.Add(("The town watch stands a little straighter as you pass.", "gray"));
+                    lines.Add(("\"Fair dealings with the god of law. That takes backbone.\"", "white"));
+                }
+                break;
+
+            case OldGodType.Noctura:
+                if (outcome == BossOutcome.Allied)
+                {
+                    lines.Add(("People avoid your eyes as you walk through the square.", "gray"));
+                    lines.Add(("The shadows you cast seem... longer than they should be.", "dark_gray"));
+                    lines.Add(("The thieves' guild leaves a single black feather on your doorstep.", godData.ThemeColor));
+                }
+                else if (outcome == BossOutcome.Defeated)
+                {
+                    if (approach == "aggressive")
+                    {
+                        lines.Add(("Lanterns blaze in every window tonight.", "bright_yellow"));
+                        lines.Add(("\"The shadow queen is dead!\" But the celebration feels hollow.", "gray"));
+                        lines.Add(("Some wonder quietly: who watches the dark now?", "dark_gray"));
+                    }
+                    else
+                    {
+                        lines.Add(("The streetlamps seem brighter. The alleys less deep.", "gray"));
+                        lines.Add(("\"The shadows are just shadows again,\" a nightwatchman says, relieved.", "white"));
+                    }
+                }
+                else if (outcome == BossOutcome.Saved)
+                {
+                    lines.Add(("The thieves' guild raises a quiet toast behind closed doors.", "gray"));
+                    lines.Add(("The merchants double-check their locks tonight.", "white"));
+                    lines.Add(("But the shadows feel... watchful. Protective, even.", godData.ThemeColor));
+                }
+                else
+                {
+                    lines.Add(("The town is quieter tonight. Calmer.", "gray"));
+                    lines.Add(("Darkness falls as it always does, but it feels gentler somehow.", "white"));
+                }
+                break;
+
+            case OldGodType.Aurelion:
+                if (outcome == BossOutcome.Defeated)
+                {
+                    if (approach == "compassionate" || approach == "righteous")
+                    {
+                        lines.Add(("The temple choir sings a dirge as news spreads.", "gray"));
+                        lines.Add(("But the head priestess catches your eye and nods. She understands.", "bright_yellow"));
+                        lines.Add(("\"Sometimes mercy means ending the suffering,\" she says quietly.", "white"));
+                    }
+                    else
+                    {
+                        lines.Add(("The priest falls to his knees in the street.", "gray"));
+                        lines.Add(("\"The god of light... gone. Who will guide us through the darkness?\"", godData.ThemeColor));
+                        lines.Add(("Storm clouds gather overhead. The town has never felt so dim.", "dark_gray"));
+                    }
+                }
+                else if (outcome == BossOutcome.Saved)
+                {
+                    lines.Add(("Golden light breaks through the clouds as you emerge.", "bright_yellow"));
+                    lines.Add(("The crowd falls to their knees, tears streaming.", "white"));
+                    lines.Add(("\"THE LIGHT RETURNS!\" The cry echoes from rooftop to rooftop.", "bright_yellow"));
+                    lines.Add(("The temple bells ring in a pattern not heard in a thousand years.", "bright_cyan"));
+                }
+                else
+                {
+                    lines.Add(("The afternoon sun feels warmer than usual.", "bright_yellow"));
+                    lines.Add(("People shield their eyes, squinting upward, sensing something changed.", "gray"));
+                }
+                break;
+
+            case OldGodType.Terravok:
+                if (outcome == BossOutcome.Defeated)
+                {
+                    if (approach == "respectful")
+                    {
+                        lines.Add(("Stonemasons bow as you pass. They know stone better than anyone.", "gray"));
+                        lines.Add(("\"What it cost to break the unbreakable... only the mountain knows.\"", "white"));
+                    }
+                    else
+                    {
+                        lines.Add(("The ground trembles beneath your feet as you emerge.", "gray"));
+                        lines.Add(("Buildings creak. Dust falls from the rafters.", godData.ThemeColor));
+                        lines.Add(("\"What have you done?\" someone whispers. No one has an answer.", "white"));
+                    }
+                }
+                else if (outcome == BossOutcome.Saved)
+                {
+                    lines.Add(("The earth itself seems to sigh with relief.", "gray"));
+                    lines.Add(("Cracks in the town walls seal before your eyes.", "bright_green"));
+                    lines.Add(("The old well, dry for decades, begins to flow again.", "bright_cyan"));
+                }
+                else
+                {
+                    lines.Add(("The cobblestones feel steadier under your feet.", "gray"));
+                    lines.Add(("Miners nod to you from across the square. They feel it in the stone.", "white"));
+                }
+                break;
+
+            default:
+                lines.Add(("The town watches you emerge from the dungeon in silence.", "gray"));
+                lines.Add(("Something has changed. Everyone can feel it.", "white"));
+                break;
+        }
+
+        return lines;
     }
 
     /// <summary>
@@ -1708,12 +1990,28 @@ public class DungeonLocation : BaseLocation
             hasAnything = true;
         }
 
-        // Trap (hidden hint)
-        if (room.HasTrap && !room.TrapTriggered && dungeonRandom.NextDouble() < 0.3)
+        // Trap detection hint — class-specific detection chance
+        if (room.HasTrap && !room.TrapTriggered)
         {
-            terminal.SetColor("magenta");
-            terminal.WriteLine(">> You sense hidden danger... <<");
-            hasAnything = true;
+            double detectChance = currentPlayer.Class switch
+            {
+                CharacterClass.Assassin => 0.65,  // Trained to spot traps
+                CharacterClass.Ranger => 0.50,    // Wilderness instincts
+                CharacterClass.Jester => 0.40,    // Street-smart awareness
+                CharacterClass.Bard => 0.35,      // Perceptive
+                _ => 0.25                          // General awareness
+            };
+            if (dungeonRandom.NextDouble() < detectChance)
+            {
+                terminal.SetColor("magenta");
+                if (currentPlayer.Class == CharacterClass.Assassin)
+                    terminal.WriteLine(">> Your trained eye spots a trap mechanism! <<");
+                else if (currentPlayer.Class == CharacterClass.Ranger)
+                    terminal.WriteLine(">> Your instincts warn of hidden danger ahead! <<");
+                else
+                    terminal.WriteLine(">> You sense hidden danger... <<");
+                hasAnything = true;
+            }
         }
 
         // Event
@@ -2485,8 +2783,17 @@ public class DungeonLocation : BaseLocation
             case "Q":
                 // Players can always leave to town - they may need to gear up, get companions, etc.
                 // Floor locking only prevents ascending to PREVIOUS floors within the dungeon
-                await NavigateToLocation(GameLocation.MainStreet);
-                return true;
+                // Confirm exit to prevent accidental dungeon departure (e.g. pressing Q through submenus)
+                terminal.SetColor("yellow");
+                terminal.Write("Leave the dungeon and return to town? (Y/N): ");
+                terminal.SetColor("white");
+                string exitConfirm = (await terminal.GetInput("")).Trim().ToUpper();
+                if (exitConfirm == "Y" || exitConfirm == "YES")
+                {
+                    await NavigateToLocation(GameLocation.MainStreet);
+                    return true;
+                }
+                return false;
 
             default:
                 terminal.WriteLine("Invalid choice.", "red");
@@ -3084,7 +3391,15 @@ public class DungeonLocation : BaseLocation
                 if (timePlayer != null)
                 {
                     DailySystemManager.Instance.AdvanceGameTime(timePlayer, GameConfig.MinutesPerDungeonRoom);
-                    timePlayer.Fatigue = Math.Min(100, timePlayer.Fatigue + GameConfig.FatigueCostDungeonRoom);
+                    // Dungeon room fatigue scaled by armor weight
+                    float dungeonArmorFatigueMult = timePlayer.GetArmorWeightTier() switch
+                    {
+                        ArmorWeightClass.Light => GameConfig.LightArmorFatigueMult,
+                        ArmorWeightClass.Medium => GameConfig.MediumArmorFatigueMult,
+                        _ => GameConfig.HeavyArmorFatigueMult
+                    };
+                    int dungeonFatigueCost = Math.Max(1, (int)(GameConfig.FatigueCostDungeonRoom * dungeonArmorFatigueMult));
+                    timePlayer.Fatigue = Math.Min(100, timePlayer.Fatigue + dungeonFatigueCost);
                 }
             }
 
@@ -3310,12 +3625,20 @@ public class DungeonLocation : BaseLocation
         // Dungeon level makes traps harder to evade
         evasionChance -= currentDungeonLevel / 5;
 
-        // Assassins get bonus trap evasion
+        // Assassins get strong trap evasion: +15 base + Dexterity scaling
         if (player.Class == CharacterClass.Assassin)
-            evasionChance += 15;
+            evasionChance += 15 + (int)(player.Dexterity / 8);
 
-        // Minimum 5% chance to evade
-        evasionChance = Math.Max(5, evasionChance);
+        // Rangers get moderate trap evasion: +10 base + Dexterity scaling
+        else if (player.Class == CharacterClass.Ranger)
+            evasionChance += 10 + (int)(player.Dexterity / 12);
+
+        // Jester/Bard get minor bonus from nimbleness
+        else if (player.Class == CharacterClass.Jester || player.Class == CharacterClass.Bard)
+            evasionChance += 5;
+
+        // Minimum 5% chance to evade, cap at 85%
+        evasionChance = Math.Clamp(evasionChance, 5, 85);
 
         int roll = dungeonRandom.Next(100);
         return roll < evasionChance;
@@ -3362,6 +3685,7 @@ public class DungeonLocation : BaseLocation
                 var dartDmg = currentDungeonLevel * 2 + dungeonRandom.Next(8);
                 player.HP = Math.Max(1, player.HP - dartDmg);
                 player.Poison = Math.Max(player.Poison, 1);
+                player.PoisonTurns = Math.Max(player.PoisonTurns, 5 + currentDungeonLevel / 5);
                 terminal.WriteLine($"Poison darts! You take {dartDmg} damage and are poisoned!");
                 BroadcastDungeonEvent($"\u001b[31m  Poison darts! {player!.Name2} takes {dartDmg} damage and is poisoned!\u001b[0m");
                 break;
@@ -3667,20 +3991,27 @@ public class DungeonLocation : BaseLocation
         await terminal.PressAnyKey();
     }
 
+    private static readonly Dictionary<DungeonTheme, string[]> BossNamePool = new()
+    {
+        { DungeonTheme.Catacombs, new[] { "Bone Lord", "Crypt Warden", "Skull Revenant", "Tomb Sentinel", "Ossuary King" } },
+        { DungeonTheme.Sewers, new[] { "Sludge Abomination", "Bile Crawler", "Plague Broodmother", "Sewer Hydra", "Filth Colossus" } },
+        { DungeonTheme.Caverns, new[] { "Crystal Guardian", "Stone Colossus", "Deep Wurm", "Stalactite Horror", "Cave Drake" } },
+        { DungeonTheme.AncientRuins, new[] { "Awakened Golem", "Ruined Sentinel", "Arcane Construct", "Timeworn Pharaoh", "Relic Guardian" } },
+        { DungeonTheme.DemonLair, new[] { "Pit Fiend", "Infernal Tyrant", "Doom Bringer", "Hellfire Warden", "Abyssal Overlord" } },
+        { DungeonTheme.FrozenDepths, new[] { "Frost Wyrm", "Glacial Titan", "Permafrost Revenant", "Blizzard Elemental", "Ice Lich" } },
+        { DungeonTheme.VolcanicPit, new[] { "Magma Elemental", "Volcanic Behemoth", "Molten Serpent", "Cinder Lord", "Lava Golem" } },
+        { DungeonTheme.AbyssalVoid, new[] { "Void Horror", "Entropy Weaver", "Null Devourer", "Shadow Sovereign", "Abyssal Maw" } },
+    };
+
     private string GetBossName(DungeonTheme theme)
     {
-        return theme switch
+        if (BossNamePool.TryGetValue(theme, out var names))
         {
-            DungeonTheme.Catacombs => "Bone Lord",
-            DungeonTheme.Sewers => "Sludge Abomination",
-            DungeonTheme.Caverns => "Crystal Guardian",
-            DungeonTheme.AncientRuins => "Awakened Golem",
-            DungeonTheme.DemonLair => "Pit Fiend",
-            DungeonTheme.FrozenDepths => "Frost Wyrm",
-            DungeonTheme.VolcanicPit => "Magma Elemental",
-            DungeonTheme.AbyssalVoid => "Void Horror",
-            _ => "Dungeon Boss"
-        };
+            // Use floor level as seed so the same floor always has the same boss name
+            int index = currentDungeonLevel % names.Length;
+            return names[index];
+        }
+        return "Dungeon Boss";
     }
 
     /// <summary>
@@ -6191,6 +6522,7 @@ public class DungeonLocation : BaseLocation
                             currentPlayer.HP = Math.Max(1, currentPlayer.HP - poisonDmg);
                             terminal.WriteLine($"Poison gas! You take {poisonDmg} damage!");
                             currentPlayer.Poison = Math.Max(currentPlayer.Poison, 1);
+                            currentPlayer.PoisonTurns = Math.Max(currentPlayer.PoisonTurns, 5 + currentDungeonLevel / 5);
                             terminal.WriteLine("You have been poisoned!", "magenta");
                             break;
                         case 1:
@@ -6598,7 +6930,7 @@ public class DungeonLocation : BaseLocation
                     BroadcastDungeonEvent($"\u001b[32m  {currentPlayer.Name2} prays at a shrine and gains +{strBonus} Strength!\u001b[0m");
                     break;
                 case 2:
-                    var expBonus = currentDungeonLevel * 500;
+                    var expBonus = 50 + currentDungeonLevel * 15;
                     currentPlayer.Experience += expBonus;
                     terminal.WriteLine($"Ancient wisdom flows into you! +{expBonus} EXP!", "yellow");
                     ShareEventRewardsWithGroup(currentPlayer, 0, expBonus, "Mysterious Shrine");
@@ -6854,6 +7186,7 @@ public class DungeonLocation : BaseLocation
                 var dartDmg = currentDungeonLevel * 2 + dungeonRandom.Next(8);
                 currentPlayer.HP = Math.Max(1, currentPlayer.HP - dartDmg);
                 currentPlayer.Poison = Math.Max(currentPlayer.Poison, 1);
+                currentPlayer.PoisonTurns = Math.Max(currentPlayer.PoisonTurns, 5 + currentDungeonLevel / 5);
                 terminal.WriteLine($"You take {dartDmg} damage and are poisoned!", "magenta");
                 break;
             case 2:
@@ -7177,7 +7510,7 @@ public class DungeonLocation : BaseLocation
             terminal.SetColor("darkgray");
             terminal.Write("] ");
             terminal.SetColor("white");
-            terminal.WriteLine($"Antidote ({antidotePrice}g) - Cures poison");
+            terminal.WriteLine($"Antidote ({antidotePrice}g) - Cures poison ({player.Antidotes}/{player.MaxAntidotes})");
 
             terminal.SetColor("darkgray");
             terminal.Write("  [");
@@ -7186,7 +7519,10 @@ public class DungeonLocation : BaseLocation
             terminal.SetColor("darkgray");
             terminal.Write("] ");
             terminal.SetColor("white");
-            terminal.WriteLine($"Buy Max Potions ({potionPrice * (player.MaxPotions - player.Healing)}g)");
+            int potionsToMax = (int)Math.Max(0, player.MaxPotions - player.Healing);
+            terminal.WriteLine(potionsToMax > 0
+                ? $"Buy Max Potions ({potionPrice * potionsToMax}g)"
+                : "Buy Max Potions (full!)");
 
             terminal.WriteLine("");
             terminal.SetColor("bright_magenta");
@@ -7271,17 +7607,29 @@ public class DungeonLocation : BaseLocation
                     break;
 
                 case "3":
-                    if (player.Poison <= 0)
+                    if (player.Antidotes >= player.MaxAntidotes)
                     {
                         terminal.SetColor("yellow");
-                        terminal.WriteLine("\"You're not poisoned! Save your gold.\"");
+                        terminal.WriteLine("\"You can't carry any more antidotes, friend!\"");
                     }
                     else if (player.Gold >= antidotePrice)
                     {
                         player.Gold -= antidotePrice;
-                        player.Poison = 0;
-                        terminal.SetColor("green");
-                        terminal.WriteLine("The poison drains from your body!");
+                        if (player.Poison > 0)
+                        {
+                            // If poisoned, use immediately
+                            player.Poison = 0;
+                            player.PoisonTurns = 0;
+                            terminal.SetColor("green");
+                            terminal.WriteLine("You drink the antidote — the poison drains from your body!");
+                        }
+                        else
+                        {
+                            // Store for later use
+                            player.Antidotes++;
+                            terminal.SetColor("green");
+                            terminal.WriteLine($"Purchased 1 antidote! ({player.Antidotes}/{player.MaxAntidotes})");
+                        }
                     }
                     else
                     {
@@ -7292,7 +7640,7 @@ public class DungeonLocation : BaseLocation
                     break;
 
                 case "4":
-                    int potionsNeeded = player.MaxPotions - (int)player.Healing;
+                    int potionsNeeded = Math.Max(0, player.MaxPotions - (int)player.Healing);
                     if (potionsNeeded <= 0)
                     {
                         terminal.SetColor("yellow");
@@ -7311,7 +7659,7 @@ public class DungeonLocation : BaseLocation
                         }
                         else
                         {
-                            int canAfford = (int)(player.Gold / potionPrice);
+                            int canAfford = Math.Min((int)(player.Gold / potionPrice), potionsNeeded);
                             if (canAfford > 0)
                             {
                                 player.Gold -= canAfford * potionPrice;
@@ -8765,6 +9113,24 @@ public class DungeonLocation : BaseLocation
                 terminal.WriteLine("Heal ALL Party Members to Full");
             }
 
+            // Antidote option
+            if (player.Antidotes > 0 && player.Poison > 0)
+            {
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_green");
+                terminal.Write("D");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("white");
+                terminal.WriteLine($"Use Antidote (cures poison, {player.Antidotes} remaining)");
+            }
+            else if (player.Antidotes > 0)
+            {
+                terminal.SetColor("darkgray");
+                terminal.WriteLine($"  [D] Use Antidote ({player.Antidotes} remaining) - not poisoned");
+            }
+
             terminal.WriteLine("");
             terminal.SetColor("darkgray");
             terminal.Write("  [");
@@ -8819,6 +9185,30 @@ public class DungeonLocation : BaseLocation
                     if (allPartyMembers.Count > 0 && player.Healing > 0)
                     {
                         await HealEntireParty(player, allPartyMembers);
+                    }
+                    break;
+
+                case "D":
+                    if (player.Antidotes > 0 && player.Poison > 0)
+                    {
+                        player.Antidotes--;
+                        player.Poison = 0;
+                        player.PoisonTurns = 0;
+                        terminal.SetColor("bright_green");
+                        terminal.WriteLine("You drink the antidote — the poison drains from your body!");
+                        await Task.Delay(1500);
+                    }
+                    else if (player.Antidotes > 0)
+                    {
+                        terminal.SetColor("yellow");
+                        terminal.WriteLine("You're not poisoned!");
+                        await Task.Delay(1000);
+                    }
+                    else
+                    {
+                        terminal.SetColor("red");
+                        terminal.WriteLine("You don't have any antidotes!");
+                        await Task.Delay(1000);
                     }
                     break;
 
@@ -10305,6 +10695,7 @@ public class DungeonLocation : BaseLocation
                         terminal.WriteLine("She blows a cloud of sparkling dust in your face!");
 
                         player.Poison = Math.Max(player.Poison, 1);
+                        player.PoisonTurns = Math.Max(player.PoisonTurns, 5 + currentDungeonLevel / 5);
                         terminal.SetColor("green");
                         terminal.WriteLine("The pixie dust makes you feel queasy... you've been poisoned!");
 
@@ -10850,6 +11241,7 @@ public class DungeonLocation : BaseLocation
             if (player.Poison > 0)
             {
                 player.Poison = 0;
+                player.PoisonTurns = 0;
                 terminal.WriteLine("The sanctuary's magic cures your poison!", "cyan");
             }
 
@@ -10875,7 +11267,7 @@ public class DungeonLocation : BaseLocation
                     mate.Mana = Math.Min(mate.MaxMana, mate.Mana + mateMana);
                     long mateSta = mate.MaxCombatStamina / 3;
                     mate.CurrentCombatStamina = Math.Min(mate.MaxCombatStamina, mate.CurrentCombatStamina + mateSta);
-                    if (mate.Poison > 0) mate.Poison = 0;
+                    if (mate.Poison > 0) { mate.Poison = 0; mate.PoisonTurns = 0; }
 
                     var session = GroupSystem.GetSession(mate.GroupPlayerUsername ?? "");
                     session?.EnqueueMessage(

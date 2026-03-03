@@ -495,8 +495,16 @@ public class HomeLocation : BaseLocation
                 await UseHerbMenu();
                 return false;
             case "T":
-                ShowTrophies();
-                await terminal.WaitForKey();
+                if (!currentPlayer.HasTrophyRoom)
+                {
+                    terminal.WriteLine("You don't have a Trophy Room yet. Visit Upgrades to purchase one!", "yellow");
+                    await terminal.WaitForKey();
+                }
+                else
+                {
+                    ShowTrophies();
+                    await terminal.WaitForKey();
+                }
                 return false;
             case "F":
                 await ShowFamily();
@@ -1521,7 +1529,9 @@ public class HomeLocation : BaseLocation
             {
                 var npc = NPCSpawnSystem.Instance?.ActiveNPCs?.FirstOrDefault(n => n.ID == spouse.NPCId);
                 var name = npc?.Name ?? spouse.NPCId;
-                var marriedDays = (int)(DateTime.Now - spouse.MarriedDate).TotalDays;
+                var marriedDays = spouse.MarriedGameDay > 0
+                    ? Math.Max(0, DailySystemManager.Instance.CurrentDay - spouse.MarriedGameDay)
+                    : (int)(DateTime.Now - spouse.MarriedDate).TotalDays; // Fallback for old saves
 
                 terminal.Write($"    ");
                 terminal.SetColor("bright_red");
@@ -1644,8 +1654,12 @@ public class HomeLocation : BaseLocation
             terminal.SetColor("gray");
             foreach (var ex in romance.ExSpouses)
             {
-                var marriageDuration = (ex.DivorceDate - ex.MarriedDate).Days;
-                var daysSinceDivorce = (DateTime.Now - ex.DivorceDate).Days;
+                var marriageDuration = ex.MarriedGameDay > 0 && ex.DivorceGameDay > 0
+                    ? Math.Max(0, ex.DivorceGameDay - ex.MarriedGameDay)
+                    : (ex.DivorceDate - ex.MarriedDate).Days; // Fallback for old saves
+                var daysSinceDivorce = ex.DivorceGameDay > 0
+                    ? Math.Max(0, DailySystemManager.Instance.CurrentDay - ex.DivorceGameDay)
+                    : (DateTime.Now - ex.DivorceDate).Days; // Fallback for old saves
                 var initiator = ex.PlayerInitiated ? "you" : "them";
 
                 terminal.Write($"    - {ex.NPCName}");
@@ -1916,7 +1930,10 @@ public class HomeLocation : BaseLocation
         if (spouseData != null)
         {
             terminal.SetColor("gray");
-            terminal.WriteLine($"  Marriage duration: {(int)(DateTime.Now - spouseData.MarriedDate).TotalDays} days");
+            var marriageDays = spouseData.MarriedGameDay > 0
+                ? Math.Max(0, DailySystemManager.Instance.CurrentDay - spouseData.MarriedGameDay)
+                : (int)(DateTime.Now - spouseData.MarriedDate).TotalDays; // Fallback for old saves
+            terminal.WriteLine($"  Marriage duration: {marriageDays} days");
             terminal.WriteLine($"  Children together: {spouseData.Children}");
             terminal.WriteLine($"  Polyamory status: {(spouseData.AcceptsPolyamory ? "Open" : "Monogamous")}");
             terminal.WriteLine();

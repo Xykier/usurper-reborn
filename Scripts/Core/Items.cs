@@ -683,6 +683,7 @@ public class Equipment
     public WeaponHandedness Handedness { get; set; } = WeaponHandedness.None;
     public WeaponType WeaponType { get; set; } = WeaponType.None;
     public ArmorType ArmorType { get; set; } = ArmorType.None;
+    public ArmorWeightClass WeightClass { get; set; } = ArmorWeightClass.None;
     public EquipmentRarity Rarity { get; set; } = EquipmentRarity.Common;
 
     // Economics
@@ -976,6 +977,32 @@ public class Equipment
             return false;
         }
 
+        // Armor weight class restrictions
+        if (WeightClass != ArmorWeightClass.None)
+        {
+            var maxWeight = GameConfig.GetMaxArmorWeight(character.Class);
+            if ((int)WeightClass > (int)maxWeight)
+            {
+                reason = $"Your class cannot wear {WeightClass} armor";
+                return false;
+            }
+            if (WeightClass == ArmorWeightClass.Heavy && GameConfig.IsSmallRace(character.Race))
+            {
+                reason = "Your race is too small for Heavy armor";
+                return false;
+            }
+            // Heavy armor STR requirement (auto-calculated if not explicitly set)
+            if (WeightClass == ArmorWeightClass.Heavy && StrengthRequired == 0)
+            {
+                int autoStrReq = 15 + MinLevel / 5;
+                if (character.Strength < autoStrReq)
+                {
+                    reason = $"Requires {autoStrReq} Strength for Heavy armor";
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
@@ -1028,6 +1055,7 @@ public class Equipment
             Handedness = this.Handedness,
             WeaponType = this.WeaponType,
             ArmorType = this.ArmorType,
+            WeightClass = this.WeightClass,
             Rarity = this.Rarity,
             // Economics
             Value = this.Value,

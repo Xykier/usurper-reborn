@@ -304,6 +304,32 @@ public static class EquipmentDatabase
             .ToList();
     }
 
+    /// <summary>
+    /// Get shop-generated rings (for magic shop display)
+    /// </summary>
+    public static List<Equipment> GetShopRings()
+    {
+        EnsureInitialized();
+        return _allEquipment.Values
+            .Where(e => e.Slot == EquipmentSlot.LFinger && IsShopGenerated(e.Id))
+            .OrderBy(e => e.MinLevel)
+            .ThenBy(e => e.Value)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Get shop-generated necklaces (for magic shop display)
+    /// </summary>
+    public static List<Equipment> GetShopNecklaces()
+    {
+        EnsureInitialized();
+        return _allEquipment.Values
+            .Where(e => e.Slot == EquipmentSlot.Neck && IsShopGenerated(e.Id))
+            .OrderBy(e => e.MinLevel)
+            .ThenBy(e => e.Value)
+            .ToList();
+    }
+
     private static void EnsureInitialized()
     {
         if (!_initialized) Initialize();

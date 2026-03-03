@@ -309,9 +309,11 @@ public class WorldSimulator
         if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
             ProcessNPCSleepCycle();
 
-        // Process NPC attacks on sleeping (offline) players
-        if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
-            ProcessNPCAttacksOnSleepers();
+        // NPC attacks on sleeping players disabled — punishes casual players
+        // who can't play in long sessions. Player-vs-player sleep attacks
+        // ([K] Attack Sleeper at Inn/Dormitory) remain available as a PvP choice.
+        // if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
+        //     ProcessNPCAttacksOnSleepers();
 
         var worldState = new WorldState(npcs);
 
@@ -2967,12 +2969,46 @@ public class WorldSimulator
 
             // GD.Print($"[WorldSim] {npc.Name} trained at the Gym and gained {statName}");
 
+            // Chance to also improve a skill proficiency
+            if (random.NextDouble() < GameConfig.NPCGymProficiencyChance)
+            {
+                string? skillId = GetRandomNPCTrainingSkill(npc);
+                if (skillId != null)
+                {
+                    TrainingSystem.TryImproveFromUse(npc, skillId, random, GameConfig.NPCProficiencyCap);
+                }
+            }
+
             // Occasionally newsworthy
             if (random.NextDouble() < 0.05)
             {
                 NewsSystem.Instance.Newsy(true, $"{npc.Name} has been training hard at the Gym!");
             }
         }
+    }
+
+    /// <summary>
+    /// Pick a random skill for an NPC to train at the Gym.
+    /// 50% basic_attack, otherwise a random class ability.
+    /// </summary>
+    private string? GetRandomNPCTrainingSkill(NPC npc)
+    {
+        if (random.NextDouble() < 0.5)
+            return "basic_attack";
+
+        // Try to pick a class ability the NPC has access to
+        try
+        {
+            var abilities = ClassAbilitySystem.GetAvailableAbilities(npc);
+            if (abilities != null && abilities.Count > 0)
+            {
+                var ability = abilities[random.Next(abilities.Count)];
+                return ability.Id;
+            }
+        }
+        catch { /* ClassAbilitySystem not available */ }
+
+        return "basic_attack"; // Fallback
     }
 
     /// <summary>

@@ -222,6 +222,7 @@ public static class ShopItemGenerator
                 Name = template.Name,
                 Slot = slot,
                 ArmorType = armorType,
+                WeightClass = InferArmorWeightClass(template.Name),
                 ArmorClass = power,
                 Value = price,
                 Rarity = GetRarityForLevel(level),
@@ -668,6 +669,53 @@ public static class ShopItemGenerator
         _ => WeaponHandedness.OneHanded,
     };
 
+    /// <summary>
+    /// Infer armor weight class from item name. Used by both shop generation and loot conversion.
+    /// Heavy: Plate, Iron/Steel/Mithril helms, Gauntlets, Greaves, heavy boots
+    /// Medium: Chain, Scale, Studded, Reinforced, Brigandine
+    /// Light: everything else (Cloth, Leather, Silk, Shadow, Wizard, etc.)
+    /// </summary>
+    public static ArmorWeightClass InferArmorWeightClass(string name)
+    {
+        // Heavy armor keywords
+        if (name.Contains("Plate", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Greathelm", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Iron Helm", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Steel Helm", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Mithril Helm", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Battle Crown", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Iron Gauntlet", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Steel Gauntlet", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Mithril Gauntlet", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Plate Greaves", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Steel Greaves", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Mithril Greaves", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Iron Boots", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Steel Boots", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Mithril Boots", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Fortress", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Titan", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Full Plate", StringComparison.OrdinalIgnoreCase))
+            return ArmorWeightClass.Heavy;
+
+        // Medium armor keywords
+        if (name.Contains("Chain", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Scale", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Studded", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Reinforced", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Brigandine", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Ring Mail", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Splint", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Banded", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Breastplate", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Half-Plate", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Holy Diadem", StringComparison.OrdinalIgnoreCase))
+            return ArmorWeightClass.Medium;
+
+        // Everything else is Light (Cloth, Leather, Silk, Shadow, Wizard, Robe, Hood, etc.)
+        return ArmorWeightClass.Light;
+    }
+
     private static WeaponType InferShieldType(string name)
     {
         if (name.Contains("Buckler"))
@@ -697,7 +745,8 @@ public static class ShopItemGenerator
         // Leather: light-medium armor
         if (name.Contains("Leather") || name.Contains("Studded") || name.Contains("Hide") ||
             name.Contains("Scout") || name.Contains("Shadow") || name.Contains("Ranger") ||
-            name.Contains("Thief") || name.Contains("Barbarian") || name.Contains("Death"))
+            name.Contains("Thief") || name.Contains("Barbarian") || name.Contains("Death") ||
+            name.Contains("Traveler") || name.Contains("Sandals"))
             return ArmorType.Leather;
         // Cloth: light armor, caster gear, cloaks, belts
         if (name.Contains("Cloth") || name.Contains("Robe") || name.Contains("Silk") ||
@@ -705,10 +754,10 @@ public static class ShopItemGenerator
             name.Contains("Wizard") || name.Contains("Arcane") || name.Contains("Mystic") ||
             name.Contains("Archmage") || name.Contains("Mantle") || name.Contains("Shroud") ||
             name.Contains("Veil") || name.Contains("Headband") || name.Contains("Slippers") ||
-            name.Contains("Sandals") || name.Contains("Handwraps") || name.Contains("Trousers") ||
+            name.Contains("Handwraps") || name.Contains("Trousers") ||
             name.Contains("Cloak") || name.Contains("Cape") || name.Contains("Belt") ||
             name.Contains("Girdle") || name.Contains("Mask") || name.Contains("Rope") ||
-            name.Contains("Tattered") || name.Contains("Traveler") || name.Contains("Elven") ||
+            name.Contains("Tattered") || name.Contains("Elven") ||
             name.Contains("Gi"))
             return ArmorType.Cloth;
         // Magic: enchanted, divine, legendary materials

@@ -388,6 +388,13 @@ public class ArmorShopLocation : BaseLocation
                 terminal.Write($" [{classTag}]");
             }
 
+            // Show armor weight class tag
+            if (item.WeightClass != ArmorWeightClass.None)
+            {
+                terminal.SetColor(canBuy ? item.WeightClass.GetWeightColor() : "darkgray");
+                terminal.Write($" [{item.WeightClass}]");
+            }
+
             // Show upgrade indicator
             if (isUpgrade && canBuy)
             {
@@ -659,6 +666,16 @@ public class ArmorShopLocation : BaseLocation
             terminal.WriteLine("");
             terminal.SetColor("red");
             terminal.WriteLine($"{item.Name} requires an evil alignment!");
+            await Pause();
+            return;
+        }
+
+        // Check level requirement
+        if (currentPlayer.Level < item.MinLevel)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("red");
+            terminal.WriteLine($"{item.Name} requires level {item.MinLevel} (you are level {currentPlayer.Level})!");
             await Pause();
             return;
         }

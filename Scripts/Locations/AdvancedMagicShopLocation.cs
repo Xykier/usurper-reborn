@@ -356,9 +356,16 @@ public class AdvancedMagicShopLocation : BaseLocation
             return;
         }
         
-        int maxAffordable = (int)(player.Gold / potionCost);
+        int potionRoom = (int)Math.Max(0, GameConfig.MaxHealingPotions - player.Healing);
+        if (potionRoom <= 0)
+        {
+            terminal.WriteLine($"\n{GameConfig.ErrorColor}You're already at max potions ({GameConfig.MaxHealingPotions})!{GameConfig.TextColor}");
+            await terminal.WaitForKeyPress();
+            return;
+        }
+        int maxAffordable = Math.Min((int)(player.Gold / potionCost), potionRoom);
         terminal.Write($"\nHow many potions to buy (max {maxAffordable}, 0 to cancel): ");
-        
+
         int quantity = await terminal.GetNumberInput(0, maxAffordable);
         
         if (quantity == 0)

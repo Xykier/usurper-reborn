@@ -123,6 +123,7 @@ namespace UsurperRemake.Systems
                 NPCId = npcId,
                 NPCName = GetNPCName(npcId),  // Cache the name at time of marriage
                 MarriedDate = DateTime.Now,
+                MarriedGameDay = DailySystemManager.Instance.CurrentDay,
                 LoveLevel = 20, // Start at Love level
                 AcceptsPolyamory = isPolyMarriage,
                 Children = 0
@@ -183,7 +184,9 @@ namespace UsurperRemake.Systems
                     NPCId = spouse.NPCId,
                     NPCName = !string.IsNullOrEmpty(spouse.NPCName) ? spouse.NPCName : GetNPCName(spouse.NPCId),
                     MarriedDate = spouse.MarriedDate,
+                    MarriedGameDay = spouse.MarriedGameDay,
                     DivorceDate = DateTime.Now,
+                    DivorceGameDay = DailySystemManager.Instance.CurrentDay,
                     ChildrenTogether = spouse.Children,
                     DivorceReason = reason,
                     PlayerInitiated = playerInitiated
@@ -277,7 +280,9 @@ namespace UsurperRemake.Systems
                     NPCId = spouse.NPCId,
                     NPCName = !string.IsNullOrEmpty(spouse.NPCName) ? spouse.NPCName : GetNPCName(spouse.NPCId),
                     MarriedDate = spouse.MarriedDate,
+                    MarriedGameDay = spouse.MarriedGameDay,
                     DivorceDate = DateTime.Now, // Death date
+                    DivorceGameDay = DailySystemManager.Instance.CurrentDay,
                     ChildrenTogether = spouse.Children,
                     DivorceReason = "Died in combat",
                     PlayerInitiated = false
@@ -557,6 +562,7 @@ namespace UsurperRemake.Systems
                     NPCId = spouse.NPCId,
                     NPCName = !string.IsNullOrEmpty(spouse.NPCName) ? spouse.NPCName : GetNPCName(spouse.NPCId),  // Use cached name first
                     MarriedDate = spouse.MarriedDate,
+                    MarriedGameDay = spouse.MarriedGameDay,
                     LoveLevel = spouse.LoveLevel,
                     AcceptsPolyamory = spouse.AcceptsPolyamory,
                     KnowsAboutOthers = spouse.KnowsAboutOthers,
@@ -577,7 +583,9 @@ namespace UsurperRemake.Systems
                     NPCId = exSpouse.NPCId,
                     NPCName = !string.IsNullOrEmpty(exSpouse.NPCName) ? exSpouse.NPCName : GetNPCName(exSpouse.NPCId),
                     MarriedDate = exSpouse.MarriedDate,
+                    MarriedGameDay = exSpouse.MarriedGameDay,
                     DivorceDate = exSpouse.DivorceDate,
+                    DivorceGameDay = exSpouse.DivorceGameDay,
                     ChildrenTogether = exSpouse.ChildrenTogether,
                     DivorceReason = exSpouse.DivorceReason,
                     PlayerInitiated = exSpouse.PlayerInitiated
@@ -695,6 +703,7 @@ namespace UsurperRemake.Systems
                     NPCId = spouseData.NPCId,
                     NPCName = !string.IsNullOrEmpty(spouseData.NPCName) ? spouseData.NPCName : GetNPCName(spouseData.NPCId),  // Use saved name or look up
                     MarriedDate = spouseData.MarriedDate,
+                    MarriedGameDay = spouseData.MarriedGameDay,
                     LoveLevel = spouseData.LoveLevel,
                     AcceptsPolyamory = spouseData.AcceptsPolyamory,
                     KnowsAboutOthers = spouseData.KnowsAboutOthers,
@@ -717,7 +726,9 @@ namespace UsurperRemake.Systems
                         NPCId = exData.NPCId,
                         NPCName = !string.IsNullOrEmpty(exData.NPCName) ? exData.NPCName : GetNPCName(exData.NPCId),
                         MarriedDate = exData.MarriedDate,
+                        MarriedGameDay = exData.MarriedGameDay,
                         DivorceDate = exData.DivorceDate,
+                        DivorceGameDay = exData.DivorceGameDay,
                         ChildrenTogether = exData.ChildrenTogether,
                         DivorceReason = exData.DivorceReason,
                         PlayerInitiated = exData.PlayerInitiated
@@ -851,6 +862,7 @@ namespace UsurperRemake.Systems
         public string NPCId { get; set; } = "";
         public string NPCName { get; set; } = "";  // Cached name for display when NPC lookup fails
         public DateTime MarriedDate { get; set; }
+        public int MarriedGameDay { get; set; }  // Game day when married (for in-game day counting)
         public int LoveLevel { get; set; }
         public bool AcceptsPolyamory { get; set; }
         public bool KnowsAboutOthers { get; set; }
@@ -866,7 +878,9 @@ namespace UsurperRemake.Systems
         public string NPCId { get; set; } = "";
         public string NPCName { get; set; } = "";
         public DateTime MarriedDate { get; set; }
+        public int MarriedGameDay { get; set; }
         public DateTime DivorceDate { get; set; }
+        public int DivorceGameDay { get; set; }
         public int ChildrenTogether { get; set; }  // Number of children from this marriage
         public string DivorceReason { get; set; } = "";  // Why they divorced
         public bool PlayerInitiated { get; set; }  // true = player asked for divorce, false = spouse left
