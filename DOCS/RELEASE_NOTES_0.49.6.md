@@ -58,6 +58,45 @@ A new early-game dream can trigger at levels 1-10. You're standing at the edge o
 
 ---
 
+## Docker Self-Hosting
+
+SysOps can now host their own Usurper Reborn MUD server using Docker. A 3-container stack provides the game server, web proxy with dashboards, and nginx reverse proxy.
+
+```bash
+git clone https://github.com/jknight/usurper-reborn.git
+cd usurper-reborn
+docker compose up -d
+```
+
+- **Game server** on port 4000 (raw TCP for BBS/MUD client connections)
+- **Web interface** on port 80 (browser play via xterm.js, live stats, admin/balance/NPC dashboards)
+- Shared SQLite database via Docker volume
+- Minimal generic landing page included (sysops can mount their own)
+- Full documentation in `DOCS/DOCKER.md`
+
+### New Server Flags
+
+| Flag | Description |
+|------|-------------|
+| `--auto-provision` | Trusted auth connections (no password) auto-create accounts if username doesn't exist. Designed for BBS passthrough where the BBS handles authentication. |
+| `--log-stdout` | Route all debug log output to stdout instead of `logs/debug.log`. For container log aggregation (docker logs, CloudWatch, etc.) |
+
+---
+
+## BBS Online Passthrough
+
+BBS door players choosing `[O]nline Play` now get seamless authentication. Instead of seeing a login/register screen, they're automatically logged in using their BBS username from the drop file. The server creates their account on first connection if `--auto-provision` is enabled.
+
+This works for any MUD server the SysOp points to — the official server or a self-hosted Docker instance.
+
+---
+
+## SysOp Configurable Online Server
+
+The SysOp Console now has an `[S] Server` option to configure the online server address and port. SysOps running their own MUD server (via Docker or otherwise) can point their BBS game installation at their own server instead of the default `play.usurper-reborn.net:4000`. The setting persists in `sysop_config.json`.
+
+---
+
 ## Bug Fixes
 
 - **World Boss Spell Casting** — Magicians and Sages couldn't cast spells during world boss fights even with a Staff equipped. The `CanCastSpell()` weapon check filtered out all spells, but the error message said "Not enough mana" instead of telling the player they need a Staff. Now shows the correct weapon requirement error before listing spells
@@ -71,17 +110,32 @@ A new early-game dream can trigger at levels 1-10. You're standing at the edge o
 
 ## Files Changed
 
-- `Scripts/Core/GameConfig.cs` — Version bump to 0.49.6
-- `Scripts/Locations/MainStreetLocation.cs` — `GenerateStreetMicroEvent()` method with 9-priority NPC state check; display call in `DisplayLocation()` (only when no NPC story notification shown); Vex companion teaser (level 4+); Lyris companion teaser (level 5+)
+- `Scripts/Core/GameConfig.cs` — Version 0.49.6; `OnlineServerAddress` and `OnlineServerPort` static properties for configurable online server
+- `Scripts/Core/Monster.cs` — `IsBurning` flag to distinguish fire DoT from poison DoT
+- `Scripts/Locations/MainStreetLocation.cs` — `GenerateStreetMicroEvent()` method with 9-priority NPC state check; display call in `DisplayLocation()`; Vex companion teaser (level 4+); Lyris companion teaser (level 5+)
 - `Scripts/Locations/InnLocation.cs` — Aldric companion teaser (level 3+) in `DisplayLocation()`
 - `Scripts/Locations/HealerLocation.cs` — Mira companion teaser (level 5+) in `DisplayLocation()`
-- `Scripts/Locations/DungeonLocation.cs` — 8 atmospheric breadcrumb texts for floors 1-5 (20% chance per room) in `DisplayRoomView()`; flee from combat no longer clears the room
-- `Scripts/Locations/BaseLocation.cs` — Awakening status display in `ShowHealthStatus()` after active buffs section
-- `Scripts/Systems/HintSystem.cs` — 4 companion teaser hint constants (`HINT_COMPANION_ALDRIC_TEASER`, `HINT_COMPANION_VEX_TEASER`, `HINT_COMPANION_LYRIS_TEASER`, `HINT_COMPANION_MIRA_TEASER`)
-- `Scripts/Systems/DreamSystem.cs` — New "The Deep Call" narrative dream (levels 1-10, awakening 0-2)
+- `Scripts/Locations/DungeonLocation.cs` — 8 atmospheric breadcrumb texts for floors 1-5 (20% chance per room); flee from combat no longer clears the room
+- `Scripts/Locations/BaseLocation.cs` — Awakening status display in `ShowHealthStatus()`
+- `Scripts/Systems/HintSystem.cs` — 4 companion teaser hint constants
+- `Scripts/Systems/DreamSystem.cs` — New "The Deep Call" narrative dream (levels 1-10)
 - `Scripts/Systems/WorldBossSystem.cs` — Staff weapon requirement check with proper error message before spell listing
-- `Scripts/Systems/CombatEngine.cs` — Minimum damage floor changed from 1 to 5% of monster attack; fire DoT uses distinct burn message and color instead of poison text
-- `Scripts/Core/Monster.cs` — `IsBurning` flag to distinguish fire DoT from poison DoT
-- `Scripts/Core/GameEngine.cs` — Legacy WeaponType migration on equipment load (InferWeaponType for MainHand items with WeaponType=None)
-- `Scripts/Systems/PlayerCharacterLoader.cs` — Same legacy WeaponType migration for echo characters
-- `Scripts/Systems/OnlinePlaySystem.cs` — Skip credential auto-login and credential saving in BBS door mode (shared installation)
+- `Scripts/Systems/CombatEngine.cs` — Minimum damage 5% of monster attack; fire DoT burn messages
+- `Scripts/Core/GameEngine.cs` — Legacy WeaponType migration on equipment load
+- `Scripts/Systems/PlayerCharacterLoader.cs` — Legacy WeaponType migration for echo characters
+- `Scripts/Systems/OnlinePlaySystem.cs` — BBS passthrough auth (direct TCP with `AUTH:username:BBS`); configurable server from `GameConfig`; credential saving disabled in BBS door mode; BBS-specific connection info text
+- `Scripts/BBS/DoorMode.cs` — `--auto-provision` flag parsing and `AutoProvision` property; `--log-stdout` flag parsing
+- `Scripts/Systems/DebugLogger.cs` — `LogToStdout` static property; stdout write path in `FlushQueue()`; conditional directory creation
+- `Scripts/Systems/SqlSaveBackend.cs` — `AutoProvisionPlayer()` method for trusted auth account creation
+- `Scripts/Server/MudServer.cs` — Auto-provision check in trusted auth path before session start
+- `Scripts/Systems/SysOpConfigSystem.cs` — `OnlineServerAddress` and `OnlineServerPort` in `SysOpConfig` class; wired into Apply/Sync methods
+- `Scripts/Systems/SysOpConsoleManager.cs` — `[S] Server` menu option in both local and online console; `SetOnlineServer()` method
+- `web/ssh-proxy.js` — `MUD_HOST` and `DB_PATH` environment variable support for Docker
+- `Dockerfile` — **NEW** — Multi-stage game server build (SDK → runtime-deps)
+- `docker/web/Dockerfile` — **NEW** — Node.js web proxy container
+- `docker/web/index.html` — **NEW** — Minimal generic landing page with xterm.js terminal and live stats
+- `docker/nginx/Dockerfile` — **NEW** — Nginx reverse proxy container
+- `docker/nginx/nginx.conf` — **NEW** — Reverse proxy config with WebSocket upgrade and SSE support
+- `docker-compose.yml` — **NEW** — 3-service stack (game, web, nginx) with shared volume
+- `.dockerignore` — **NEW** — Build context exclusions
+- `DOCS/DOCKER.md` — **NEW** — Complete Docker deployment guide
