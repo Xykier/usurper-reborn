@@ -41,15 +41,23 @@ public class AnchorRoadLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (IsScreenReader) { DisplayLocationSR(); return; }
         if (IsBBSSession) { DisplayLocationBBS(); return; }
 
         terminal.ClearScreen();
 
         // Header
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "ANCHOR ROAD - Conjunction of Destinies"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("ANCHOR ROAD - Conjunction of Destinies", "bright_magenta");
+        }
+        else
+        {
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            { const string t = "ANCHOR ROAD - Conjunction of Destinies"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         // Atmospheric description
@@ -84,6 +92,38 @@ public class AnchorRoadLocation : BaseLocation
         WriteMenuRow("P", "Prison Grounds", "S", "Status", "R", "Return to Town");
         terminal.WriteLine("");
 
+        ShowStatusLine();
+    }
+
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        WriteBoxHeader("ANCHOR ROAD - Conjunction of Destinies", "bright_magenta");
+        terminal.WriteLine("");
+        terminal.SetColor("white");
+        terminal.WriteLine("The Red Fields stretch east, where warriors test their mettle.");
+        terminal.WriteLine("Blood and glory await those brave enough to enter.");
+        terminal.WriteLine("");
+        ShowNPCsInLocation();
+        ShowChallengeStatus();
+        terminal.WriteLine("");
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Challenges:");
+        WriteSRMenuOption("B", "Bounty Board");
+        WriteSRMenuOption("G", "Gang War");
+        WriteSRMenuOption("T", "The Gauntlet");
+        terminal.WriteLine("");
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Town Control:");
+        WriteSRMenuOption("C", "Claim Town");
+        WriteSRMenuOption("F", "Flee Town Control");
+        terminal.WriteLine("");
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Other:");
+        WriteSRMenuOption("P", "Prison Grounds");
+        WriteSRMenuOption("S", "Status");
+        WriteSRMenuOption("R", "Return to Town");
+        terminal.WriteLine("");
         ShowStatusLine();
     }
 
@@ -141,8 +181,11 @@ public class AnchorRoadLocation : BaseLocation
 
     private void ShowChallengeStatus()
     {
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("─────────────────────────────────────────");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("─────────────────────────────────────────");
+        }
 
         // Show player fights remaining
         terminal.SetColor("white");
@@ -200,8 +243,11 @@ public class AnchorRoadLocation : BaseLocation
             terminal.WriteLine(turfController);
         }
 
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("─────────────────────────────────────────");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("─────────────────────────────────────────");
+        }
     }
 
     /// <summary>
@@ -325,10 +371,7 @@ public class AnchorRoadLocation : BaseLocation
     private async Task StartBountyHunting()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "BOUNTY HUNTING"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("BOUNTY HUNTING", "bright_red");
         terminal.WriteLine("");
 
         if (currentPlayer.PFights <= 0)
@@ -379,12 +422,18 @@ public class AnchorRoadLocation : BaseLocation
 
         terminal.SetColor("bright_yellow");
         terminal.WriteLine("WANTED - DEAD OR ALIVE:");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('─', 60));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(new string('─', 60));
+        }
         terminal.SetColor("white");
         terminal.WriteLine($"{"#",-3} {"Name",-20} {"Level",-6} {"Bounty",-12} {"Crime",-15}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('─', 60));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(new string('─', 60));
+        }
 
         for (int i = 0; i < bountyTargets.Count; i++)
         {
@@ -424,9 +473,7 @@ public class AnchorRoadLocation : BaseLocation
 
                 terminal.SetColor("bright_green");
                 terminal.WriteLine("");
-                terminal.WriteLine("═══════════════════════════════════════");
-                terminal.WriteLine("           BOUNTY COLLECTED!");
-                terminal.WriteLine("═══════════════════════════════════════");
+                WriteSectionHeader("BOUNTY COLLECTED!", "bright_green");
                 terminal.WriteLine($"Bounty Reward: {bounty:N0} gold");
                 terminal.WriteLine($"Experience: {expGain:N0}");
 
@@ -463,10 +510,7 @@ public class AnchorRoadLocation : BaseLocation
     private async Task StartGangWar()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "GANG WAR"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("GANG WAR", "bright_red");
         terminal.WriteLine("");
 
         if (string.IsNullOrEmpty(currentPlayer.Team))
@@ -525,12 +569,18 @@ public class AnchorRoadLocation : BaseLocation
 
         terminal.SetColor("cyan");
         terminal.WriteLine("Rival Teams:");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('─', 55));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(new string('─', 55));
+        }
         terminal.SetColor("white");
         terminal.WriteLine($"{"#",-3} {"Team Name",-24} {"Members",-8} {"Power",-8} {"Turf",-5}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('─', 55));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(new string('─', 55));
+        }
 
         for (int i = 0; i < teams.Count; i++)
         {
@@ -583,8 +633,7 @@ public class AnchorRoadLocation : BaseLocation
             {
                 var enemy = enemyTeamMembers[f];
 
-                terminal.SetColor("bright_magenta");
-                terminal.WriteLine($"═══ FIGHT {f + 1}/{enemyTeamMembers.Count} ═══");
+                WriteSectionHeader($"FIGHT {f + 1}/{enemyTeamMembers.Count}", "bright_magenta");
                 terminal.SetColor("white");
                 terminal.WriteLine($"You face {enemy.DisplayName} (Level {enemy.Level} {enemy.Class})!");
                 terminal.WriteLine("");
@@ -625,9 +674,7 @@ public class AnchorRoadLocation : BaseLocation
             if (playerWon)
             {
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("═══════════════════════════════════════");
-                terminal.WriteLine("        GANG WAR VICTORY!");
-                terminal.WriteLine("═══════════════════════════════════════");
+                WriteSectionHeader("GANG WAR VICTORY!", "bright_green");
                 terminal.WriteLine($"You defeated all {enemiesDefeated} members of {targetTeam.TeamName}!");
                 terminal.WriteLine($"Gold Plundered: {totalGoldReward:N0}");
                 terminal.WriteLine($"Experience: {totalXPReward:N0}");
@@ -658,9 +705,7 @@ public class AnchorRoadLocation : BaseLocation
             else
             {
                 terminal.SetColor("red");
-                terminal.WriteLine("═══════════════════════════════════════");
-                terminal.WriteLine("        GANG WAR DEFEAT!");
-                terminal.WriteLine("═══════════════════════════════════════");
+                WriteSectionHeader("GANG WAR DEFEAT!", "red");
                 terminal.WriteLine($"You were defeated after taking down {enemiesDefeated} opponent{(enemiesDefeated != 1 ? "s" : "")}.");
 
                 if (enemiesDefeated > 0)
@@ -690,10 +735,7 @@ public class AnchorRoadLocation : BaseLocation
     private async Task StartGauntlet()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "THE GAUNTLET"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE GAUNTLET", "bright_yellow");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -728,8 +770,11 @@ public class AnchorRoadLocation : BaseLocation
 
         terminal.SetColor("cyan");
         terminal.WriteLine("Gauntlet Details:");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("─────────────────────────────────────────");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("─────────────────────────────────────────");
+        }
         terminal.SetColor("white");
         terminal.Write("Entry Fee: ");
         terminal.SetColor("bright_yellow");
@@ -742,8 +787,11 @@ public class AnchorRoadLocation : BaseLocation
         terminal.Write("Your HP: ");
         terminal.SetColor(currentPlayer.HP > currentPlayer.MaxHP / 2 ? "bright_green" : "red");
         terminal.WriteLine($"{currentPlayer.HP}/{currentPlayer.MaxHP}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("─────────────────────────────────────────");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("─────────────────────────────────────────");
+        }
         terminal.WriteLine("");
 
         if (currentPlayer.Gold < entryFee)
@@ -819,8 +867,7 @@ public class AnchorRoadLocation : BaseLocation
             var monster = MonsterGenerator.GenerateMonster(monsterLevel, isBoss, isMiniBoss, random);
 
             terminal.ClearScreen();
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"═══════════════════ WAVE {wave}/{GameConfig.GauntletWaveCount} ═══════════════════");
+            WriteSectionHeader($"WAVE {wave}/{GameConfig.GauntletWaveCount}", "bright_yellow");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -869,11 +916,9 @@ public class AnchorRoadLocation : BaseLocation
                     currentPlayer.Gold += championGold;
                     currentPlayer.Experience += championXP;
 
-                    terminal.SetColor("bright_yellow");
                     terminal.WriteLine("");
-                    terminal.WriteLine("═══════════════════════════════════════");
-                    terminal.WriteLine("        GAUNTLET CHAMPION!");
-                    terminal.WriteLine("═══════════════════════════════════════");
+                    WriteSectionHeader("GAUNTLET CHAMPION!", "bright_yellow");
+                    terminal.SetColor("bright_yellow");
                     terminal.WriteLine($"Champion Bonus: +{championGold:N0} gold, +{championXP:N0} XP!");
 
                     AchievementSystem.TryUnlock(currentPlayer, "gauntlet_champion");
@@ -911,10 +956,7 @@ public class AnchorRoadLocation : BaseLocation
 
         // Final summary
         terminal.WriteLine("");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         GAUNTLET SUMMARY");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("GAUNTLET SUMMARY", "bright_cyan");
         terminal.SetColor("white");
         terminal.Write("Waves Survived: ");
         if (wavesCompleted >= GameConfig.GauntletWaveCount)
@@ -940,10 +982,7 @@ public class AnchorRoadLocation : BaseLocation
     private async Task ClaimTown()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "CLAIM TOWN"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("CLAIM TOWN", "bright_yellow");
         terminal.WriteLine("");
 
         if (string.IsNullOrEmpty(currentPlayer.Team))
@@ -1077,10 +1116,7 @@ public class AnchorRoadLocation : BaseLocation
     private async Task NavigateToPrisonGrounds()
     {
         terminal.ClearScreen();
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "PRISON GROUNDS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("PRISON GROUNDS", "darkgray");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1090,10 +1126,18 @@ public class AnchorRoadLocation : BaseLocation
 
         terminal.SetColor("cyan");
         terminal.WriteLine("Options:");
-        terminal.SetColor("white");
-        WriteMenuOption("J", "Attempt a Jailbreak (rescue a prisoner)");
-        WriteMenuOption("V", "View Prisoners");
-        WriteMenuOption("L", "Leave");
+        if (IsScreenReader)
+        {
+            WriteSRMenuOption("J", "Attempt a Jailbreak (rescue a prisoner)");
+            WriteSRMenuOption("V", "View Prisoners");
+            WriteSRMenuOption("L", "Leave");
+        }
+        else
+        {
+            WriteMenuOption("J", "Attempt a Jailbreak (rescue a prisoner)");
+            WriteMenuOption("V", "View Prisoners");
+            WriteMenuOption("L", "Leave");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
@@ -1192,8 +1236,11 @@ public class AnchorRoadLocation : BaseLocation
         {
             terminal.SetColor("cyan");
             terminal.WriteLine("Prisoners:");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine(new string('─', 40));
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("darkgray");
+                terminal.WriteLine(new string('─', 40));
+            }
 
             foreach (var prisoner in prisoners)
             {

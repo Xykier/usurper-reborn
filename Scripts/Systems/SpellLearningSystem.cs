@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UsurperRemake.Utils;
 using UsurperRemake.Systems;
+using UsurperRemake.UI;
 
 /// <summary>
 /// Spell learning and quickbar equip interface at the Level Master.
@@ -33,7 +34,7 @@ public static class SpellLearningSystem
         while (true)
         {
             terminal.ClearScreen();
-            terminal.WriteLine("═══ SPELL LIBRARY ═══", "bright_magenta");
+            UIHelper.WriteSectionHeader(terminal, "SPELL LIBRARY", "bright_magenta");
             terminal.WriteLine($"Class: {player.Class} | Level: {player.Level} | Mana: {player.Mana}/{player.MaxMana}", "cyan");
             terminal.WriteLine("");
 
@@ -145,8 +146,16 @@ public static class SpellLearningSystem
             }
 
             terminal.WriteLine("");
-            terminal.WriteLine("[1-9] Equip/change slot  [C] Clear slot  [A] Auto-fill", "bright_yellow");
-            terminal.WriteLine("[L#] Learn spell (e.g. L5)  [F#] Forget spell  [X] Exit", "bright_yellow");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("1-9. Equip or change slot, C. Clear slot, A. Auto-fill", "bright_yellow");
+                terminal.WriteLine("L followed by number to learn spell (e.g. L5), F followed by number to forget spell, X. Exit", "bright_yellow");
+            }
+            else
+            {
+                terminal.WriteLine("[1-9] Equip/change slot  [C] Clear slot  [A] Auto-fill", "bright_yellow");
+                terminal.WriteLine("[L#] Learn spell (e.g. L5)  [F#] Forget spell  [X] Exit", "bright_yellow");
+            }
             var input = await terminal.GetInput("> ");
             if (string.IsNullOrWhiteSpace(input)) continue;
 

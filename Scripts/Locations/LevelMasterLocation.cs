@@ -106,9 +106,55 @@ public class LevelMasterLocation : BaseLocation
 
     protected override string GetMudPromptName() => "Level Master";
 
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+
+        terminal.WriteLine("Level Master's Sanctum", "bright_cyan");
+        terminal.WriteLine($"Master: {currentMaster.Name}", currentMaster.Color);
+        terminal.WriteLine("");
+
+        // XP status
+        terminal.WriteLine($"Experience: {currentPlayer.Experience:N0}", "cyan");
+        if (currentPlayer.Level >= GameConfig.MaxLevel)
+        {
+            terminal.WriteLine("You have reached the pinnacle of mortal power!", "bright_magenta");
+        }
+        else
+        {
+            long nextLevelXP = GetExperienceForLevel(currentPlayer.Level + 1);
+            long xpNeeded = nextLevelXP - currentPlayer.Experience;
+            if (xpNeeded <= 0)
+                terminal.WriteLine($"Ready to advance to level {currentPlayer.Level + 1}!", "bright_green");
+            else
+                terminal.WriteLine($"Need {xpNeeded:N0} XP for level {currentPlayer.Level + 1}", "white");
+        }
+        terminal.WriteLine($"Training Points: {currentPlayer.TrainingPoints}", "bright_magenta");
+        terminal.WriteLine("");
+
+        terminal.WriteLine("Services:", "cyan");
+        WriteSRMenuOption("L", "Level Raise");
+        WriteSRMenuOption("A", "Abilities - combat abilities or spells");
+        WriteSRMenuOption("T", $"Training - improve skills ({currentPlayer.TrainingPoints} points)");
+        WriteSRMenuOption("C", "Crystal Ball - scry other characters");
+        WriteSRMenuOption("H", "Help Team Member - assist a teammate");
+        WriteSRMenuOption("S", "Status - view your statistics");
+        terminal.WriteLine("");
+        WriteSRMenuOption("R", "Return to Main Street");
+        terminal.WriteLine("");
+
+        ShowStatusLine();
+    }
+
     protected override void DisplayLocation()
     {
         terminal.ClearScreen();
+
+        if (IsScreenReader)
+        {
+            DisplayLocationSR();
+            return;
+        }
 
         if (IsBBSSession)
         {
@@ -117,10 +163,7 @@ public class LevelMasterLocation : BaseLocation
         }
 
         // Header - standardized format
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"LEVEL MASTER'S SANCTUM".PadLeft((77 + 22) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("LEVEL MASTER'S SANCTUM", "bright_cyan");
         terminal.WriteLine("");
         terminal.SetColor(currentMaster.Color);
         terminal.WriteLine($"Master: {currentMaster.Name}");
@@ -360,8 +403,16 @@ public class LevelMasterLocation : BaseLocation
             // Prestige hybrid — both abilities and spells
             terminal.WriteLine($"\"{currentPlayer.DisplayName}, your power spans both martial and arcane arts...\"");
             terminal.WriteLine("");
-            terminal.WriteLine("  [A] Combat Abilities", "bright_yellow");
-            terminal.WriteLine("  [S] Spell Library", "bright_cyan");
+            if (IsScreenReader)
+            {
+                WriteSRMenuOption("A", "Combat Abilities");
+                WriteSRMenuOption("S", "Spell Library");
+            }
+            else
+            {
+                terminal.WriteLine("  [A] Combat Abilities", "bright_yellow");
+                terminal.WriteLine("  [S] Spell Library", "bright_cyan");
+            }
             terminal.WriteLine("");
             var choice = await terminal.GetInput("Your choice: ");
             if (choice.Equals("S", StringComparison.OrdinalIgnoreCase))
@@ -494,8 +545,18 @@ public class LevelMasterLocation : BaseLocation
         terminal.ClearScreen();
 
         // Display dramatic ANSI art for level up
-        await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.LevelUp, 30);
-        terminal.WriteLine("");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("  LEVEL UP!");
+            terminal.WriteLine("");
+        }
+        else
+        {
+            await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.LevelUp, 30);
+            terminal.WriteLine("");
+        }
 
         terminal.SetColor("bright_green");
         if (levelsRaised == 1)
@@ -567,10 +628,7 @@ public class LevelMasterLocation : BaseLocation
             if (startLevel < level && endLevel >= level)
             {
                 terminal.WriteLine("");
-                terminal.SetColor("bright_yellow");
-                terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗");
-                terminal.WriteLine($"║              * MILESTONE REACHED: Level {level,3} *                     ║");
-                terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝");
+                WriteBoxHeader($"* MILESTONE REACHED: Level {level} *", "bright_yellow");
                 terminal.WriteLine("");
 
                 terminal.SetColor("bright_white");
@@ -950,10 +1008,7 @@ public class LevelMasterLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor(currentMaster.Color);
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE CRYSTAL BALL"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE CRYSTAL BALL", currentMaster.Color);
             terminal.WriteLine("");
 
             terminal.SetColor("cyan");
@@ -1032,10 +1087,7 @@ public class LevelMasterLocation : BaseLocation
     private async Task DisplayScryingResult(NPC target)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "VISIONS IN THE CRYSTAL"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("VISIONS IN THE CRYSTAL", "bright_magenta");
         terminal.WriteLine("");
 
         await Task.Delay(500);
@@ -1085,10 +1137,7 @@ public class LevelMasterLocation : BaseLocation
     private async Task HelpTeamMember()
     {
         terminal.ClearScreen();
-        terminal.SetColor(currentMaster.Color);
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "HELP ALLY"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("HELP ALLY", currentMaster.Color);
         terminal.WriteLine("");
 
         // Find NPC teammates (only if player is on a team)

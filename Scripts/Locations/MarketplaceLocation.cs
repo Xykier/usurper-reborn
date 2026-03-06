@@ -29,15 +29,13 @@ public class MarketplaceLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (IsScreenReader) { DisplayLocationSR(); return; }
         if (IsBBSSession) { DisplayLocationBBS(); return; }
 
         terminal.ClearScreen();
 
         // Header
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"AUCTION HOUSE".PadLeft((77 + 13) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("AUCTION HOUSE", "bright_cyan", 77);
         terminal.WriteLine("");
 
         // Atmospheric description
@@ -223,6 +221,31 @@ public class MarketplaceLocation : BaseLocation
         ShowBBSFooter();
     }
 
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.WriteLine("AUCTION HOUSE");
+        terminal.WriteLine("");
+
+        var stats = MarketplaceSystem.Instance.GetStatistics();
+        terminal.WriteLine($"Listings: {stats.TotalListings} ({stats.PlayerListings} player, {stats.NPCListings} NPC)");
+        if (stats.TotalValue > 0)
+            terminal.WriteLine($"Total value: {stats.TotalValue:N0} {GameConfig.MoneyType}");
+        terminal.WriteLine($"Your gold: {currentPlayer.Gold:N0}");
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        WriteSRMenuOption("C", "Check bulletin board");
+        WriteSRMenuOption("B", "Buy item");
+        WriteSRMenuOption("A", "Add item for sale");
+        WriteSRMenuOption("S", "Status");
+        WriteSRMenuOption("R", "Return to Main Street");
+        terminal.WriteLine("");
+
+        ShowStatusLine();
+    }
+
     protected override async Task<bool> ProcessChoice(string choice)
     {
         // Handle global quick commands first
@@ -257,10 +280,7 @@ public class MarketplaceLocation : BaseLocation
         MarketplaceSystem.Instance.CleanupExpiredListings();
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"AUCTION HOUSE \u2014 LISTINGS".PadLeft((77 + 24) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("AUCTION HOUSE \u2014 LISTINGS", "bright_cyan", 77);
         terminal.WriteLine("");
 
         var listings = MarketplaceSystem.Instance.GetAllListings();
@@ -276,8 +296,11 @@ public class MarketplaceLocation : BaseLocation
             // Column headers
             terminal.SetColor("gray");
             terminal.WriteLine($"  {"#",-4} {"Item",-30} {"Price",-16} {"Seller",-18} {"Age"}");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("  ─── ────────────────────────── ──────────────── ────────────────── ───");
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("  ─── ────────────────────────── ──────────────── ────────────────── ───");
+            }
 
             int idx = 1;
             foreach (var listing in listings)
@@ -473,10 +496,7 @@ public class MarketplaceLocation : BaseLocation
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"AUCTION HOUSE \u2014 YOUR STATUS".PadLeft((77 + 28) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("AUCTION HOUSE \u2014 YOUR STATUS", "bright_cyan", 77);
         terminal.WriteLine("");
 
         var allListings = MarketplaceSystem.Instance.GetAllListings();
@@ -485,8 +505,11 @@ public class MarketplaceLocation : BaseLocation
         // Your listings section
         terminal.SetColor("cyan");
         terminal.WriteLine("  Your Active Listings:");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ─────────────────────────────────────────────────────────");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("  ─────────────────────────────────────────────────────────");
+        }
 
         if (myListings.Count == 0)
         {
@@ -515,8 +538,11 @@ public class MarketplaceLocation : BaseLocation
         var stats = MarketplaceSystem.Instance.GetStatistics();
         terminal.SetColor("cyan");
         terminal.WriteLine("  Market Overview:");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ─────────────────────────────────────────────────────────");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("  ─────────────────────────────────────────────────────────");
+        }
         terminal.SetColor("gray");
         terminal.Write("    Total listings: ");
         terminal.SetColor("white");

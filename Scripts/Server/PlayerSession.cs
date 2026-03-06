@@ -53,6 +53,9 @@ public class PlayerSession : IDisposable
     /// While false, broadcast messages (gossip, shouts, etc.) are suppressed.</summary>
     public bool IsInGame { get; set; }
 
+    /// <summary>Whether this player has screen reader mode enabled. Set from player save data on load.</summary>
+    public bool ScreenReaderMode { get; set; }
+
     /// <summary>True if this player has admin privileges. Computed from WizardLevel.</summary>
     public bool IsAdmin => WizardLevel >= WizardLevel.Archwizard;
 

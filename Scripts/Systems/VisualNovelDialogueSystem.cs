@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 using UsurperRemake.Data;
 
@@ -186,17 +187,22 @@ namespace UsurperRemake.Systems
         private async Task ShowConversationHeader(NPC npc, int relationLevel, RomanceRelationType romanceType)
         {
             terminal!.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-
-            // NPC name with relationship color
             string relColor = GetRelationColor(relationLevel);
-            terminal.SetColor(relColor);
             string romanticStatus = romanceType != RomanceRelationType.None ? $" [{romanceType}]" : "";
-            terminal.WriteLine($"║  {npc.Name2}{romanticStatus,-60}  ║");
-
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                terminal.SetColor(relColor);
+                terminal.WriteLine($"║  {npc.Name2}{romanticStatus,-60}  ║");
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
+            else
+            {
+                terminal.SetColor(relColor);
+                terminal.WriteLine($"  {npc.Name2}{romanticStatus}");
+            }
             terminal.WriteLine("");
 
             // NPC description
@@ -236,8 +242,11 @@ namespace UsurperRemake.Systems
             int flirtsNeeded = player.Charisma >= CHARISMA_EXCEPTIONAL ? 0 :
                                player.Charisma >= CHARISMA_HIGH ? 1 : 2;
 
-            terminal.SetColor("dark_gray");
-            terminal.WriteLine("  ─────────────────────────────────────────────────────────────────────────────");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("dark_gray");
+                terminal.WriteLine("  ─────────────────────────────────────────────────────────────────────────────");
+            }
             terminal.SetColor("yellow");
             terminal.WriteLine("  [DEBUG] Relationship Stats:");
             terminal.SetColor("white");
@@ -250,8 +259,11 @@ namespace UsurperRemake.Systems
             terminal.WriteLine($"    Flirt Success Count: {state.FlirtSuccessCount} (need {flirtsNeeded} for confession)");
             terminal.WriteLine($"    Flirt Receptiveness: {flirtReceptiveness:P0}");
             terminal.WriteLine($"    Has Confessed: {state.HasConfessed}, Accepted: {state.ConfessionAccepted}");
-            terminal.SetColor("dark_gray");
-            terminal.WriteLine("  ─────────────────────────────────────────────────────────────────────────────");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("dark_gray");
+                terminal.WriteLine("  ─────────────────────────────────────────────────────────────────────────────");
+            }
             terminal.WriteLine("");
         }
 
@@ -1400,7 +1412,7 @@ namespace UsurperRemake.Systems
                     {
                         case AffairMilestone.BecameLovers:
                             terminal.SetColor("bright_red");
-                            terminal.WriteLine($"  ♥ Something forbidden has begun... ♥");
+                            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Something forbidden has begun..." : $"  ♥ Something forbidden has begun... ♥");
                             terminal.SetColor("yellow");
                             terminal.WriteLine($"  {affairResult.Message}");
                             terminal.WriteLine("");
@@ -1437,7 +1449,10 @@ namespace UsurperRemake.Systems
                     {
                         terminal.WriteLine("");
                         terminal.SetColor("bright_yellow");
-                        terminal.WriteLine($"  ═══ A Decision Is Made ═══");
+                        if (!GameConfig.ScreenReaderMode)
+                            terminal.WriteLine($"  ═══ A Decision Is Made ═══");
+                        else
+                            terminal.WriteLine("  A Decision Is Made");
                         terminal.SetColor("yellow");
                         terminal.WriteLine($"  {divorceCheck.Reason}");
                         terminal.WriteLine("");
@@ -1459,13 +1474,13 @@ namespace UsurperRemake.Systems
                             if (marry)
                             {
                                 terminal.SetColor("bright_red");
-                                terminal.WriteLine($"  ♥ {npc.Name2} will become your spouse! ♥");
+                                terminal.WriteLine(GameConfig.ScreenReaderMode ? $"  {npc.Name2} will become your spouse!" : $"  ♥ {npc.Name2} will become your spouse! ♥");
                                 // The actual marriage would be handled by the regular marriage system
                             }
                             else
                             {
                                 terminal.SetColor("red");
-                                terminal.WriteLine($"  ♥ {npc.Name2} is now your lover. ♥");
+                                terminal.WriteLine(GameConfig.ScreenReaderMode ? $"  {npc.Name2} is now your lover." : $"  ♥ {npc.Name2} is now your lover. ♥");
                                 RomanceTracker.Instance.AddLover(npc.ID, 50, false);
                             }
                         }
@@ -1912,7 +1927,10 @@ namespace UsurperRemake.Systems
             {
                 // They agree to leave!
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine($"  ═══ A Decision Is Made ═══");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine($"  ═══ A Decision Is Made ═══");
+                else
+                    terminal.WriteLine("  A Decision Is Made");
                 terminal.WriteLine("");
                 await Task.Delay(500);
 
@@ -1998,10 +2016,7 @@ namespace UsurperRemake.Systems
         {
             terminal!.ClearScreen();
 
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "MARRIAGE PROPOSAL"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "MARRIAGE PROPOSAL", "bright_red");
             terminal.WriteLine("");
 
             // Check player age
@@ -2125,10 +2140,7 @@ namespace UsurperRemake.Systems
         {
             terminal!.ClearScreen();
 
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "<3<3<3 WEDDING CEREMONY <3<3<3"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "<3<3<3 WEDDING CEREMONY <3<3<3", "bright_yellow");
             terminal.WriteLine("");
 
             await Task.Delay(500);
@@ -2196,9 +2208,11 @@ namespace UsurperRemake.Systems
             NewsSystem.Instance?.Newsy(true, $"{player.Name} and {npc.Name2} have gotten married! Congratulations to the happy couple!");
 
             terminal.SetColor("bright_green");
-            terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
             terminal.WriteLine($"  YOU ARE NOW MARRIED TO {npc.Name2.ToUpper()}!");
-            terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
             terminal.WriteLine("");
 
             // Benefits announcement

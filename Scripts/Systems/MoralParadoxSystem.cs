@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -708,13 +709,12 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine("║              A   C H O I C E   A W A I T S                     ║", "bright_yellow");
-            terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "bright_yellow");
+            UIHelper.WriteBoxHeader(terminal, "A   C H O I C E   A W A I T S", "bright_yellow", 64);
             terminal.WriteLine("");
             terminal.WriteLine($"  {paradox.Name}", "bright_white");
             terminal.WriteLine("");
-            terminal.WriteLine("  ────────────────────────────────────────────", "dark_gray");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ────────────────────────────────────────────", "dark_gray");
             terminal.WriteLine("");
 
             await Task.Delay(500);
@@ -733,7 +733,8 @@ namespace UsurperRemake.Systems
             }
 
             terminal.WriteLine("");
-            terminal.WriteLine("  ────────────────────────────────────────────", "dark_gray");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ────────────────────────────────────────────", "dark_gray");
             terminal.WriteLine("");
 
             await Task.Delay(500);
@@ -786,9 +787,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "dark_cyan");
-            terminal.WriteLine("║                  C O N S E Q U E N C E S                       ║", "dark_cyan");
-            terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "dark_cyan");
+            UIHelper.WriteBoxHeader(terminal, "C O N S E Q U E N C E S", "dark_cyan", 64);
             terminal.WriteLine("");
 
             await Task.Delay(1000);
@@ -885,7 +884,8 @@ namespace UsurperRemake.Systems
             if (OceanPhilosophySystem.Instance.AwakeningLevel < 3) return;
 
             terminal.WriteLine("");
-            terminal.WriteLine("  ═══════════════════════════════════════════", "dark_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ═══════════════════════════════════════════", "dark_cyan");
             terminal.WriteLine("");
             terminal.WriteLine("  [A deeper understanding stirs...]", "cyan");
             terminal.WriteLine("");

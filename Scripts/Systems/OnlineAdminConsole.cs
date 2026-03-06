@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using UsurperRemake.BBS;
 using UsurperRemake.Server;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -138,52 +139,69 @@ namespace UsurperRemake.Systems
         private void DisplayMenu()
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                    O N L I N E   A D M I N   C O N S O L E                 ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "O N L I N E   A D M I N   C O N S O L E", "bright_red");
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
             terminal.WriteLine($"  Logged in as: {DoorMode.OnlineUsername ?? "Unknown"} (Admin)");
             terminal.WriteLine("");
 
+            bool sr = GameConfig.ScreenReaderMode;
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ PLAYER MANAGEMENT ═══");
+            terminal.WriteLine(sr ? "PLAYER MANAGEMENT" : "═══ PLAYER MANAGEMENT ═══");
             terminal.SetColor("white");
-            terminal.WriteLine("  [1] List/Edit Players");
-            terminal.WriteLine("  [2] Ban Player        [3] Unban Player");
-            terminal.WriteLine("  [4] Delete Player     [P] Reset Password");
+            if (sr)
+            {
+                terminal.WriteLine("  1. List/Edit Players");
+                terminal.WriteLine("  2. Ban Player");
+                terminal.WriteLine("  3. Unban Player");
+                terminal.WriteLine("  4. Delete Player");
+                terminal.WriteLine("  P. Reset Password");
+            }
+            else
+            {
+                terminal.WriteLine("  [1] List/Edit Players");
+                terminal.WriteLine("  [2] Ban Player        [3] Unban Player");
+                terminal.WriteLine("  [4] Delete Player     [P] Reset Password");
+            }
             terminal.WriteLine("");
 
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ GAME SETTINGS ═══");
+            terminal.WriteLine(sr ? "GAME SETTINGS" : "═══ GAME SETTINGS ═══");
             terminal.SetColor("white");
-            terminal.WriteLine("  [5] Difficulty Settings");
-            terminal.WriteLine("  [6] Set Message of the Day (MOTD)");
+            terminal.WriteLine(sr ? "  5. Difficulty Settings" : "  [5] Difficulty Settings");
+            terminal.WriteLine(sr ? "  6. Set Message of the Day (MOTD)" : "  [6] Set Message of the Day (MOTD)");
             terminal.WriteLine("");
 
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ WORLD MANAGEMENT ═══");
+            terminal.WriteLine(sr ? "WORLD MANAGEMENT" : "═══ WORLD MANAGEMENT ═══");
             terminal.SetColor("white");
-            terminal.WriteLine("  [7] View Online Players");
-            terminal.WriteLine("  [8] Clear News Feed   [9] Broadcast Message");
+            terminal.WriteLine(sr ? "  7. View Online Players" : "  [7] View Online Players");
+            if (sr)
+            {
+                terminal.WriteLine("  8. Clear News Feed");
+                terminal.WriteLine("  9. Broadcast Message");
+            }
+            else
+            {
+                terminal.WriteLine("  [8] Clear News Feed   [9] Broadcast Message");
+            }
             terminal.WriteLine("");
 
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ GOD MANAGEMENT ═══");
+            terminal.WriteLine(sr ? "GOD MANAGEMENT" : "═══ GOD MANAGEMENT ═══");
             terminal.SetColor("white");
-            terminal.WriteLine("  [I] Immortalize Player (Grant Godhood)");
+            terminal.WriteLine(sr ? "  I. Immortalize Player (Grant Godhood)" : "  [I] Immortalize Player (Grant Godhood)");
             terminal.WriteLine("");
 
             terminal.SetColor("bright_red");
-            terminal.WriteLine("═══ DANGER ZONE ═══");
+            terminal.WriteLine(sr ? "DANGER ZONE" : "═══ DANGER ZONE ═══");
             terminal.SetColor("red");
-            terminal.WriteLine("  [W] Full Game Wipe/Reset");
+            terminal.WriteLine(sr ? "  W. Full Game Wipe/Reset" : "  [W] Full Game Wipe/Reset");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
-            terminal.WriteLine("  [Q] Return to Character Selection");
+            terminal.WriteLine(sr ? "  Q. Return to Character Selection" : "  [Q] Return to Character Selection");
             terminal.WriteLine("");
         }
 
@@ -230,13 +248,16 @@ namespace UsurperRemake.Systems
 
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine($"═══ {title} ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? $"{title}" : $"═══ {title} ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
             terminal.WriteLine($"  {"#",-4} {"Name",-16} {"Lvl",4} {"Class",-14} {"Gold",10} {"Status",-8}");
-            terminal.SetColor("gray");
-            terminal.WriteLine("  " + new string('─', 60));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("  " + new string('─', 60));
+            }
 
             for (int i = 0; i < players.Count; i++)
             {
@@ -247,7 +268,7 @@ namespace UsurperRemake.Systems
 
             terminal.WriteLine("");
             terminal.SetColor("white");
-            terminal.WriteLine("  Enter # to select, [Q]uit");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Enter number to select, Q to quit" : "  Enter # to select, [Q]uit");
             terminal.WriteLine("");
 
             var input = await ReadInput("Choice: ");
@@ -291,14 +312,19 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine($"═══ ALL PLAYERS (Page {page + 1}/{totalPages}, {players.Count} total) ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode
+                    ? $"ALL PLAYERS (Page {page + 1}/{totalPages}, {players.Count} total)"
+                    : $"═══ ALL PLAYERS (Page {page + 1}/{totalPages}, {players.Count} total) ═══");
                 terminal.WriteLine("");
 
                 // Header
                 terminal.SetColor("yellow");
                 terminal.WriteLine($"  {"#",-4} {"Name",-16} {"Lvl",4} {"Class",-14} {"Gold",10} {"Status",-8} {"Last Login",-12}");
-                terminal.SetColor("gray");
-                terminal.WriteLine("  " + new string('─', 72));
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("  " + new string('─', 72));
+                }
 
                 var pageItems = players.Skip(page * pageSize).Take(pageSize).ToList();
                 for (int i = 0; i < pageItems.Count; i++)
@@ -408,7 +434,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ UNBAN PLAYER ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "UNBAN PLAYER" : "═══ UNBAN PLAYER ═══");
             terminal.WriteLine("");
 
             var banned = await backend.GetBannedPlayers();
@@ -580,7 +606,7 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine($"═══ EDITING: {player.Name2} ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode ? $"EDITING: {player.Name2}" : $"═══ EDITING: {player.Name2} ═══");
                 if (modified)
                 {
                     terminal.SetColor("bright_yellow");
@@ -821,7 +847,7 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine($"═══ COMPANIONS: {saveData.Player.Name2} ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode ? $"COMPANIONS: {saveData.Player.Name2}" : $"═══ COMPANIONS: {saveData.Player.Name2} ═══");
                 terminal.WriteLine("");
 
                 // Display each companion's status
@@ -1067,7 +1093,7 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine($"═══ OLD GODS: {saveData.Player.Name2} ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode ? $"OLD GODS: {saveData.Player.Name2}" : $"═══ OLD GODS: {saveData.Player.Name2} ═══");
                 terminal.WriteLine("");
 
                 for (int i = 0; i < GodNames.Length; i++)
@@ -1440,7 +1466,7 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("═══ DIFFICULTY SETTINGS ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode ? "DIFFICULTY SETTINGS" : "═══ DIFFICULTY SETTINGS ═══");
                 terminal.WriteLine("");
 
                 terminal.SetColor("white");
@@ -1522,7 +1548,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ SET MESSAGE OF THE DAY ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "SET MESSAGE OF THE DAY" : "═══ SET MESSAGE OF THE DAY ═══");
             terminal.WriteLine("");
 
             if (!string.IsNullOrEmpty(GameConfig.MessageOfTheDay))
@@ -1566,7 +1592,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ ONLINE PLAYERS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "ONLINE PLAYERS" : "═══ ONLINE PLAYERS ═══");
             terminal.WriteLine("");
 
             var online = await backend.GetOnlinePlayers();
@@ -1580,8 +1606,11 @@ namespace UsurperRemake.Systems
 
             terminal.SetColor("yellow");
             terminal.WriteLine($"  {"Name",-18} {"Location",-20} {"Connection",-10} {"Connected At",-20}");
-            terminal.SetColor("gray");
-            terminal.WriteLine("  " + new string('─', 70));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("  " + new string('─', 70));
+            }
 
             foreach (var p in online)
             {
@@ -1606,7 +1635,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ CLEAR NEWS FEED ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "CLEAR NEWS FEED" : "═══ CLEAR NEWS FEED ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
@@ -1634,7 +1663,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ BROADCAST SYSTEM MESSAGE ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "BROADCAST SYSTEM MESSAGE" : "═══ BROADCAST SYSTEM MESSAGE ═══");
             terminal.WriteLine("");
 
             // Show current broadcast if active
@@ -1693,10 +1722,7 @@ namespace UsurperRemake.Systems
         internal async Task FullGameReset()
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                     !!! DANGER: FULL GAME WIPE !!!                         ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "!!! DANGER: FULL GAME WIPE !!!", "bright_red");
             terminal.WriteLine("");
 
             terminal.SetColor("red");

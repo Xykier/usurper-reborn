@@ -497,7 +497,7 @@ public partial class GameEngine
         {
             // ── Full menu for MUD/local/Steam ──
             terminal.SetColor("darkgray");
-            terminal.WriteLine("  ── PLAY ─────────────────────────────────────────────────────────────────");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  PLAY" : "  ── PLAY ─────────────────────────────────────────────────────────────────");
             if (mainSave != null)
                 WriteMenuKey("1", $"Play {mainSave.PlayerName}");
             if (altSave != null)
@@ -516,7 +516,7 @@ public partial class GameEngine
             terminal.WriteLine("");
 
             terminal.SetColor("darkgray");
-            terminal.WriteLine("  ── INFO ─────────────────────────────────────────────────────────────────");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  INFO" : "  ── INFO ─────────────────────────────────────────────────────────────────");
             WriteMenuKey("I", "The Story So Far...");
             WriteMenuKey("H", "Usurper History");
             WriteMenuKey("B", "BBS & Online Server List");
@@ -528,7 +528,7 @@ public partial class GameEngine
             terminal.WriteLine("");
 
             terminal.SetColor("darkgray");
-            terminal.WriteLine("  ── ACCESSIBILITY ────────────────────────────────────────────────────────");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  ACCESSIBILITY" : "  ── ACCESSIBILITY ────────────────────────────────────────────────────────");
             terminal.SetColor("darkgray");
             terminal.Write("  [");
             terminal.SetColor("bright_yellow");
@@ -1195,29 +1195,42 @@ public partial class GameEngine
         }
 
         terminal.WriteLine("");
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("  ╔══════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("  ║ ");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("[!] ALPHA BUILD - Expect bugs, balance issues, and missing content. [!]");
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("  ║");
-        terminal.Write("  ║ ");
-        terminal.SetColor("white");
-        terminal.Write("Character data may be wiped at any time (full wipe planned at Beta).    ");
-        terminal.SetColor("bright_red");
-        terminal.WriteLine(" ║");
-        terminal.Write("  ║ ");
-        terminal.SetColor("white");
-        terminal.Write("Report bugs via /bug in-game or join our Discord:                       ");
-        terminal.SetColor("bright_red");
-        terminal.WriteLine(" ║");
-        terminal.Write("  ║ ");
-        terminal.SetColor("bright_cyan");
-        terminal.Write(GameConfig.DiscordInvite);
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("                                                    ║");
-        terminal.WriteLine("  ╚══════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  ALPHA BUILD - Expect bugs, balance issues, and missing content.");
+            terminal.SetColor("white");
+            terminal.WriteLine("  Character data may be wiped at any time (full wipe planned at Beta).");
+            terminal.WriteLine("  Report bugs via /bug in-game or join our Discord:");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine($"  {GameConfig.DiscordInvite}");
+        }
+        else
+        {
+            terminal.SetColor("bright_red");
+            terminal.WriteLine("  ╔══════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("  ║ ");
+            terminal.SetColor("bright_yellow");
+            terminal.Write("[!] ALPHA BUILD - Expect bugs, balance issues, and missing content. [!]");
+            terminal.SetColor("bright_red");
+            terminal.WriteLine("  ║");
+            terminal.Write("  ║ ");
+            terminal.SetColor("white");
+            terminal.Write("Character data may be wiped at any time (full wipe planned at Beta).    ");
+            terminal.SetColor("bright_red");
+            terminal.WriteLine(" ║");
+            terminal.Write("  ║ ");
+            terminal.SetColor("white");
+            terminal.Write("Report bugs via /bug in-game or join our Discord:                       ");
+            terminal.SetColor("bright_red");
+            terminal.WriteLine(" ║");
+            terminal.Write("  ║ ");
+            terminal.SetColor("bright_cyan");
+            terminal.Write(GameConfig.DiscordInvite);
+            terminal.SetColor("bright_red");
+            terminal.WriteLine("                                                    ║");
+            terminal.WriteLine("  ╚══════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
     }
 
@@ -1241,161 +1254,198 @@ public partial class GameEngine
             terminal.ClearScreen();
 
             // Title header
-            terminal.SetColor("cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("cyan");
-            terminal.Write("║");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("                USURPER REBORN");
-            terminal.SetColor("white");
-            terminal.Write(" - Halls of Avarice                             ");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("║");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("  USURPER REBORN - Halls of Avarice");
+            }
+            else
+            {
+                terminal.SetColor("cyan");
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                terminal.SetColor("cyan");
+                terminal.Write("║");
+                terminal.SetColor("bright_yellow");
+                terminal.Write("                USURPER REBORN");
+                terminal.SetColor("white");
+                terminal.Write(" - Halls of Avarice                             ");
+                terminal.SetColor("cyan");
+                terminal.WriteLine("║");
+                terminal.SetColor("cyan");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.SetColor("darkgray");
             terminal.WriteLine($"  v{GameConfig.Version} \"{GameConfig.VersionName}\"");
             ShowAlphaBanner();
 
-            // PLAY section
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("  ── PLAY ──────────────────────────────────────────────────────────────────");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("S");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("Single-Player");
-
-            // Online Multiplayer - hidden when already on the server, or when SysOp disabled it
-            if (!UsurperRemake.BBS.DoorMode.IsMudServerMode && !UsurperRemake.BBS.DoorMode.IsMudRelayMode
-                && !GameConfig.DisableOnlinePlay)
+            if (GameConfig.ScreenReaderMode)
             {
+                // Screen reader friendly menu - plain text, no multi-color brackets
+                terminal.WriteLine("  PLAY", "darkgray");
+                terminal.WriteLine("  S. Single-Player", "bright_green");
+                if (!UsurperRemake.BBS.DoorMode.IsMudServerMode && !UsurperRemake.BBS.DoorMode.IsMudRelayMode
+                    && !GameConfig.DisableOnlinePlay)
+                    terminal.WriteLine("  O. Online Multiplayer, Shared World", "bright_yellow");
+                terminal.WriteLine("");
+
+                terminal.WriteLine("  INFO", "darkgray");
+                terminal.WriteLine("  I. The Story So Far", "white");
+                terminal.WriteLine("  H. Usurper History", "white");
+                terminal.WriteLine("  B. BBS and Online Server List", "white");
+                terminal.WriteLine("  C. Credits", "white");
+#if !STEAM_BUILD
+                terminal.WriteLine("  @. Support the Developer", "bright_yellow");
+#endif
+                terminal.WriteLine("");
+
+                terminal.WriteLine("  ACCESSIBILITY", "darkgray");
+                terminal.WriteLine("  A. Screen Reader Mode: ON", "bright_green");
+                terminal.WriteLine(GameConfig.CompactMode
+                    ? "  Z. Compact Mode: ON"
+                    : "  Z. Compact Mode: OFF", GameConfig.CompactMode ? "bright_green" : "white");
+                terminal.WriteLine("");
+
+                terminal.WriteLine("  Q. Quit", "gray");
+
+                if (UsurperRemake.BBS.DoorMode.IsInDoorMode && UsurperRemake.BBS.DoorMode.IsSysOp)
+                    terminal.WriteLine("  %. SysOp Console", "yellow");
+            }
+            else
+            {
+                // Visual menu with colored brackets
+                // PLAY section
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("  ── PLAY ──────────────────────────────────────────────────────────────────");
                 terminal.SetColor("darkgray");
                 terminal.Write("  [");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("O");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("S");
                 terminal.SetColor("darkgray");
                 terminal.Write("] ");
-                terminal.SetColor("bright_yellow");
-                terminal.WriteLine("Online Multiplayer - Shared World");
-            }
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("Single-Player");
 
-            terminal.WriteLine("");
+                // Online Multiplayer - hidden when already on the server, or when SysOp disabled it
+                if (!UsurperRemake.BBS.DoorMode.IsMudServerMode && !UsurperRemake.BBS.DoorMode.IsMudRelayMode
+                    && !GameConfig.DisableOnlinePlay)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write("O");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("bright_yellow");
+                    terminal.WriteLine("Online Multiplayer - Shared World");
+                }
 
-            // INFO section
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("  ── INFO ──────────────────────────────────────────────────────────────────");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("I");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("The Story So Far...");
+                terminal.WriteLine("");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("H");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Usurper History");
+                // INFO section
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("  ── INFO ──────────────────────────────────────────────────────────────────");
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("I");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("white");
+                terminal.WriteLine("The Story So Far...");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("B");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("BBS & Online Server List");
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("H");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("white");
+                terminal.WriteLine("Usurper History");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("C");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("gray");
-            terminal.WriteLine("Credits");
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("B");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("white");
+                terminal.WriteLine("BBS & Online Server List");
+
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("C");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("gray");
+                terminal.WriteLine("Credits");
 
 
 #if !STEAM_BUILD
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("@");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("Support the Developer");
-#endif
-
-            terminal.WriteLine("");
-
-            // Accessibility section
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("  ── ACCESSIBILITY ─────────────────────────────────────────────────────");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("A");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            if (GameConfig.ScreenReaderMode)
-            {
-                terminal.SetColor("bright_green");
-                terminal.WriteLine("Screen Reader Mode: ON");
-            }
-            else
-            {
-                terminal.SetColor("white");
-                terminal.WriteLine("Screen Reader Mode: OFF");
-            }
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("Z");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            if (GameConfig.CompactMode)
-            {
-                terminal.SetColor("bright_green");
-                terminal.WriteLine("Compact Mode: ON (Mobile/Small Screen)");
-            }
-            else
-            {
-                terminal.SetColor("white");
-                terminal.WriteLine("Compact Mode: OFF");
-            }
-
-            terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("red");
-            terminal.Write("Q");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("gray");
-            terminal.WriteLine("Quit");
-
-            // SysOp option - only visible in BBS door mode for SysOps
-            if (UsurperRemake.BBS.DoorMode.IsInDoorMode && UsurperRemake.BBS.DoorMode.IsSysOp)
-            {
-                terminal.WriteLine("");
                 terminal.SetColor("darkgray");
                 terminal.Write("  [");
                 terminal.SetColor("bright_yellow");
-                terminal.Write("%");
+                terminal.Write("@");
                 terminal.SetColor("darkgray");
                 terminal.Write("] ");
-                terminal.SetColor("yellow");
-                terminal.WriteLine("SysOp Console");
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("Support the Developer");
+#endif
+
+                terminal.WriteLine("");
+
+                // Accessibility section
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("  ── ACCESSIBILITY ─────────────────────────────────────────────────────");
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("A");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("white");
+                terminal.WriteLine("Screen Reader Mode: OFF");
+
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write("Z");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                if (GameConfig.CompactMode)
+                {
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine("Compact Mode: ON (Mobile/Small Screen)");
+                }
+                else
+                {
+                    terminal.SetColor("white");
+                    terminal.WriteLine("Compact Mode: OFF");
+                }
+
+                terminal.WriteLine("");
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("red");
+                terminal.Write("Q");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("gray");
+                terminal.WriteLine("Quit");
+
+                // SysOp option - only visible in BBS door mode for SysOps
+                if (UsurperRemake.BBS.DoorMode.IsInDoorMode && UsurperRemake.BBS.DoorMode.IsSysOp)
+                {
+                    terminal.WriteLine("");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write("%");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("yellow");
+                    terminal.WriteLine("SysOp Console");
+                }
             }
 
             terminal.WriteLine("");
@@ -1522,7 +1572,7 @@ public partial class GameEngine
 
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ CHANGE PASSWORD ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "CHANGE PASSWORD" : "═══ CHANGE PASSWORD ═══");
         terminal.WriteLine("");
 
         var username = UsurperRemake.BBS.DoorMode.OnlineUsername;
@@ -1592,14 +1642,21 @@ public partial class GameEngine
         if (mySession == null) return;
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("║");
-        terminal.SetColor("bright_white");
-        terminal.Write("                                Spectator Mode                                ");
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("Spectator Mode", "bright_white");
+        }
+        else
+        {
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("║");
+            terminal.SetColor("bright_white");
+            terminal.Write("                                Spectator Mode                                ");
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine("║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         // Get list of in-game players (exclude self, invisible wizards, other spectators)
@@ -1628,10 +1685,18 @@ public partial class GameEngine
             var p = candidates[i];
             var spectatorCount = p.Spectators.Count;
             var watching = spectatorCount > 0 ? $" ({spectatorCount} watching)" : "";
-            terminal.SetColor("bright_yellow");
-            terminal.Write($"  [{i + 1}] ");
-            terminal.SetColor("white");
-            terminal.WriteLine($"{p.Username} [{p.ConnectionType}]{watching}");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("white");
+                terminal.WriteLine($"  {i + 1}. {p.Username} ({p.ConnectionType}){watching}");
+            }
+            else
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.Write($"  [{i + 1}] ");
+                terminal.SetColor("white");
+                terminal.WriteLine($"{p.Username} [{p.ConnectionType}]{watching}");
+            }
         }
 
         terminal.WriteLine("");
@@ -1752,12 +1817,18 @@ public partial class GameEngine
 
         // Show spectator header
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("  ══════════════════════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine("  ══════════════════════════════════════════════════════════════════════════");
+        }
         terminal.SetColor("bright_white");
         terminal.WriteLine($"  SPECTATING: {targetSession.Username}");
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("  ══════════════════════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine("  ══════════════════════════════════════════════════════════════════════════");
+        }
         terminal.SetColor("gray");
         terminal.WriteLine("  Type Q + Enter to stop watching.");
         terminal.WriteLine("");
@@ -1827,14 +1898,22 @@ public partial class GameEngine
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.Write("║");
-            terminal.SetColor("bright_yellow");
-            { const string t = "SAVE FILE MANAGEMENT"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("SAVE FILE MANAGEMENT");
+            }
+            else
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                terminal.Write("║");
+                terminal.SetColor("bright_yellow");
+                { const string t = "SAVE FILE MANAGEMENT"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("║");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.WriteLine("");
 
             // Get all unique player names
@@ -1867,47 +1946,63 @@ public partial class GameEngine
 
                 if (mostRecentSave != null)
                 {
-                    terminal.SetColor("darkgray");
-                    terminal.Write($"[");
-                    terminal.SetColor("bright_cyan");
-                    terminal.Write($"{i + 1}");
-                    terminal.SetColor("darkgray");
-                    terminal.Write("] ");
-                    terminal.SetColor("white");
-                    terminal.Write($"{mostRecentSave.PlayerName}");
-                    terminal.SetColor("cyan");
-                    terminal.Write($" ({mostRecentSave.ClassName})");
-                    terminal.SetColor("gray");
-                    terminal.Write($" - Level {mostRecentSave.Level}");
-                    terminal.SetColor("darkgray");
-                    terminal.Write(" | ");
-                    terminal.SetColor(mostRecentSave.IsAutosave ? "yellow" : "green");
-                    terminal.Write(mostRecentSave.SaveType);
-                    terminal.SetColor("darkgray");
-                    terminal.Write(" | ");
-                    terminal.SetColor("gray");
-                    terminal.WriteLine(mostRecentSave.SaveTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    if (GameConfig.ScreenReaderMode)
+                    {
+                        terminal.SetColor("white");
+                        terminal.WriteLine($"{i + 1}. {mostRecentSave.PlayerName} ({mostRecentSave.ClassName}) - Level {mostRecentSave.Level} | {mostRecentSave.SaveType} | {mostRecentSave.SaveTime:yyyy-MM-dd HH:mm:ss}");
+                    }
+                    else
+                    {
+                        terminal.SetColor("darkgray");
+                        terminal.Write($"[");
+                        terminal.SetColor("bright_cyan");
+                        terminal.Write($"{i + 1}");
+                        terminal.SetColor("darkgray");
+                        terminal.Write("] ");
+                        terminal.SetColor("white");
+                        terminal.Write($"{mostRecentSave.PlayerName}");
+                        terminal.SetColor("cyan");
+                        terminal.Write($" ({mostRecentSave.ClassName})");
+                        terminal.SetColor("gray");
+                        terminal.Write($" - Level {mostRecentSave.Level}");
+                        terminal.SetColor("darkgray");
+                        terminal.Write(" | ");
+                        terminal.SetColor(mostRecentSave.IsAutosave ? "yellow" : "green");
+                        terminal.Write(mostRecentSave.SaveType);
+                        terminal.SetColor("darkgray");
+                        terminal.Write(" | ");
+                        terminal.SetColor("gray");
+                        terminal.WriteLine(mostRecentSave.SaveTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                    }
                 }
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("N");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("green");
-            terminal.WriteLine("New Character");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("N. New Character", "green");
+                terminal.WriteLine("B. Back to Main Menu", "red");
+            }
+            else
+            {
+                terminal.SetColor("darkgray");
+                terminal.Write("[");
+                terminal.SetColor("bright_yellow");
+                terminal.Write("N");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("green");
+                terminal.WriteLine("New Character");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("B");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("red");
-            terminal.WriteLine("Back to Main Menu");
+                terminal.SetColor("darkgray");
+                terminal.Write("[");
+                terminal.SetColor("bright_yellow");
+                terminal.Write("B");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("red");
+                terminal.WriteLine("Back to Main Menu");
+            }
 
             terminal.WriteLine("");
             terminal.SetColor("bright_white");
@@ -1967,14 +2062,22 @@ public partial class GameEngine
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine($"╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.Write("║");
-            terminal.SetColor("bright_yellow");
-            { string label = "Save Slots For: " + playerName; int l = (78 - label.Length) / 2, r = 78 - label.Length - l; terminal.Write(new string(' ', l) + label + new string(' ', r)); }
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("║");
-            terminal.WriteLine($"╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine($"Save Slots For: {playerName}");
+            }
+            else
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"╔══════════════════════════════════════════════════════════════════════════════╗");
+                terminal.Write("║");
+                terminal.SetColor("bright_yellow");
+                { string label = "Save Slots For: " + playerName; int l = (78 - label.Length) / 2, r = 78 - label.Length - l; terminal.Write(new string(' ', l) + label + new string(' ', r)); }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("║");
+                terminal.WriteLine($"╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.WriteLine("");
 
             var saves = SaveSystem.Instance.GetPlayerSaves(playerName);
@@ -2167,14 +2270,8 @@ public partial class GameEngine
                 await OnlineStateManager.Instance.LoadSettlementFromWorldState();
             }
 
-            // In online mode, merge this player's quests into the shared database
-            // without clearing other players' quests (which RestoreFromSaveData would do)
-            if (UsurperRemake.BBS.DoorMode.IsOnlineMode && saveData.Player?.ActiveQuests != null)
-            {
-                var playerName = saveData.Player.Name2 ?? saveData.Player.Name1 ?? fileName;
-                QuestSystem.MergePlayerQuests(playerName, saveData.Player.ActiveQuests);
-                DebugLogger.Instance.LogInfo("ONLINE", $"Merged {saveData.Player.ActiveQuests.Count} quests for player {playerName}");
-            }
+            // NOTE: Player quests are already merged in RestorePlayerFromSaveData via MergePlayerQuests.
+            // A second merge here would create duplicate Quest objects, orphaning the ones in player.ActiveQuests.
 
             // Restore story systems (companions, children, seals, etc.)
             SaveSystem.Instance.RestoreStorySystems(saveData.StorySystems);
@@ -2710,19 +2807,27 @@ public partial class GameEngine
                 return;
 
             terminal.WriteLine("");
-            const string wyweTitle = "WHILE YOU WERE GONE";
-            const int wyweInner = 78;
-            int wyweLeft  = (wyweInner - wyweTitle.Length) / 2;
-            int wyweRight = wyweInner - wyweTitle.Length - wyweLeft;
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("WHILE YOU WERE GONE");
+            }
+            else
+            {
+                const string wyweTitle = "WHILE YOU WERE GONE";
+                const int wyweInner = 78;
+                int wyweLeft  = (wyweInner - wyweTitle.Length) / 2;
+                int wyweRight = wyweInner - wyweTitle.Length - wyweLeft;
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.Write("║");
-            terminal.SetColor("bright_yellow");
-            terminal.Write(new string(' ', wyweLeft) + wyweTitle + new string(' ', wyweRight));
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("║");
-            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                terminal.Write("║");
+                terminal.SetColor("bright_yellow");
+                terminal.Write(new string(' ', wyweLeft) + wyweTitle + new string(' ', wyweRight));
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("║");
+                terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+            }
 
             // --- PvP Attacks Section ---
             if (pvpAttacks.Count > 0)
@@ -2818,8 +2923,11 @@ public partial class GameEngine
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.WriteLine("");
 
             await terminal.PressAnyKey();
@@ -3230,7 +3338,9 @@ public partial class GameEngine
             MaxHP = playerData.MaxHP,
             Gold = playerData.Gold,
             BankGold = playerData.BankGold,
-            
+            BankGuard = playerData.BankGuard,
+            BankWage = playerData.BankWage,
+
             // Attributes
             Strength = playerData.Strength,
             Defence = playerData.Defence,
@@ -3964,6 +4074,16 @@ public partial class GameEngine
 
         // Sync screen reader mode from player save to global
         GameConfig.ScreenReaderMode = player.ScreenReaderMode;
+
+        // Sync to PlayerSession for group broadcast sanitization
+        var ctx = UsurperRemake.Server.SessionContext.Current;
+        if (ctx != null)
+        {
+            var session = UsurperRemake.Server.MudServer.Instance?.ActiveSessions
+                .TryGetValue(ctx.Username.ToLowerInvariant(), out var s) == true ? s : null;
+            if (session != null)
+                session.ScreenReaderMode = player.ScreenReaderMode;
+        }
 
         // Sync compact mode from player save to global
         GameConfig.CompactMode = player.CompactMode;
@@ -4884,9 +5004,16 @@ public partial class GameEngine
         terminal.ClearScreen();
         terminal.ShowANSIArt("DEATH");
         terminal.SetColor("bright_red");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                        YOU HAVE DIED!                          ");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("YOU HAVE DIED!");
+        }
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                        YOU HAVE DIED!                          ");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("gray");
@@ -4923,7 +5050,8 @@ public partial class GameEngine
         // Apply death penalties
         terminal.SetColor("red");
         terminal.WriteLine("Death Penalties Applied:");
-        terminal.WriteLine("─────────────────────────");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("─────────────────────────");
 
         // Calculate penalties
         long expLoss = currentPlayer.Experience / 10;  // Lose 10% experience
@@ -4988,7 +5116,8 @@ public partial class GameEngine
         terminal.ClearScreen();
         terminal.SetColor("gray");
         terminal.WriteLine("You are in PRISON!");
-        terminal.WriteLine("═══════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════");
         terminal.WriteLine("");
         terminal.WriteLine($"Days remaining: {currentPlayer.DaysInPrison}");
         terminal.WriteLine("");
@@ -5162,14 +5291,22 @@ public partial class GameEngine
     private async Task ShowSupportPage()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("║");
-        terminal.SetColor("bright_white");
-        terminal.Write("                         SUPPORT USURPER REBORN                              ");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("SUPPORT USURPER REBORN");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("║");
+            terminal.SetColor("bright_white");
+            terminal.Write("                         SUPPORT USURPER REBORN                              ");
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -5179,7 +5316,7 @@ public partial class GameEngine
         terminal.WriteLine("");
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("  ─── How You Can Help ───");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "  How You Can Help" : "  ─── How You Can Help ───");
         terminal.WriteLine("");
 
         terminal.SetColor("bright_yellow");
@@ -5208,9 +5345,12 @@ public partial class GameEngine
         terminal.WriteLine("  purchasing a copy is another great way to show your support.");
         terminal.WriteLine("");
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("  ─────────────────────────");
-        terminal.WriteLine("");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("  ─────────────────────────");
+            terminal.WriteLine("");
+        }
 
         terminal.SetColor("gray");
         terminal.WriteLine("  Thank you for playing. Every bit of support — whether a sponsorship,");
@@ -5229,12 +5369,19 @@ public partial class GameEngine
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("|                 BBS LIST - Play Usurper Reborn Online!                      |");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("BBS LIST - Play Usurper Reborn Online!", "bright_white");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("|                 BBS LIST - Play Usurper Reborn Online!                      |");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -5245,8 +5392,11 @@ public partial class GameEngine
         // Column headers
         terminal.SetColor("bright_yellow");
         terminal.WriteLine("  BBS Name                       Software    Address");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ---------------------------------------------------------------------------");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("  ---------------------------------------------------------------------------");
+        }
 
         // --- BBS Entries ---
 
@@ -5281,8 +5431,11 @@ public partial class GameEngine
         // --- End BBS Entries ---
 
         terminal.WriteLine("");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ---------------------------------------------------------------------------");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("  ---------------------------------------------------------------------------");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_magenta");
@@ -5305,6 +5458,11 @@ public partial class GameEngine
     /// <summary>Helper to display a menu key option in the character selection screen.</summary>
     private void WriteMenuKey(string key, string label)
     {
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine($"  {key}. {label}", "bright_white");
+            return;
+        }
         terminal.SetColor("darkgray");
         terminal.Write("  [");
         terminal.SetColor("bright_yellow");
@@ -5347,10 +5505,17 @@ public partial class GameEngine
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                              CREDITS                                        |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("CREDITS", "bright_yellow");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                              CREDITS                                        |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_cyan");
@@ -5431,10 +5596,17 @@ public partial class GameEngine
         terminal.ClearScreen();
 
         // Page 1: The Golden Age
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("THE STORY SO FAR...", "bright_yellow");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_cyan");
@@ -5457,10 +5629,18 @@ public partial class GameEngine
 
         // Page 2: The Sundering
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("THE STORY SO FAR...");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_red");
@@ -5487,10 +5667,18 @@ public partial class GameEngine
 
         // Page 3: The Age of Avarice
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("THE STORY SO FAR...");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_magenta");
@@ -5520,10 +5708,18 @@ public partial class GameEngine
 
         // Page 4: Your Story Begins
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("THE STORY SO FAR...");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.WriteLine("║                         THE STORY SO FAR...                                  ║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_green");
@@ -5559,8 +5755,11 @@ public partial class GameEngine
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
         terminal.WriteLine(title);
-        terminal.SetColor("cyan");
-        terminal.WriteLine(new string('═', title.Length));
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("cyan");
+            terminal.WriteLine(new string('═', title.Length));
+        }
         terminal.WriteLine("");
         terminal.SetColor("white");
         terminal.WriteLine(content);
@@ -5698,9 +5897,16 @@ public partial class GameEngine
         terminal.Clear();
         terminal.SetColor("cyan");
         terminal.WriteLine("");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║              HELP IMPROVE USURPER REBORN                     ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("HELP IMPROVE USURPER REBORN");
+        }
+        else
+        {
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════╗");
+            terminal.WriteLine("║              HELP IMPROVE USURPER REBORN                     ║");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+        }
         terminal.WriteLine("");
         terminal.SetColor("white");
         terminal.WriteLine("During this alpha testing phase, we can collect anonymous");

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -712,10 +713,18 @@ namespace UsurperRemake.Systems
                 _ => "Legendary"
             };
 
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "bright_cyan");
-            terminal.WriteLine($"║  {puzzle.Title.PadRight(62)}║", "bright_cyan");
-            terminal.WriteLine($"║  Difficulty: {diffText.PadRight(51)}║", "cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "bright_cyan");
+                terminal.WriteLine($"║  {puzzle.Title.PadRight(62)}║", "bright_cyan");
+                terminal.WriteLine($"║  Difficulty: {diffText.PadRight(51)}║", "cyan");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            }
+            else
+            {
+                terminal.WriteLine(puzzle.Title, "bright_cyan");
+                terminal.WriteLine($"Difficulty: {diffText}", "cyan");
+            }
             terminal.WriteLine("");
             terminal.WriteLine(puzzle.Description, "white");
             terminal.WriteLine("");
@@ -1005,9 +1014,13 @@ namespace UsurperRemake.Systems
                 string hint = puzzle.Hints[Math.Min(puzzle.HintsUsed, puzzle.Hints.Count - 1)];
                 puzzle.HintsUsed++;
                 terminal.WriteLine("");
-                terminal.WriteLine("═══ HINT ═══", "bright_yellow");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("═══ HINT ═══", "bright_yellow");
+                else
+                    terminal.WriteLine("HINT:", "bright_yellow");
                 terminal.WriteLine(hint, "yellow");
-                terminal.WriteLine("═════════════", "bright_yellow");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("═════════════", "bright_yellow");
                 terminal.WriteLine("");
             }
             else
@@ -1019,9 +1032,7 @@ namespace UsurperRemake.Systems
         private async Task DisplayPuzzleSuccess(PuzzleInstance puzzle, Character player, TerminalEmulator terminal)
         {
             terminal.WriteLine("");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "bright_green");
-            terminal.WriteLine("║                    P U Z Z L E   S O L V E D !                   ║", "bright_green");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "bright_green");
+            UIHelper.WriteBoxHeader(terminal, "P U Z Z L E   S O L V E D !", "bright_green", 66);
             terminal.WriteLine("");
 
             terminal.WriteLine($"You gain {puzzle.SuccessXP} experience!", "cyan");

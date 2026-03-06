@@ -352,9 +352,15 @@ namespace UsurperRemake.Systems
             var alignment = GetAlignment(character);
 
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("═══════════════════════════════════════");
+            }
             terminal.WriteLine("         ALIGNMENT STATUS");
-            terminal.WriteLine("═══════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("═══════════════════════════════════════");
+            }
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
@@ -379,20 +385,28 @@ namespace UsurperRemake.Systems
 
             // Show alignment bar
             terminal.WriteLine("");
-            terminal.SetColor("gray");
-            terminal.Write("Holy ");
-            terminal.SetColor("bright_green");
-            int chivBars = (int)Math.Min(10, character.Chivalry / 100);
-            int darkBars = (int)Math.Min(10, character.Darkness / 100);
-            terminal.Write(new string('█', chivBars));
-            terminal.SetColor("gray");
-            terminal.Write(new string('░', 10 - chivBars));
-            terminal.Write(" | ");
-            terminal.SetColor("red");
-            terminal.Write(new string('█', darkBars));
-            terminal.SetColor("gray");
-            terminal.Write(new string('░', 10 - darkBars));
-            terminal.WriteLine(" Evil");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine($"Chivalry: {character.Chivalry}/1000 — Darkness: {character.Darkness}/1000");
+            }
+            else
+            {
+                terminal.SetColor("gray");
+                terminal.Write("Holy ");
+                terminal.SetColor("bright_green");
+                int chivBars = (int)Math.Min(10, character.Chivalry / 100);
+                int darkBars = (int)Math.Min(10, character.Darkness / 100);
+                terminal.Write(new string('█', chivBars));
+                terminal.SetColor("gray");
+                terminal.Write(new string('░', 10 - chivBars));
+                terminal.Write(" | ");
+                terminal.SetColor("red");
+                terminal.Write(new string('█', darkBars));
+                terminal.SetColor("gray");
+                terminal.Write(new string('░', 10 - darkBars));
+                terminal.WriteLine(" Evil");
+            }
 
             // Show abilities
             terminal.WriteLine("");

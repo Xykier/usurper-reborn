@@ -36,10 +36,7 @@ public class DormitoryLocation : BaseLocation
         terminal.ClearScreen();
 
         // Header
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"THE DORMITORY".PadLeft((77 + 13) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE DORMITORY", "bright_cyan");
         terminal.WriteLine("");
 
         // Atmosphere
@@ -226,7 +223,7 @@ public class DormitoryLocation : BaseLocation
                 await ShowStatus();
                 return false;
             case 'R':
-                await NavigateToLocation(GameLocation.AnchorRoad);
+                await NavigateToLocation(GameLocation.MainStreet);
                 return true;
             default:
                 return false;
@@ -346,8 +343,11 @@ public class DormitoryLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
         terminal.WriteLine(npc.Name2);
-        terminal.SetColor("yellow");
-        terminal.WriteLine(new string('═', npc.Name2.Length));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("yellow");
+            terminal.WriteLine(new string('═', npc.Name2.Length));
+        }
         terminal.SetColor("white");
         terminal.WriteLine(npc.GetDisplayInfo());
         terminal.WriteLine("\nPress Enter...");
@@ -384,7 +384,7 @@ public class DormitoryLocation : BaseLocation
         terminal.WriteLine("You awaken refreshed, ready for a new day of adventure.", "green");
         await Task.Delay(1500);
 
-        await NavigateToLocation(GameLocation.AnchorRoad);
+        await NavigateToLocation(GameLocation.MainStreet);
     }
 
     private async Task GoToSleepOnline()

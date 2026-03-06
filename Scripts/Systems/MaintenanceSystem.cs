@@ -136,9 +136,11 @@ public class MaintenanceSystem
     {
         terminal.ClearScreen();
         terminal.WriteLine("", "white");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════", "bright_cyan");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════", "bright_cyan");
         terminal.WriteLine("               U S U R P E R   M A I N T E N A N C E              ", "bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════", "bright_cyan");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════", "bright_cyan");
         terminal.WriteLine("", "white");
         
         var maintenanceType = forced ? "FORCED" : "SCHEDULED";
@@ -644,9 +646,11 @@ public class MaintenanceSystem
     private async Task DisplayMaintenanceCompletion()
     {
         terminal.WriteLine("", "white");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_green");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_green");
         terminal.WriteLine("    ALL DEEDS ARE DONE!", "bright_green");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_green");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_green");
         terminal.WriteLine("", "white");
         terminal.WriteLine("Maintenance completed successfully.", "green");
         terminal.WriteLine($"Next maintenance: {DateTime.Now.AddDays(1):MM-dd-yyyy}", "gray");

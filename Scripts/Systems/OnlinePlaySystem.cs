@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Renci.SshNet;
+using UsurperRemake.UI;
 
 namespace UsurperRemake.Systems
 {
@@ -50,14 +51,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.Write("║");
-            terminal.SetColor("bright_white");
-            { const string t = "ONLINE PLAY"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "ONLINE PLAY", "bright_cyan");
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -455,40 +449,55 @@ namespace UsurperRemake.Systems
                 }
 
                 // Show Login/Register menu
-                terminal.SetColor("bright_cyan");
-                terminal.WriteLine("  ──────────────────────────────────────");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine("  ──────────────────────────────────────");
+                }
                 terminal.SetColor("bright_white");
                 terminal.WriteLine("  Account Login");
-                terminal.SetColor("bright_cyan");
-                terminal.WriteLine("  ──────────────────────────────────────");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine("  ──────────────────────────────────────");
+                }
                 terminal.WriteLine("");
 
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_cyan");
-                terminal.Write("L");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine("Login to existing account");
+                if (GameConfig.ScreenReaderMode)
+                {
+                    terminal.WriteLine("  L. Login to existing account", "white");
+                    terminal.WriteLine("  R. Register new account", "white");
+                    terminal.WriteLine("  Q. Quit", "gray");
+                }
+                else
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_cyan");
+                    terminal.Write("L");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine("Login to existing account");
 
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_green");
-                terminal.Write("R");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine("Register new account");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_green");
+                    terminal.Write("R");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine("Register new account");
 
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_red");
-                terminal.Write("Q");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("gray");
-                terminal.WriteLine("Quit");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_red");
+                    terminal.Write("Q");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("Quit");
+                }
 
                 terminal.WriteLine("");
                 terminal.SetColor("bright_white");

@@ -198,6 +198,7 @@ public class GroupSystem
 
     /// <summary>
     /// Broadcast the same message to all group members.
+    /// Sanitizes decorative Unicode for screen reader recipients.
     /// </summary>
     public void BroadcastToAllGroupSessions(DungeonGroup group, string message,
         string? excludeUsername = null)
@@ -215,8 +216,29 @@ public class GroupSystem
 
             var session = MudServer.Instance?.ActiveSessions
                 .TryGetValue(member.ToLowerInvariant(), out var s) == true ? s : null;
-            session?.EnqueueMessage(message);
+            if (session != null)
+            {
+                var msg = session.ScreenReaderMode ? SanitizeBroadcastForSR(message) : message;
+                session.EnqueueMessage(msg);
+            }
         }
+    }
+
+    /// <summary>
+    /// Strip decorative Unicode from raw ANSI broadcast messages for screen reader recipients.
+    /// </summary>
+    private static string SanitizeBroadcastForSR(string message)
+    {
+        return message
+            .Replace("═", "-").Replace("━", "-").Replace("─", "-")
+            .Replace("╔", "+").Replace("╗", "+").Replace("╚", "+").Replace("╝", "+")
+            .Replace("║", "|").Replace("╠", "+").Replace("╣", "+")
+            .Replace("★", "*").Replace("✦", "*").Replace("✚", "+")
+            .Replace("♥", "").Replace("♪", "").Replace("♫", "")
+            .Replace("⚔", "").Replace("⬆", "").Replace("✗", "")
+            .Replace("☆", "").Replace("⚡", "").Replace("🔥", "")
+            .Replace("♀", "").Replace("⚗", "").Replace("▼", "")
+            .Replace("·", "-");
     }
 
     /// <summary>Get the PlayerSession for a username.</summary>

@@ -850,7 +850,7 @@ public partial class TerminalEmulator
             cursorX = 0;
             cursorY = 0;
             WriteLine("");
-            WriteLine("────────────────────────────────────────");
+            WriteLine("---");
             WriteLine("");
             return;
         }
@@ -1302,6 +1302,7 @@ public partial class TerminalEmulator
     
     public void ShowASCIIArt(string artName)
     {
+        if (GameConfig.ScreenReaderMode) return;
         var artPath = $"Assets/ASCII/{artName}.ans";
         if (File.Exists(artPath))
         {

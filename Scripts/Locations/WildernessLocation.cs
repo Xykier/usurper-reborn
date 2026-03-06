@@ -20,10 +20,7 @@ public class WildernessLocation : BaseLocation
 
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_green");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                         THE  WILDERNESS                             ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE WILDERNESS", "bright_green");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -42,8 +39,10 @@ public class WildernessLocation : BaseLocation
             bool canAccess = currentPlayer.Level >= region.MinLevel;
             terminal.SetColor(canAccess ? region.ThemeColor : "darkgray");
             string levelReq = region.MinLevel > 1 ? $" (Level {region.MinLevel}+)" : " (Any level)";
-            string lockIcon = canAccess ? "" : " [LOCKED]";
-            terminal.WriteLine($"  [{region.DirectionKey}] {region.Name,-24} - {region.Direction}{levelReq}{lockIcon}");
+            string lockIcon = canAccess ? "" : (IsScreenReader ? " LOCKED" : " [LOCKED]");
+            terminal.WriteLine(IsScreenReader
+                ? $"  {region.DirectionKey}. {region.Name,-24} - {region.Direction}{levelReq}{lockIcon}"
+                : $"  [{region.DirectionKey}] {region.Name,-24} - {region.Direction}{levelReq}{lockIcon}");
         }
 
         terminal.WriteLine("");
@@ -54,11 +53,13 @@ public class WildernessLocation : BaseLocation
         {
             int revisitsLeft = GameConfig.WildernessMaxDailyRevisits - currentPlayer.WildernessRevisitsToday;
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine($"  [D] Discoveries ({discoveryCount} found, {revisitsLeft} revisits left)");
+            terminal.WriteLine(IsScreenReader
+                ? $"  D. Discoveries ({discoveryCount} found, {revisitsLeft} revisits left)"
+                : $"  [D] Discoveries ({discoveryCount} found, {revisitsLeft} revisits left)");
         }
 
         terminal.SetColor("gray");
-        terminal.WriteLine("  [R] Return to Main Street");
+        terminal.WriteLine(IsScreenReader ? "  R. Return to Main Street" : "  [R] Return to Main Street");
         terminal.WriteLine("");
 
         ShowStatusLine();
@@ -162,7 +163,10 @@ public class WildernessLocation : BaseLocation
         // Show travel text
         terminal.ClearScreen();
         terminal.SetColor(region.ThemeColor);
-        terminal.WriteLine($"═══ {region.Name} ═══");
+        if (IsScreenReader)
+            terminal.WriteLine(region.Name);
+        else
+            terminal.WriteLine($"═══ {region.Name} ═══");
         terminal.WriteLine("");
         terminal.SetColor("white");
         foreach (var line in region.Description.Split('\n'))
@@ -602,7 +606,10 @@ public class WildernessLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ Your Discoveries ═══");
+        if (IsScreenReader)
+            terminal.WriteLine("Your Discoveries");
+        else
+            terminal.WriteLine("═══ Your Discoveries ═══");
         terminal.WriteLine("");
 
         if (currentPlayer.WildernessDiscoveries.Count == 0)
@@ -623,7 +630,7 @@ public class WildernessLocation : BaseLocation
         {
             var (region, discovery) = allDiscoveries[i];
             terminal.SetColor(region.ThemeColor);
-            terminal.Write($"  [{i + 1}] ");
+            terminal.Write(IsScreenReader ? $"  {i + 1}. " : $"  [{i + 1}] ");
             terminal.SetColor("white");
             terminal.Write($"{discovery.Name}");
             terminal.SetColor("gray");
@@ -632,7 +639,7 @@ public class WildernessLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("gray");
-        terminal.WriteLine("[0] Return");
+        terminal.WriteLine(IsScreenReader ? "0. Return" : "[0] Return");
         terminal.WriteLine("");
 
         var choice = await terminal.GetInput("Visit: ");
@@ -654,7 +661,10 @@ public class WildernessLocation : BaseLocation
 
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine($"═══ {discovery.Name} ═══");
+            if (IsScreenReader)
+                terminal.WriteLine(discovery.Name);
+            else
+                terminal.WriteLine($"═══ {discovery.Name} ═══");
             terminal.SetColor("gray");
             terminal.WriteLine(discovery.Description);
             terminal.WriteLine("");

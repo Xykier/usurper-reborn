@@ -51,10 +51,7 @@ public class NewsLocation : BaseLocation
         terminal.ClearScreen();
         terminal.WriteLine("");
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                            TOWN NEWS BOARD                                 ║");
-        terminal.WriteLine("╚════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("TOWN NEWS BOARD", "bright_cyan");
         terminal.WriteLine("");
 
         if (news == null || news.Count == 0)
@@ -156,10 +153,7 @@ public class NewsLocation : BaseLocation
             terminal.ClearScreen();
             terminal.WriteLine("");
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                            TOWN NEWS BOARD                                 ║");
-            terminal.WriteLine("╚════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("TOWN NEWS BOARD", "bright_cyan");
             terminal.WriteLine("");
 
             terminal.SetColor("gray");

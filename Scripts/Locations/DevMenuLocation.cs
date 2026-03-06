@@ -31,11 +31,7 @@ public class DevMenuLocation : BaseLocation
     protected override void DisplayLocation()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "* DEVELOPER MENU *"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("║                    For Testing Purposes Only                                 ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("* DEVELOPER MENU *", "bright_magenta");
         terminal.WriteLine("");
 
         if (!_authenticated)
@@ -52,9 +48,16 @@ public class DevMenuLocation : BaseLocation
     private void ShowDevMenu()
     {
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("  ═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    DEVELOPER CHEAT MENU");
-        terminal.WriteLine("  ═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("  DEVELOPER CHEAT MENU");
+        }
+        else
+        {
+            terminal.WriteLine("  ═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    DEVELOPER CHEAT MENU");
+            terminal.WriteLine("  ═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -141,8 +144,11 @@ public class DevMenuLocation : BaseLocation
 
     private void ShowCurrentStats()
     {
-        terminal.SetColor("dark_cyan");
-        terminal.WriteLine("  ═══════════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("dark_cyan");
+            terminal.WriteLine("  ═══════════════════════════════════════════════════════════════");
+        }
         terminal.SetColor("gray");
         terminal.WriteLine($"  {currentPlayer.DisplayName} | Lvl {currentPlayer.Level} {currentPlayer.Race} {currentPlayer.Class} | HP {currentPlayer.HP}/{currentPlayer.MaxHP} | Mana {currentPlayer.Mana}/{currentPlayer.MaxMana}");
         terminal.WriteLine($"  Str:{currentPlayer.Strength} Dex:{currentPlayer.Dexterity} Con:{currentPlayer.Constitution} Int:{currentPlayer.Intelligence} Wis:{currentPlayer.Wisdom} Cha:{currentPlayer.Charisma}");
@@ -231,13 +237,23 @@ public class DevMenuLocation : BaseLocation
             {
                 terminal.WriteLine("");
                 terminal.SetColor("bright_red");
-                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-                { const string t = "!! STEAM WARNING !!"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-                terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
-                terminal.WriteLine("║  Using the Developer Menu will PERMANENTLY disable Steam achievements        ║");
-                terminal.WriteLine("║  for this save file. This cannot be undone - the only way to re-enable      ║");
-                terminal.WriteLine("║  achievements is to delete this save and start a new character.             ║");
-                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                if (GameConfig.ScreenReaderMode)
+                {
+                    terminal.WriteLine("STEAM WARNING!");
+                    terminal.WriteLine("Using the Developer Menu will PERMANENTLY disable Steam achievements");
+                    terminal.WriteLine("for this save file. This cannot be undone - the only way to re-enable");
+                    terminal.WriteLine("achievements is to delete this save and start a new character.");
+                }
+                else
+                {
+                    terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                    { const string t = "!! STEAM WARNING !!"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
+                    terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+                    terminal.WriteLine("║  Using the Developer Menu will PERMANENTLY disable Steam achievements        ║");
+                    terminal.WriteLine("║  for this save file. This cannot be undone - the only way to re-enable      ║");
+                    terminal.WriteLine("║  achievements is to delete this save and start a new character.             ║");
+                    terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                }
                 terminal.WriteLine("");
                 terminal.SetColor("yellow");
                 string confirm = await terminal.GetInput("Are you sure you want to proceed? (Y/N): ");
@@ -284,9 +300,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    EDIT PRIMARY STATS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT PRIMARY STATS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    EDIT PRIMARY STATS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -367,9 +388,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                   EDIT SECONDARY STATS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT SECONDARY STATS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                   EDIT SECONDARY STATS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -432,9 +458,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                     EDIT COMBAT STATS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT COMBAT STATS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                     EDIT COMBAT STATS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -512,9 +543,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                      EDIT RESOURCES");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT RESOURCES");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                      EDIT RESOURCES");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -622,9 +658,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                       EDIT ALIGNMENT");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT ALIGNMENT");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                       EDIT ALIGNMENT");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         int netAlignment = (int)(currentPlayer.Chivalry - currentPlayer.Darkness);
@@ -715,9 +756,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    EDIT CLASS & RACE");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT CLASS & RACE");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    EDIT CLASS & RACE");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -775,9 +821,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                      EDIT APPEARANCE");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT APPEARANCE");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                      EDIT APPEARANCE");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -879,9 +930,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                   EDIT PHRASES & BATTLE CRY");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT PHRASES & BATTLE CRY");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                   EDIT PHRASES & BATTLE CRY");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -934,9 +990,14 @@ public class DevMenuLocation : BaseLocation
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-            terminal.WriteLine("                     TOGGLE DISEASES");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            if (GameConfig.ScreenReaderMode)
+                terminal.WriteLine("TOGGLE DISEASES");
+            else
+            {
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+                terminal.WriteLine("                     TOGGLE DISEASES");
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            }
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1010,9 +1071,14 @@ public class DevMenuLocation : BaseLocation
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-            terminal.WriteLine("                   TOGGLE STATUS EFFECTS");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            if (GameConfig.ScreenReaderMode)
+                terminal.WriteLine("TOGGLE STATUS EFFECTS");
+            else
+            {
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+                terminal.WriteLine("                   TOGGLE STATUS EFFECTS");
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            }
             terminal.WriteLine("");
 
             var statuses = Enum.GetValues<StatusEffect>().Where(s => s != StatusEffect.None).ToArray();
@@ -1085,9 +1151,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    EDIT DRUG STATUS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT DRUG STATUS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    EDIT DRUG STATUS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1173,9 +1244,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    EDIT STORY PROGRESS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT STORY PROGRESS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    EDIT STORY PROGRESS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         var story = StoryProgressionSystem.Instance;
@@ -1243,9 +1319,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                 EDIT ARTIFACTS & GOD STATUS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT ARTIFACTS & GOD STATUS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                 EDIT ARTIFACTS & GOD STATUS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         var story = StoryProgressionSystem.Instance;
@@ -1327,9 +1408,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                   EDIT KILL STATISTICS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT KILL STATISTICS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                   EDIT KILL STATISTICS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1387,9 +1473,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    EDIT SOCIAL STATUS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("EDIT SOCIAL STATUS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    EDIT SOCIAL STATUS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1501,9 +1592,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                      SPAWN ITEMS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("SPAWN ITEMS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                      SPAWN ITEMS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1622,9 +1718,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                     CLEAR INVENTORY");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("CLEAR INVENTORY");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                     CLEAR INVENTORY");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.WriteLine($"  You have {currentPlayer.Inventory.Count} items in your inventory.");
@@ -1652,9 +1753,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                       NPC CONTROLS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("NPC CONTROLS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                       NPC CONTROLS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         var npcs = NPCSpawnSystem.Instance?.ActiveNPCs;
@@ -1826,9 +1932,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                      WORLD CONTROLS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("WORLD CONTROLS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                      WORLD CONTROLS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1891,9 +2002,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                       TIME CONTROLS");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("TIME CONTROLS");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                       TIME CONTROLS");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1953,9 +2069,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                       * GOD MODE *");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("GOD MODE");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                       * GOD MODE *");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -2012,11 +2133,8 @@ public class DevMenuLocation : BaseLocation
         currentPlayer.ActiveDrug = DrugType.None;
         currentPlayer.Addict = 0;
 
-        terminal.SetColor("bright_magenta");
         terminal.WriteLine("");
-        terminal.WriteLine("  ╔═══════════════════════════════════════════════════════╗");
-        terminal.WriteLine("  ║          YOU HAVE ASCENDED TO GODHOOD!               ║");
-        terminal.WriteLine("  ╚═══════════════════════════════════════════════════════╝");
+        WriteBoxHeader("YOU HAVE ASCENDED TO GODHOOD!", "bright_magenta", 55);
         terminal.WriteLine("");
         terminal.SetColor("yellow");
         terminal.WriteLine("  All stats maximized. You are now unstoppable.");
@@ -2152,9 +2270,14 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_red");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine("                    RESET CHARACTER");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+            terminal.WriteLine("RESET CHARACTER");
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+            terminal.WriteLine("                    RESET CHARACTER");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -2201,10 +2324,7 @@ public class DevMenuLocation : BaseLocation
     private async Task ResetSteamStats()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                    STEAM STATS RESET (DEBUG)                                 ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("STEAM STATS RESET (DEBUG)", "bright_red");
         terminal.WriteLine("");
 
         if (!SteamIntegration.IsAvailable)
@@ -2309,10 +2429,7 @@ public class DevMenuLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                    NARRATIVE SYSTEMS DEBUG                                   ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("NARRATIVE SYSTEMS DEBUG", "bright_magenta");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -2399,7 +2516,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ NARRATIVE SYSTEMS STATE ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "NARRATIVE SYSTEMS STATE" : "═══════════════════════ NARRATIVE SYSTEMS STATE ═══════════════════════");
         terminal.WriteLine("");
 
         // Stranger Encounter System
@@ -2510,7 +2627,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ FACTION DETAILS ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "FACTION DETAILS" : "═══════════════════════ FACTION DETAILS ═══════════════════════");
         terminal.WriteLine("");
 
         try
@@ -2575,7 +2692,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ DREAM HISTORY ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "DREAM HISTORY" : "═══════════════════════ DREAM HISTORY ═══════════════════════");
         terminal.WriteLine("");
 
         try
@@ -2627,7 +2744,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ TOWN NPC STORIES ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "TOWN NPC STORIES" : "═══════════════════════ TOWN NPC STORIES ═══════════════════════");
         terminal.WriteLine("");
 
         try
@@ -2720,7 +2837,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ FORCE JOIN FACTION ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "FORCE JOIN FACTION" : "═══════════════════════ FORCE JOIN FACTION ═══════════════════════");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -2794,7 +2911,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ ADJUST FACTION STANDING ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "ADJUST FACTION STANDING" : "═══════════════════════ ADJUST FACTION STANDING ═══════════════════════");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -2855,7 +2972,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ EXPERIENCE DREAM ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "EXPERIENCE DREAM" : "═══════════════════════ EXPERIENCE DREAM ═══════════════════════");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -2953,7 +3070,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ ADVANCE NPC STORY ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "ADVANCE NPC STORY" : "═══════════════════════ ADVANCE NPC STORY ═══════════════════════");
         terminal.WriteLine("");
 
         try
@@ -3010,7 +3127,7 @@ public class DevMenuLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════ RESET NPC STORY ═══════════════════════");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "RESET NPC STORY" : "═══════════════════════ RESET NPC STORY ═══════════════════════");
         terminal.WriteLine("");
 
         try

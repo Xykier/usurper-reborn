@@ -124,8 +124,20 @@ public class DungeonLocation : BaseLocation
 
             // Show dramatic dungeon entrance art
             term.ClearScreen();
-            await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(term, UsurperRemake.UI.ANSIArt.DungeonEntrance, 40);
-            term.WriteLine("");
+            if (GameConfig.ScreenReaderMode)
+            {
+                term.WriteLine("");
+                term.SetColor("bright_red");
+                term.WriteLine("  THE DUNGEONS");
+                term.SetColor("red");
+                term.WriteLine("  Abandon all hope ye who enter here");
+                term.WriteLine("");
+            }
+            else
+            {
+                await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(term, UsurperRemake.UI.ANSIArt.DungeonEntrance, 40);
+                term.WriteLine("");
+            }
             term.SetColor("cyan");
             term.WriteLine($"  Floor {currentDungeonLevel} - {currentFloor.Theme}");
             term.SetColor("gray");
@@ -644,8 +656,7 @@ public class DungeonLocation : BaseLocation
         if (companionCharacters.Count > 0)
         {
             term.WriteLine("");
-            term.SetColor("bright_cyan");
-            term.WriteLine("═══ YOUR COMPANIONS ═══");
+            WriteSectionHeader("YOUR COMPANIONS", "bright_cyan");
             foreach (var companion in companionCharacters)
             {
                 var companionData = companionSystem.GetCompanion(companion.CompanionId!.Value);
@@ -700,8 +711,7 @@ public class DungeonLocation : BaseLocation
         if (restoredCount > 0)
         {
             term.WriteLine("");
-            term.SetColor("bright_cyan");
-            term.WriteLine($"═══ PARTY RESTORED ═══");
+            WriteSectionHeader("PARTY RESTORED", "bright_cyan");
             term.SetColor("green");
             term.WriteLine($"{restoredCount} ally/allies rejoin your dungeon party from your last session.");
             term.WriteLine("");
@@ -1029,9 +1039,16 @@ public class DungeonLocation : BaseLocation
         term.ClearScreen();
         term.WriteLine("");
         term.SetColor(color);
-        term.WriteLine($"╔{'═'.ToString().PadRight(58, '═')}╗");
-        term.WriteLine($"║  {title.PadRight(55)} ║");
-        term.WriteLine($"╚{'═'.ToString().PadRight(58, '═')}╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            term.WriteLine(title);
+        }
+        else
+        {
+            term.WriteLine($"╔{'═'.ToString().PadRight(58, '═')}╗");
+            term.WriteLine($"║  {title.PadRight(55)} ║");
+            term.WriteLine($"╚{'═'.ToString().PadRight(58, '═')}╝");
+        }
         term.WriteLine("");
 
         await Task.Delay(1000);
@@ -1063,17 +1080,7 @@ public class DungeonLocation : BaseLocation
         UsurperRemake.Systems.ScriptedStrangerEncounter encounter, Character player, TerminalEmulator term)
     {
         term.ClearScreen();
-        term.SetColor("dark_magenta");
-        term.WriteLine("");
-        term.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-
-        string titlePadded = encounter.Title.PadLeft((78 + encounter.Title.Length) / 2).PadRight(78);
-        term.Write("║");
-        term.SetColor("bright_magenta");
-        term.Write(titlePadded);
-        term.SetColor("dark_magenta");
-        term.WriteLine("║");
-        term.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader(encounter.Title, "dark_magenta");
         term.WriteLine("");
 
         // Intro narration
@@ -1701,9 +1708,16 @@ public class DungeonLocation : BaseLocation
 
         // Room header with theme color
         terminal.SetColor(GetThemeColor(currentFloor.Theme));
-        terminal.WriteLine($"╔{new string('═', 55)}╗");
-        terminal.WriteLine($"║  {room.Name.PadRight(52)} ║");
-        terminal.WriteLine($"╚{new string('═', 55)}╝");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine(room.Name);
+        }
+        else
+        {
+            terminal.WriteLine($"╔{new string('═', 55)}╗");
+            terminal.WriteLine($"║  {room.Name.PadRight(52)} ║");
+            terminal.WriteLine($"╚{new string('═', 55)}╝");
+        }
 
         // Show danger indicators
         ShowDangerIndicators(room);
@@ -1764,10 +1778,12 @@ public class DungeonLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         // Line 1: Header with floor + room name
-        string dangerStars = new string('*', room.DangerRating) + new string('.', 3 - room.DangerRating);
+        string dangerIndicator = GameConfig.ScreenReaderMode
+            ? $"Danger {room.DangerRating} of 3"
+            : new string('*', room.DangerRating) + new string('.', 3 - room.DangerRating);
         string roomStatus = room.IsCleared ? "[CLEARED]" : room.HasMonsters ? "[DANGER]" : "";
         string bossTag = room.IsBossRoom ? " [BOSS]" : "";
-        ShowBBSHeader($"Floor {currentDungeonLevel} - {room.Name} {dangerStars}{bossTag} {roomStatus}");
+        ShowBBSHeader($"Floor {currentDungeonLevel} - {room.Name} {dangerIndicator}{bossTag} {roomStatus}");
 
         // Line 2: Theme
         terminal.SetColor(GetThemeColor(currentFloor.Theme));
@@ -2035,9 +2051,16 @@ public class DungeonLocation : BaseLocation
 
         // Danger rating
         terminal.SetColor(room.DangerRating >= 3 ? "red" : room.DangerRating >= 2 ? "yellow" : "green");
-        terminal.Write($"Danger: ");
-        for (int i = 0; i < room.DangerRating; i++) terminal.Write("*");
-        for (int i = room.DangerRating; i < 3; i++) terminal.Write(".");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.Write($"Danger: {room.DangerRating} of 3");
+        }
+        else
+        {
+            terminal.Write($"Danger: ");
+            for (int i = 0; i < room.DangerRating; i++) terminal.Write("*");
+            for (int i = room.DangerRating; i < 3; i++) terminal.Write(".");
+        }
 
         // Room status
         if (room.IsCleared)
@@ -2180,40 +2203,57 @@ public class DungeonLocation : BaseLocation
             var targetRoom = currentFloor.GetRoom(exit.Value.TargetRoomId);
             var dirKey = GetDirectionKey(exit.Key);
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write(dirKey);
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-
-            terminal.SetColor("gray");
-            terminal.Write(exit.Value.Description);
-
-            // Show target room status
-            if (targetRoom != null)
+            if (IsScreenReader)
             {
-                if (targetRoom.IsCleared)
+                string status = "";
+                if (targetRoom != null)
                 {
-                    terminal.SetColor("green");
-                    if (GameConfig.ScreenReaderMode && IsDirectionFullyCleared(exit.Value.TargetRoomId, room.Id))
-                        terminal.Write(" (fully cleared)");
+                    if (targetRoom.IsCleared)
+                        status = IsDirectionFullyCleared(exit.Value.TargetRoomId, room.Id) ? " (fully cleared)" : " (cleared)";
+                    else if (targetRoom.IsExplored)
+                        status = " (explored)";
                     else
-                        terminal.Write(" (cleared)");
+                        status = " (unknown)";
                 }
-                else if (targetRoom.IsExplored)
-                {
-                    terminal.SetColor("yellow");
-                    terminal.Write(" (explored)");
-                }
-                else
-                {
-                    terminal.SetColor("darkgray");
-                    terminal.Write(" (unknown)");
-                }
+                terminal.WriteLine($"{dirKey}. {exit.Value.Description}{status}");
             }
+            else
+            {
+                terminal.SetColor("darkgray");
+                terminal.Write("  [");
+                terminal.SetColor("bright_cyan");
+                terminal.Write(dirKey);
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
 
-            terminal.WriteLine("");
+                terminal.SetColor("gray");
+                terminal.Write(exit.Value.Description);
+
+                // Show target room status
+                if (targetRoom != null)
+                {
+                    if (targetRoom.IsCleared)
+                    {
+                        terminal.SetColor("green");
+                        if (GameConfig.ScreenReaderMode && IsDirectionFullyCleared(exit.Value.TargetRoomId, room.Id))
+                            terminal.Write(" (fully cleared)");
+                        else
+                            terminal.Write(" (cleared)");
+                    }
+                    else if (targetRoom.IsExplored)
+                    {
+                        terminal.SetColor("yellow");
+                        terminal.Write(" (explored)");
+                    }
+                    else
+                    {
+                        terminal.SetColor("darkgray");
+                        terminal.Write(" (unknown)");
+                    }
+                }
+
+                terminal.WriteLine("");
+            }
         }
         terminal.WriteLine("");
     }
@@ -2222,6 +2262,33 @@ public class DungeonLocation : BaseLocation
     {
         terminal.SetColor("white");
         terminal.WriteLine("Actions:");
+
+        if (IsScreenReader)
+        {
+            // Screen reader: plain text menu
+            if (room.HasMonsters && !room.IsCleared)
+                WriteSRMenuOption("F", "Fight the monsters");
+            if (room.HasTreasure && !room.TreasureLooted && (room.IsCleared || !room.HasMonsters))
+                WriteSRMenuOption("T", "Collect treasure");
+            if (room.HasEvent && !room.EventCompleted)
+                WriteSRMenuOption("V", "Investigate the event");
+            if (room.Features.Any(f => !f.IsInteracted))
+                WriteSRMenuOption("X", "Examine features");
+            if (room.HasStairsDown && (room.IsCleared || !room.HasMonsters))
+                WriteSRMenuOption("D", "Descend stairs");
+            if ((room.IsCleared || !room.HasMonsters) && !hasCampedThisFloor)
+                WriteSRMenuOption("R", "Make camp and recover");
+            WriteSRMenuOption("M", "Map");
+            WriteSRMenuOption("G", "Guide");
+            WriteSRMenuOption("I", "Inventory");
+            WriteSRMenuOption("P", "Potions");
+            if (currentPlayer.TotalHerbCount > 0)
+                WriteSRMenuOption("J", $"Herbs ({currentPlayer.TotalHerbCount})");
+            WriteSRMenuOption("=", "Status");
+            WriteSRMenuOption("Q", "Leave dungeon");
+            terminal.WriteLine("");
+            return;
+        }
 
         // Fight monsters
         if (room.HasMonsters && !room.IsCleared)
@@ -2373,9 +2440,12 @@ public class DungeonLocation : BaseLocation
 
     private void ShowQuickStatus(Character player)
     {
-        terminal.SetColor("darkgray");
-        terminal.Write(new string('─', 57));
-        terminal.WriteLine("");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("darkgray");
+            terminal.Write(new string('─', 57));
+            terminal.WriteLine("");
+        }
 
         // Health bar
         terminal.SetColor("white");
@@ -2400,6 +2470,8 @@ public class DungeonLocation : BaseLocation
 
     private void DrawBar(long current, long max, int width, string fillColor, string emptyColor)
     {
+        if (GameConfig.ScreenReaderMode) return;
+
         int filled = max > 0 ? (int)((current * width) / max) : 0;
         filled = Math.Max(0, Math.Min(width, filled));
 
@@ -2476,15 +2548,12 @@ public class DungeonLocation : BaseLocation
     {
         if (IsBBSSession) { DisplayFloorOverviewBBS(); return; }
 
+        if (IsScreenReader) { DisplayFloorOverviewSR(); return; }
+
         ShowBreadcrumb();
 
         // Header - standardized format
-        string dlTitle = $"DUNGEON  LEVEL   {currentDungeonLevel}";
-        string dlPadded = dlTitle.PadLeft((77 + dlTitle.Length) / 2).PadRight(77);
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{dlPadded}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader($"DUNGEON  LEVEL   {currentDungeonLevel}", "bright_cyan", 77);
         terminal.WriteLine("");
         terminal.SetColor(GetThemeColor(currentFloor.Theme));
         terminal.WriteLine($"Theme: {currentFloor.Theme}");
@@ -2583,6 +2652,49 @@ public class DungeonLocation : BaseLocation
         terminal.Write("]");
         terminal.SetColor("white");
         terminal.WriteLine("eturn to town");
+        terminal.WriteLine("");
+    }
+
+    /// <summary>
+    /// Screen reader friendly floor overview
+    /// </summary>
+    private void DisplayFloorOverviewSR()
+    {
+        terminal.WriteLine($"Dungeon Level {currentDungeonLevel}", "bright_cyan");
+        terminal.WriteLine("");
+
+        terminal.WriteLine($"Theme: {currentFloor.Theme}", GetThemeColor(currentFloor.Theme));
+        terminal.WriteLine("");
+
+        int explored = currentFloor.Rooms.Count(r => r.IsExplored);
+        int cleared = currentFloor.Rooms.Count(r => r.IsCleared);
+        terminal.SetColor("white");
+        terminal.WriteLine($"Rooms: {currentFloor.Rooms.Count}, Explored: {explored}, Cleared: {cleared}");
+        terminal.WriteLine($"Danger Level: {currentFloor.DangerLevel} of 10");
+        terminal.WriteLine("");
+
+        terminal.WriteLine(GetFloorFlavorText(currentFloor.Theme), "gray");
+        terminal.WriteLine("");
+
+        terminal.WriteLine($"Your Party: {1 + teammates.Count} member{(teammates.Count > 0 ? "s" : "")}", "cyan");
+        terminal.WriteLine("");
+
+        if (currentFloor.HasUncollectedSeal && !currentFloor.SealCollected)
+        {
+            terminal.WriteLine("A Seal of the Old Gods is hidden on this floor!", "bright_yellow");
+            terminal.WriteLine("");
+        }
+
+        ShowLevelEligibilityMessage();
+        ShowFloorGuidance(currentDungeonLevel);
+
+        terminal.WriteLine("Actions:", "cyan");
+        terminal.WriteLine("  E. Enter the dungeon", "white");
+        terminal.WriteLine("  J. Journal, quest progress", "white");
+        terminal.WriteLine("  T. Party management", "white");
+        terminal.WriteLine("  S. Status", "white");
+        terminal.WriteLine("  L. Level change, plus or minus 10", "white");
+        terminal.WriteLine("  R. Return to town", "white");
         terminal.WriteLine("");
     }
 
@@ -2757,12 +2869,7 @@ public class DungeonLocation : BaseLocation
         if (currentPlayer.Experience >= experienceNeeded)
         {
             terminal.WriteLine("");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("║     * You are eligible for a level raise! Visit your Master to advance! *    ║");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("* You are eligible for a level raise! Visit your Master to advance! *", "bright_yellow");
             terminal.WriteLine("");
         }
     }
@@ -2917,10 +3024,7 @@ public class DungeonLocation : BaseLocation
         var seals = SevenSealsSystem.Instance;
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                    S T O R Y   J O U R N A L               ║");
-        terminal.WriteLine("╚════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("S T O R Y   J O U R N A L", "bright_cyan", 60);
         terminal.WriteLine("");
 
         // Current chapter
@@ -2931,15 +3035,13 @@ public class DungeonLocation : BaseLocation
         terminal.WriteLine("");
 
         // The main objective
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("═══ YOUR QUEST ═══");
+        WriteSectionHeader("YOUR QUEST", "bright_white");
         terminal.SetColor("white");
         terminal.WriteLine(GetCurrentObjective(story, player!));
         terminal.WriteLine("");
 
         // Seals progress
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine($"═══ SEALS OF THE OLD GODS ({story.CollectedSeals.Count}/7) ═══");
+        WriteSectionHeader($"SEALS OF THE OLD GODS ({story.CollectedSeals.Count}/7)", "bright_yellow");
         terminal.SetColor("gray");
 
         foreach (var seal in seals.GetAllSeals())
@@ -2947,13 +3049,19 @@ public class DungeonLocation : BaseLocation
             if (story.CollectedSeals.Contains(seal.Type))
             {
                 terminal.SetColor("green");
-                terminal.WriteLine($"  [X] {seal.Name} - {seal.Title}");
+                if (IsScreenReader)
+                    terminal.WriteLine($"  Collected: {seal.Name} - {seal.Title}");
+                else
+                    terminal.WriteLine($"  [X] {seal.Name} - {seal.Title}");
             }
             else
             {
                 terminal.SetColor("gray");
                 string locationText = seal.DungeonFloor == 0 ? "Hidden somewhere in town" : "Hidden in the dungeon depths";
-                terminal.WriteLine($"  [ ] {seal.Name} - {locationText}");
+                if (IsScreenReader)
+                    terminal.WriteLine($"  Not collected: {seal.Name} - {locationText}");
+                else
+                    terminal.WriteLine($"  [ ] {seal.Name} - {locationText}");
                 terminal.SetColor("dark_cyan");
                 terminal.WriteLine($"      {seal.LocationHint}");
             }
@@ -2961,8 +3069,7 @@ public class DungeonLocation : BaseLocation
         terminal.WriteLine("");
 
         // What you know so far
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("═══ WHAT YOU'VE LEARNED ═══");
+        WriteSectionHeader("WHAT YOU'VE LEARNED", "bright_magenta");
         terminal.SetColor("white");
         ShowKnownLore(story);
         terminal.WriteLine("");
@@ -2984,8 +3091,7 @@ public class DungeonLocation : BaseLocation
         terminal.WriteLine("");
 
         // Next steps
-        terminal.SetColor("bright_green");
-        terminal.WriteLine("═══ SUGGESTED NEXT STEPS ═══");
+        WriteSectionHeader("SUGGESTED NEXT STEPS", "bright_green");
         terminal.SetColor("white");
         ShowSuggestedSteps(story, player, seals);
         terminal.WriteLine("");
@@ -3116,8 +3222,7 @@ public class DungeonLocation : BaseLocation
     {
         var ocean = OceanPhilosophySystem.Instance;
 
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine($"═══ THE OCEAN'S WHISPER (Awakening: {ocean.AwakeningLevel}/7) ═══");
+        WriteSectionHeader($"THE OCEAN'S WHISPER (Awakening: {ocean.AwakeningLevel}/7)", "bright_blue");
 
         // Show awakening level description
         terminal.SetColor("cyan");
@@ -3156,8 +3261,7 @@ public class DungeonLocation : BaseLocation
 
     private void ShowOldGodStatus(StoryProgressionSystem story)
     {
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("═══ THE OLD GODS ═══");
+        WriteSectionHeader("THE OLD GODS", "bright_red");
 
         // Define Old Gods and their floors
         var gods = new (OldGodType type, string name, int floor)[]
@@ -3214,8 +3318,7 @@ public class DungeonLocation : BaseLocation
     {
         var storySystem = TownNPCStorySystem.Instance;
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ TOWN STORIES ═══");
+        WriteSectionHeader("TOWN STORIES", "bright_yellow");
 
         // Define memorable NPCs and their story counts
         var npcInfo = new (string id, string name, int totalStages)[]
@@ -3243,17 +3346,26 @@ public class DungeonLocation : BaseLocation
                     if (isComplete)
                     {
                         terminal.SetColor("green");
-                        terminal.WriteLine($"  [✓] {name} - Story Complete");
+                        if (IsScreenReader)
+                            terminal.WriteLine($"  Complete: {name} - Story Complete");
+                        else
+                            terminal.WriteLine($"  [✓] {name} - Story Complete");
                     }
                     else if (isFailed)
                     {
                         terminal.SetColor("red");
-                        terminal.WriteLine($"  [X] {name} - Story Failed");
+                        if (IsScreenReader)
+                            terminal.WriteLine($"  Not started: {name} - Story Failed");
+                        else
+                            terminal.WriteLine($"  [X] {name} - Story Failed");
                     }
                     else
                     {
                         terminal.SetColor("yellow");
-                        terminal.WriteLine($"  [~] {name} - Chapter {currentStage}/{totalStages}");
+                        if (IsScreenReader)
+                            terminal.WriteLine($"  In progress: {name} - Chapter {currentStage}/{totalStages}");
+                        else
+                            terminal.WriteLine($"  [~] {name} - Chapter {currentStage}/{totalStages}");
                     }
                 }
             }
@@ -3271,8 +3383,7 @@ public class DungeonLocation : BaseLocation
     {
         var companions = CompanionSystem.Instance;
 
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("═══ COMPANIONS ═══");
+        WriteSectionHeader("COMPANIONS", "bright_white");
 
         var recruited = companions.GetRecruitedCompanions().ToList();
         var active = companions.GetActiveCompanions().ToList();
@@ -3557,6 +3668,13 @@ public class DungeonLocation : BaseLocation
                 // Check for companion personal quest encounters
                 await CheckCompanionQuestEncounters(player, targetRoom);
             }
+            else
+            {
+                // Already-explored room: still announce the room name so the player
+                // knows where they are (especially important for screen reader users)
+                terminal.SetColor("gray");
+                terminal.WriteLine($"You return to: {targetRoom.Name}");
+            }
         }
 
         // Check for Old God save quest return visit (god is Awakened, player has artifact)
@@ -3700,18 +3818,15 @@ public class DungeonLocation : BaseLocation
     private async Task DisplayMaterialDrop(GameConfig.CraftingMaterialDef material, int count)
     {
         terminal.WriteLine("");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("  ══════════════════════════════════════════");
+        WriteThickDivider(42);
         terminal.SetColor(material.Color);
-        terminal.WriteLine("    ** RARE MATERIAL FOUND! **");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("  ══════════════════════════════════════════");
+        terminal.WriteLine("    RARE MATERIAL FOUND!");
+        WriteThickDivider(42);
         terminal.SetColor(material.Color);
         terminal.WriteLine($"    {material.Name}" + (count > 1 ? $" x{count}" : ""));
         terminal.SetColor("gray");
         terminal.WriteLine($"    \"{material.Description}\"");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("  ══════════════════════════════════════════");
+        WriteThickDivider(42);
         terminal.WriteLine("");
         await Task.Delay(1500);
     }
@@ -3863,9 +3978,7 @@ public class DungeonLocation : BaseLocation
 
         if (room.IsBossRoom)
         {
-            terminal.WriteLine("╔═══════════════════════════════════════════════════╗");
-            terminal.WriteLine("║              *** BOSS ENCOUNTER ***               ║");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════╝");
+            WriteBoxHeader("*** BOSS ENCOUNTER ***", "red", 51);
             terminal.WriteLine("");
             terminal.WriteLine(room.Description);
 
@@ -3925,7 +4038,7 @@ public class DungeonLocation : BaseLocation
         }
         else
         {
-            terminal.WriteLine("═══ COMBAT! ═══");
+            WriteSectionHeader("COMBAT!");
         }
 
         terminal.WriteLine("");
@@ -4355,8 +4468,18 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
 
         // Display treasure art
-        await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.Treasure, 30);
-        terminal.WriteLine("");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  TREASURE FOUND!");
+            terminal.WriteLine("");
+        }
+        else
+        {
+            await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.Treasure, 30);
+            terminal.WriteLine("");
+        }
 
         // Scale rewards with level
         long goldFound = currentDungeonLevel * 100 + dungeonRandom.Next(currentDungeonLevel * 200);
@@ -5074,14 +5197,12 @@ public class DungeonLocation : BaseLocation
         terminal.WriteLine("");
         if (isSpecialFloor)
         {
-            terminal.WriteLine("╔══════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine("║      FLOOR CONQUERED!                ║", "bright_yellow");
-            terminal.WriteLine("╚══════════════════════════════════════╝", "bright_yellow");
+            WriteBoxHeader("FLOOR CONQUERED!", "bright_yellow", 38);
             terminal.WriteLine($"You have proven your worth on this sacred floor!", "bright_magenta");
         }
         else
         {
-            terminal.WriteLine("═══ FLOOR CLEARED ═══", "bright_green");
+            WriteSectionHeader("FLOOR CLEARED", "bright_green");
             terminal.WriteLine("You have vanquished all foes on this level!", "green");
         }
         if (teammates.Count > 0)
@@ -5538,8 +5659,7 @@ public class DungeonLocation : BaseLocation
 
         if (!GameConfig.ScreenReaderMode)
             terminal.ClearScreen();
-        terminal.SetColor("yellow");
-        terminal.WriteLine("═══ EXPLORING ═══");
+        WriteSectionHeader("EXPLORING", "yellow");
         terminal.WriteLine("");
 
         // Atmospheric exploration text
@@ -5567,7 +5687,7 @@ public class DungeonLocation : BaseLocation
     private async Task MonsterEncounter()
     {
         terminal.SetColor("red");
-        terminal.WriteLine("▼ MONSTER ENCOUNTER ▼");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "-- MONSTER ENCOUNTER --" : "▼ MONSTER ENCOUNTER ▼");
         terminal.WriteLine("");
 
         // Use new MonsterGenerator to create level-appropriate monsters
@@ -5582,7 +5702,9 @@ public class DungeonLocation : BaseLocation
             if (monster.IsBoss)
             {
                 terminal.SetColor("bright_red");
-                terminal.WriteLine($"⚠ A powerful [{monster.MonsterColor}]{monster.Name}[/] blocks your path! ⚠");
+                terminal.WriteLine(GameConfig.ScreenReaderMode
+                    ? $"WARNING: A powerful [{monster.MonsterColor}]{monster.Name}[/] blocks your path!"
+                    : $"⚠ A powerful [{monster.MonsterColor}]{monster.Name}[/] blocks your path! ⚠");
             }
             else
             {
@@ -6872,7 +6994,7 @@ public class DungeonLocation : BaseLocation
     private async Task HarassedWomanEncounter()
     {
         terminal.SetColor("magenta");
-        terminal.WriteLine("♀ DAMSEL IN DISTRESS ♀");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "-- DAMSEL IN DISTRESS --" : "♀ DAMSEL IN DISTRESS ♀");
         terminal.WriteLine("");
 
         terminal.WriteLine("You hear screams echoing through the corridor!", "white");
@@ -6962,7 +7084,7 @@ public class DungeonLocation : BaseLocation
     private async Task WoundedManEncounter()
     {
         terminal.SetColor("cyan");
-        terminal.WriteLine("✚ WOUNDED STRANGER ✚");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "-- WOUNDED STRANGER --" : "✚ WOUNDED STRANGER ✚");
         terminal.WriteLine("");
 
         terminal.WriteLine("You find a wounded man lying against the wall.", "white");
@@ -7047,7 +7169,7 @@ public class DungeonLocation : BaseLocation
         }
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("✦ MYSTERIOUS SHRINE ✦");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "-- MYSTERIOUS SHRINE --" : "✦ MYSTERIOUS SHRINE ✦");
         terminal.WriteLine("");
 
         terminal.WriteLine("You discover an ancient shrine glowing with strange light.", "white");
@@ -7181,10 +7303,7 @@ public class DungeonLocation : BaseLocation
 
         // Show the encounter
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-        { const string t = "THE FORGOTTEN SHRINE"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE FORGOTTEN SHRINE", "bright_magenta", 66);
         terminal.WriteLine("");
         await Task.Delay(1000);
 
@@ -7227,9 +7346,18 @@ public class DungeonLocation : BaseLocation
         await Task.Delay(1500);
 
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("[R] Ask her to join you");
-        terminal.WriteLine("[T] Talk more");
-        terminal.WriteLine("[L] Leave her to her prayers");
+        if (IsScreenReader)
+        {
+            WriteSRMenuOption("R", "Ask her to join you");
+            WriteSRMenuOption("T", "Talk more");
+            WriteSRMenuOption("L", "Leave her to her prayers");
+        }
+        else
+        {
+            terminal.WriteLine("[R] Ask her to join you");
+            terminal.WriteLine("[T] Talk more");
+            terminal.WriteLine("[L] Leave her to her prayers");
+        }
         terminal.WriteLine("");
 
         var choice = await terminal.GetInput("Your choice: ");
@@ -7301,7 +7429,7 @@ public class DungeonLocation : BaseLocation
     private async Task TrapEncounter()
     {
         terminal.SetColor("red");
-        terminal.WriteLine("⚠ TRAP! ⚠");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "WARNING: TRAP!" : "⚠ TRAP! ⚠");
         terminal.WriteLine("");
 
         var currentPlayer = GetCurrentPlayer();
@@ -7455,7 +7583,7 @@ public class DungeonLocation : BaseLocation
     private async Task PotionCacheEncounter()
     {
         terminal.SetColor("bright_green");
-        terminal.WriteLine("✚ POTION CACHE ✚");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "-- POTION CACHE --" : "✚ POTION CACHE ✚");
         terminal.WriteLine("");
 
         var currentPlayer = GetCurrentPlayer();
@@ -7510,10 +7638,7 @@ public class DungeonLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         terminal.ClearScreen();
-        terminal.SetColor("green");
-        terminal.WriteLine("╔═══════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║             ♦ TRAVELING MERCHANT ♦                    ║");
-        terminal.WriteLine("╚═══════════════════════════════════════════════════════╝");
+        WriteBoxHeader("♦ TRAVELING MERCHANT ♦", "green", 55);
         terminal.WriteLine("");
         terminal.SetColor("white");
         terminal.WriteLine("A traveling merchant appears from the shadows!");
@@ -7616,10 +7741,7 @@ public class DungeonLocation : BaseLocation
         while (trading)
         {
             terminal.ClearScreen();
-            terminal.SetColor("green");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║               MERCHANT'S WARES                        ║");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════╝");
+            WriteBoxHeader("MERCHANT'S WARES", "green", 55);
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
@@ -7629,8 +7751,7 @@ public class DungeonLocation : BaseLocation
             terminal.WriteLine($"Weapon Power: {player.WeapPow}  |  Armor Power: {player.ArmPow}");
             terminal.WriteLine("");
 
-            terminal.SetColor("white");
-            terminal.WriteLine("═══ SUPPLIES ═══");
+            WriteSectionHeader("SUPPLIES", "white");
             terminal.WriteLine("");
 
             terminal.SetColor("darkgray");
@@ -7673,8 +7794,7 @@ public class DungeonLocation : BaseLocation
                 : "Buy Max Potions (full!)");
 
             terminal.WriteLine("");
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("═══ RARE ITEMS (Dungeon Exclusive!) ═══");
+            WriteSectionHeader("RARE ITEMS (Dungeon Exclusive!)", "bright_magenta");
             terminal.WriteLine("");
 
             for (int i = 0; i < rareItems.Count; i++)
@@ -8062,9 +8182,10 @@ public class DungeonLocation : BaseLocation
 
             terminal.SetColor("bright_yellow");
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════");
-            terminal.WriteLine($"  * ACQUIRED: {item.Name.ToUpper()} *");
-            terminal.WriteLine("═══════════════════════════════════════");
+            WriteThickDivider(39);
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine($"  ACQUIRED: {item.Name.ToUpper()}");
+            WriteThickDivider(39);
             terminal.SetColor("green");
             terminal.WriteLine($"{item.Description}");
             terminal.SetColor("white");
@@ -8409,10 +8530,7 @@ public class DungeonLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═══════════════════════════════════════════════════╗");
-        terminal.WriteLine("║              PARTY MANAGEMENT                     ║");
-        terminal.WriteLine("╚═══════════════════════════════════════════════════╝");
+        WriteBoxHeader("PARTY MANAGEMENT", "bright_cyan", 51);
         terminal.WriteLine("");
 
         // Check if player has any potential party members (team, spouse, or companions)
@@ -8877,8 +8995,7 @@ public class DungeonLocation : BaseLocation
             var xpTeammates = teammates.Where(t => t != null && !t.IsGroupedPlayer && !t.IsEcho).ToList();
 
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══ XP Distribution ═══");
+            WriteSectionHeader("XP Distribution", "bright_cyan");
             terminal.WriteLine("");
 
             // Show grouped players note if any
@@ -9072,8 +9189,16 @@ public class DungeonLocation : BaseLocation
             terminal.WriteLine("");
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("[R] Remove someone to make room");
-            terminal.WriteLine("[C] Cancel recruitment");
+            if (IsScreenReader)
+            {
+                WriteSRMenuOption("R", "Remove someone to make room");
+                WriteSRMenuOption("C", "Cancel recruitment");
+            }
+            else
+            {
+                terminal.WriteLine("[R] Remove someone to make room");
+                terminal.WriteLine("[C] Cancel recruitment");
+            }
             terminal.WriteLine("");
 
             var removeChoice = await terminal.GetInput("Your choice: ");
@@ -9163,15 +9288,11 @@ public class DungeonLocation : BaseLocation
             allPartyMembers = GetAllPartyMembers();
 
             terminal.ClearScreen();
-            terminal.SetColor("cyan");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                    POTIONS MENU                       ║");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════╝");
+            WriteBoxHeader("POTIONS MENU", "cyan", 55);
             terminal.WriteLine("");
 
             // Show player status
-            terminal.SetColor("bright_white");
-            terminal.WriteLine("═══ YOUR STATUS ═══");
+            WriteSectionHeader("YOUR STATUS", "bright_white");
             terminal.SetColor("white");
             terminal.Write("HP: ");
             DrawBar(player.HP, player.MaxHP, 25, "red", "darkgray");
@@ -9185,8 +9306,7 @@ public class DungeonLocation : BaseLocation
             // Show teammate status if we have party members
             if (allPartyMembers.Count > 0)
             {
-                terminal.SetColor("bright_cyan");
-                terminal.WriteLine("═══ TEAM STATUS ═══");
+                WriteSectionHeader("TEAM STATUS", "bright_cyan");
                 foreach (var member in allPartyMembers)
                 {
                     int hpPercent = member.MaxHP > 0 ? (int)(100 * member.HP / member.MaxHP) : 100;
@@ -9207,102 +9327,129 @@ public class DungeonLocation : BaseLocation
             terminal.WriteLine("Options:");
             terminal.WriteLine("");
 
-            // Use potion option
-            if (player.Healing > 0)
+            // Calculate costs for display
+            int costPerPotion = 50 + (player.Level * 10);
+
+            if (IsScreenReader)
             {
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("U");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine($"Use Healing Potion on yourself (heals ~{healAmount} HP)");
+                // Screen reader: plain text menu
+                if (player.Healing > 0)
+                    WriteSRMenuOption("U", $"Use Healing Potion on yourself (heals ~{healAmount} HP)");
+                else
+                    WriteSRMenuOption("U", "Use Healing Potion - NO POTIONS!");
+                WriteSRMenuOption("B", $"Buy Potions from Monk (Healing {costPerPotion}g, Mana {Math.Max(75, player.Level * 3)}g)");
+                if (player.Healing > 0 && player.HP < player.MaxHP)
+                    WriteSRMenuOption("H", "Heal yourself to Full (use multiple potions)");
+                if (allPartyMembers.Count > 0 && player.Healing > 0)
+                    WriteSRMenuOption("T", "Heal a Teammate");
+                bool anyTeammateInjured = allPartyMembers.Any(c => c.HP < c.MaxHP);
+                if (allPartyMembers.Count > 0 && player.Healing > 0 && (player.HP < player.MaxHP || anyTeammateInjured))
+                    WriteSRMenuOption("A", "Heal ALL Party Members to Full");
+                if (player.Antidotes > 0 && player.Poison > 0)
+                    WriteSRMenuOption("D", $"Use Antidote (cures poison, {player.Antidotes} remaining)");
+                else if (player.Antidotes > 0)
+                    WriteSRMenuOption("D", $"Use Antidote ({player.Antidotes} remaining) - not poisoned");
+                terminal.WriteLine("");
+                WriteSRMenuOption("Q", "Return to Dungeon");
             }
             else
             {
-                terminal.SetColor("darkgray");
-                terminal.WriteLine("  [U] Use Healing Potion - NO POTIONS!");
-            }
+                // Use potion option
+                if (player.Healing > 0)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write("U");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine($"Use Healing Potion on yourself (heals ~{healAmount} HP)");
+                }
+                else
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.WriteLine("  [U] Use Healing Potion - NO POTIONS!");
+                }
 
-            // Buy potions option
-            int costPerPotion = 50 + (player.Level * 10);
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("B");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine($"Buy Potions from Monk (Healing {costPerPotion}g, Mana {Math.Max(75, player.Level * 3)}g)");
-
-            // Quick heal - use potions until full
-            if (player.Healing > 0 && player.HP < player.MaxHP)
-            {
+                // Buy potions option
                 terminal.SetColor("darkgray");
                 terminal.Write("  [");
                 terminal.SetColor("bright_yellow");
-                terminal.Write("H");
+                terminal.Write("B");
                 terminal.SetColor("darkgray");
                 terminal.Write("] ");
                 terminal.SetColor("white");
-                terminal.WriteLine("Heal yourself to Full (use multiple potions)");
-            }
+                terminal.WriteLine($"Buy Potions from Monk (Healing {costPerPotion}g, Mana {Math.Max(75, player.Level * 3)}g)");
 
-            // Heal teammate option
-            if (allPartyMembers.Count > 0 && player.Healing > 0)
-            {
+                // Quick heal - use potions until full
+                if (player.Healing > 0 && player.HP < player.MaxHP)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write("H");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine("Heal yourself to Full (use multiple potions)");
+                }
+
+                // Heal teammate option
+                if (allPartyMembers.Count > 0 && player.Healing > 0)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write("T");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine("Heal a Teammate");
+                }
+
+                // Heal entire party option
+                bool anyTeammateInjured = allPartyMembers.Any(c => c.HP < c.MaxHP);
+                if (allPartyMembers.Count > 0 && player.Healing > 0 && (player.HP < player.MaxHP || anyTeammateInjured))
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write("A");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine("Heal ALL Party Members to Full");
+                }
+
+                // Antidote option
+                if (player.Antidotes > 0 && player.Poison > 0)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("  [");
+                    terminal.SetColor("bright_green");
+                    terminal.Write("D");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor("white");
+                    terminal.WriteLine($"Use Antidote (cures poison, {player.Antidotes} remaining)");
+                }
+                else if (player.Antidotes > 0)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.WriteLine($"  [D] Use Antidote ({player.Antidotes} remaining) - not poisoned");
+                }
+
+                terminal.WriteLine("");
                 terminal.SetColor("darkgray");
                 terminal.Write("  [");
                 terminal.SetColor("bright_yellow");
-                terminal.Write("T");
+                terminal.Write("Q");
                 terminal.SetColor("darkgray");
                 terminal.Write("] ");
                 terminal.SetColor("white");
-                terminal.WriteLine("Heal a Teammate");
+                terminal.WriteLine("Return to Dungeon");
             }
-
-            // Heal entire party option
-            bool anyTeammateInjured = allPartyMembers.Any(c => c.HP < c.MaxHP);
-            if (allPartyMembers.Count > 0 && player.Healing > 0 && (player.HP < player.MaxHP || anyTeammateInjured))
-            {
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("A");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine("Heal ALL Party Members to Full");
-            }
-
-            // Antidote option
-            if (player.Antidotes > 0 && player.Poison > 0)
-            {
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_green");
-                terminal.Write("D");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine($"Use Antidote (cures poison, {player.Antidotes} remaining)");
-            }
-            else if (player.Antidotes > 0)
-            {
-                terminal.SetColor("darkgray");
-                terminal.WriteLine($"  [D] Use Antidote ({player.Antidotes} remaining) - not poisoned");
-            }
-
-            terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("Q");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Return to Dungeon");
 
             terminal.WriteLine("");
             terminal.SetColor("cyan");
@@ -10151,7 +10298,7 @@ public class DungeonLocation : BaseLocation
         if (currentFloor.BossDefeated)
         {
             terminal.SetColor("bright_green");
-            terminal.Write("  ★ BOSS DEFEATED");
+            terminal.Write(GameConfig.ScreenReaderMode ? "  * BOSS DEFEATED" : "  ★ BOSS DEFEATED");
         }
         terminal.WriteLine("");
 
@@ -10625,23 +10772,23 @@ public class DungeonLocation : BaseLocation
         if (currentFloor == null || currentFloor.Rooms.Count == 0)
             return positions;
 
-        // Start from current room at origin (not entrance)
-        var startId = currentFloor.CurrentRoomId;
-        if (string.IsNullOrEmpty(startId))
-            startId = currentFloor.EntranceRoomId;
+        // Start from entrance at origin so the map is stable regardless of player position
+        var startId = currentFloor.EntranceRoomId;
         if (string.IsNullOrEmpty(startId) && currentFloor.Rooms.Count > 0)
             startId = currentFloor.Rooms[0].Id;
 
+        var occupiedPositions = new HashSet<(int x, int y)>();
         positions[startId] = (0, 0);
-        var queue = new Queue<(string roomId, int x, int y, int depth)>();
-        queue.Enqueue((startId, 0, 0, 0));
+        occupiedPositions.Add((0, 0));
+        var queue = new Queue<(string roomId, int x, int y)>();
+        queue.Enqueue((startId, 0, 0));
 
-        int maxDepth = 3;
-
+        // BFS with no depth limit — show all explored rooms on the map.
+        // Rooms are connected with spatially consistent directions, so grid
+        // positions won't conflict. The occupiedPositions check is a safety net.
         while (queue.Count > 0)
         {
-            var (roomId, x, y, depth) = queue.Dequeue();
-            if (depth >= maxDepth) continue;
+            var (roomId, x, y) = queue.Dequeue();
 
             var room = currentFloor.Rooms.FirstOrDefault(r => r.Id == roomId);
             if (room == null) continue;
@@ -10660,12 +10807,13 @@ public class DungeonLocation : BaseLocation
                     case Direction.West: newX--; break;
                 }
 
-                // Skip if position already taken — no displacement
-                if (positions.ContainsValue((newX, newY)))
+                // Skip if position already taken (safety net for legacy saves)
+                if (occupiedPositions.Contains((newX, newY)))
                     continue;
 
                 positions[targetId] = (newX, newY);
-                queue.Enqueue((targetId, newX, newY, depth + 1));
+                occupiedPositions.Add((newX, newY));
+                queue.Enqueue((targetId, newX, newY));
             }
         }
 
@@ -11412,9 +11560,16 @@ public class DungeonLocation : BaseLocation
         {
             terminal.ClearScreen();
             terminal.SetColor(settlement.ThemeColor);
-            terminal.WriteLine($"╔{'═'.ToString().PadRight(settlement.Name.Length + 4, '═')}╗");
-            terminal.WriteLine($"║  {settlement.Name}  ║");
-            terminal.WriteLine($"╚{'═'.ToString().PadRight(settlement.Name.Length + 4, '═')}╝");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine(settlement.Name);
+            }
+            else
+            {
+                terminal.WriteLine($"╔{'═'.ToString().PadRight(settlement.Name.Length + 4, '═')}╗");
+                terminal.WriteLine($"║  {settlement.Name}  ║");
+                terminal.WriteLine($"╚{'═'.ToString().PadRight(settlement.Name.Length + 4, '═')}╝");
+            }
             terminal.WriteLine("");
 
             // Description
@@ -11437,26 +11592,52 @@ public class DungeonLocation : BaseLocation
 
             // Menu
             terminal.SetColor("bright_yellow");
-            if (settlement.HasHealing)
+            if (IsScreenReader)
             {
-                long healCost = CalculateSettlementHealCost(player, settlement);
-                terminal.WriteLine($"[H] Heal - Restore HP & Mana ({healCost}g)");
-            }
-            if (settlement.HasTrading)
-                terminal.WriteLine("[T] Trade - Buy supplies");
-            if (settlement.HasLore)
-            {
-                int totalLore = settlement.LoreFragments.Length;
-                int readLore = 0;
-                foreach (var frag in settlement.LoreFragments)
+                if (settlement.HasHealing)
                 {
-                    string loreKey = $"{settlement.Id}_{System.Array.IndexOf(settlement.LoreFragments, frag)}";
-                    if (player.SettlementLoreRead.Contains(loreKey)) readLore++;
+                    long healCost = CalculateSettlementHealCost(player, settlement);
+                    WriteSRMenuOption("H", $"Heal - Restore HP & Mana ({healCost}g)");
                 }
-                terminal.WriteLine($"[L] Lore - Ask about the depths ({readLore}/{totalLore} heard)");
+                if (settlement.HasTrading)
+                    WriteSRMenuOption("T", "Trade - Buy supplies");
+                if (settlement.HasLore)
+                {
+                    int totalLore = settlement.LoreFragments.Length;
+                    int readLore = 0;
+                    foreach (var frag in settlement.LoreFragments)
+                    {
+                        string loreKey = $"{settlement.Id}_{System.Array.IndexOf(settlement.LoreFragments, frag)}";
+                        if (player.SettlementLoreRead.Contains(loreKey)) readLore++;
+                    }
+                    WriteSRMenuOption("L", $"Lore - Ask about the depths ({readLore}/{totalLore} heard)");
+                }
+                terminal.SetColor("gray");
+                WriteSRMenuOption("R", "Return to dungeon");
             }
-            terminal.SetColor("gray");
-            terminal.WriteLine("[R] Return to dungeon");
+            else
+            {
+                if (settlement.HasHealing)
+                {
+                    long healCost = CalculateSettlementHealCost(player, settlement);
+                    terminal.WriteLine($"[H] Heal - Restore HP & Mana ({healCost}g)");
+                }
+                if (settlement.HasTrading)
+                    terminal.WriteLine("[T] Trade - Buy supplies");
+                if (settlement.HasLore)
+                {
+                    int totalLore = settlement.LoreFragments.Length;
+                    int readLore = 0;
+                    foreach (var frag in settlement.LoreFragments)
+                    {
+                        string loreKey = $"{settlement.Id}_{System.Array.IndexOf(settlement.LoreFragments, frag)}";
+                        if (player.SettlementLoreRead.Contains(loreKey)) readLore++;
+                    }
+                    terminal.WriteLine($"[L] Lore - Ask about the depths ({readLore}/{totalLore} heard)");
+                }
+                terminal.SetColor("gray");
+                terminal.WriteLine("[R] Return to dungeon");
+            }
             terminal.WriteLine("");
 
             ShowStatusLine();
@@ -11551,8 +11732,11 @@ public class DungeonLocation : BaseLocation
             terminal.ClearScreen();
             terminal.SetColor(settlement.ThemeColor);
             terminal.WriteLine($"{settlement.NPCName}'s Wares");
-            terminal.SetColor("gray");
-            terminal.WriteLine(new string('─', 40));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine(new string('─', 40));
+            }
             terminal.WriteLine("");
 
             // Generate trade items based on floor level
@@ -11568,7 +11752,10 @@ public class DungeonLocation : BaseLocation
             terminal.SetColor("bright_yellow");
             terminal.WriteLine($"Your Gold: {player.Gold:N0}");
             terminal.SetColor("gray");
-            terminal.WriteLine("[0] Done shopping");
+            if (IsScreenReader)
+                WriteSRMenuOption("0", "Done shopping");
+            else
+                terminal.WriteLine("[0] Done shopping");
             terminal.WriteLine("");
 
             var choice = await terminal.GetInput("Buy: ");
@@ -11716,8 +11903,11 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
         terminal.WriteLine($"{settlement.NPCName} speaks...");
-        terminal.SetColor("gray");
-        terminal.WriteLine(new string('─', 40));
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("gray");
+            terminal.WriteLine(new string('─', 40));
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -11951,9 +12141,11 @@ public class DungeonLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("dark_cyan");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         terminal.WriteLine("              ANCIENT LORE LIBRARY");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         terminal.WriteLine("");
 
         var player = GetCurrentPlayer();
@@ -12048,9 +12240,11 @@ public class DungeonLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("magenta");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         terminal.WriteLine("              MEMORY CHAMBER");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         terminal.WriteLine("");
 
         var player = GetCurrentPlayer();
@@ -12124,9 +12318,11 @@ public class DungeonLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("yellow");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         terminal.WriteLine("              THE RIDDLE GATE");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         terminal.WriteLine("");
 
         var player = GetCurrentPlayer();
@@ -12164,9 +12360,11 @@ public class DungeonLocation : BaseLocation
         if (result.Solved)
         {
             terminal.SetColor("green");
-            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             terminal.WriteLine("              RIDDLE SOLVED");
-            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             terminal.WriteLine("");
             terminal.WriteLine("The stone face smiles. 'Wisdom opens all doors.'");
             terminal.WriteLine("The gate rumbles open.");
@@ -12189,9 +12387,11 @@ public class DungeonLocation : BaseLocation
         else
         {
             terminal.SetColor("red");
-            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             terminal.WriteLine("              RIDDLE FAILED");
-            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             terminal.WriteLine("");
             terminal.WriteLine("'Foolish mortal. There is a price for failure.'");
             terminal.WriteLine("");
@@ -12262,9 +12462,11 @@ public class DungeonLocation : BaseLocation
             // No boss for this floor - give atmospheric message instead
             terminal.ClearScreen();
             terminal.SetColor("dark_magenta");
-            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             terminal.WriteLine("              HIDDEN CHAMBER");
-            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             terminal.WriteLine("");
 
             // Track secret found for achievements (finding a hidden chamber counts as a secret)
@@ -12541,11 +12743,11 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
         terminal.WriteLine("");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════");
+        WriteThickDivider(62);
         terminal.WriteLine("");
         terminal.WriteLine("       As you explore the room, an ancient power stirs...");
         terminal.WriteLine("");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════");
+        WriteThickDivider(62);
         terminal.WriteLine("");
         await Task.Delay(2000);
 
@@ -12612,9 +12814,9 @@ public class DungeonLocation : BaseLocation
         // Collect the artifact!
         terminal.WriteLine("");
         terminal.SetColor("bright_magenta");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════");
+        WriteThickDivider(62);
         terminal.WriteLine("      A DIVINE ARTIFACT PULSES WITH POWER!");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════");
+        WriteThickDivider(62);
         terminal.WriteLine("");
 
         await UsurperRemake.Systems.ArtifactSystem.Instance.CollectArtifact(player, artifactType, terminal);
@@ -12679,9 +12881,9 @@ public class DungeonLocation : BaseLocation
         // Trigger the quest event
         terminal.ClearScreen();
         terminal.SetColor("bright_magenta");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("                    THE LIGHT THAT WAS                                        ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
@@ -12821,9 +13023,9 @@ public class DungeonLocation : BaseLocation
         await Task.Delay(1500);
 
         terminal.SetColor("bright_green");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("           QUEST COMPLETE: THE LIGHT THAT WAS                                 ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         story.SetStoryFlag("lyris_quest_artifact_found", true);
@@ -12859,9 +13061,9 @@ public class DungeonLocation : BaseLocation
 
         terminal.ClearScreen();
         terminal.SetColor("dark_red");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("                    GHOSTS OF THE GUARD                                       ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
@@ -12977,9 +13179,9 @@ public class DungeonLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("red");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("                    BOSS: MALACHAR THE SLAYER                                 ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         // Create Malachar as a boss monster
@@ -13060,9 +13262,9 @@ public class DungeonLocation : BaseLocation
             terminal.WriteLine("");
 
             terminal.SetColor("bright_green");
-            terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+            WriteThickDivider();
             terminal.WriteLine("           QUEST COMPLETE: GHOSTS OF THE GUARD                               ");
-            terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+            WriteThickDivider();
             terminal.WriteLine("");
 
             var story = UsurperRemake.Systems.StoryProgressionSystem.Instance;
@@ -13101,9 +13303,9 @@ public class DungeonLocation : BaseLocation
 
         terminal.ClearScreen();
         terminal.SetColor("bright_green");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("                    THE MEANING OF MERCY                                      ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
@@ -13232,9 +13434,9 @@ public class DungeonLocation : BaseLocation
         await Task.Delay(1500);
 
         terminal.SetColor("bright_green");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("           QUEST COMPLETE: THE MEANING OF MERCY                               ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         story.SetStoryFlag("mira_quest_choice_made", true);
@@ -13288,9 +13490,9 @@ public class DungeonLocation : BaseLocation
 
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("                    ONE MORE SUNRISE                                          ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
@@ -13318,9 +13520,9 @@ public class DungeonLocation : BaseLocation
         if (itemsDone >= 3)
         {
             terminal.SetColor("bright_green");
-            terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+            WriteThickDivider();
             terminal.WriteLine("           QUEST COMPLETE: ONE MORE SUNRISE                                   ");
-            terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+            WriteThickDivider();
             terminal.WriteLine("");
 
             UsurperRemake.Systems.CompanionSystem.Instance.CompletePersonalQuest(
@@ -13577,9 +13779,9 @@ public class DungeonLocation : BaseLocation
         // Trigger the quest event
         terminal.ClearScreen();
         terminal.SetColor("bright_magenta");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("                       THE LOST OPUS                                        ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
@@ -13737,9 +13939,9 @@ public class DungeonLocation : BaseLocation
         await Task.Delay(1500);
 
         terminal.SetColor("bright_green");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("              QUEST COMPLETE: THE LOST OPUS                                  ");
-        terminal.WriteLine("══════════════════════════════════════════════════════════════════════════════");
+        WriteThickDivider();
         terminal.WriteLine("");
 
         story.SetStoryFlag("melodia_quest_opus_found", true);
@@ -13782,10 +13984,7 @@ public class DungeonLocation : BaseLocation
 
         // Divine punishment triggers!
         terminal.WriteLine("");
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                    *** DIVINE WRATH ***                        ║");
-        terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("*** DIVINE WRATH ***", "bright_red", 64);
         terminal.WriteLine("");
         await Task.Delay(1000);
 
@@ -13897,9 +14096,10 @@ public class DungeonLocation : BaseLocation
         string betrayedFor = player.BetrayedForGodName;
 
         terminal.SetColor("bright_red");
-        terminal.WriteLine("██████████████████████████████████████████████████████████████████");
+        WriteThickDivider(66, "bright_red");
+        terminal.SetColor("bright_red");
         terminal.WriteLine("              THE HEAVENS THEMSELVES CRY OUT IN RAGE!");
-        terminal.WriteLine("██████████████████████████████████████████████████████████████████");
+        WriteThickDivider(66, "bright_red");
         await Task.Delay(1500);
 
         terminal.SetColor("bright_magenta");
@@ -14510,8 +14710,10 @@ public class DungeonLocation : BaseLocation
             case "?":
             case "help":
             case "commands":
-                term.SetColor("bright_cyan");
-                term.WriteLine("  ═══ FOLLOWER COMMANDS ═══");
+                if (GameConfig.ScreenReaderMode)
+                    term.WriteLine("FOLLOWER COMMANDS", "bright_cyan");
+                else
+                    term.WriteLine("═══ FOLLOWER COMMANDS ═══", "bright_cyan");
                 term.SetColor("white");
                 term.WriteLine("  Between combats:");
                 term.SetColor("yellow");
@@ -14615,8 +14817,10 @@ public class DungeonLocation : BaseLocation
                     term.WriteLine("  You are not in a group.");
                     return true;
                 }
-                term.SetColor("bright_cyan");
-                term.WriteLine("  ═══ GROUP STATUS ═══");
+                if (GameConfig.ScreenReaderMode)
+                    term.WriteLine("GROUP STATUS", "bright_cyan");
+                else
+                    term.WriteLine("═══ GROUP STATUS ═══", "bright_cyan");
                 // Show all members (snapshot list to avoid lock issues)
                 List<string> memberSnapshot;
                 lock (partyGroup.MemberUsernames)
@@ -14631,7 +14835,9 @@ public class DungeonLocation : BaseLocation
                     {
                         int mhpPct = memberPlayer.MaxHP > 0 ? (int)(memberPlayer.HP * 100 / memberPlayer.MaxHP) : 0;
                         string mhpColor = mhpPct > 50 ? "32" : mhpPct > 25 ? "33" : "31";
-                        string prefix = isLeader ? "\u001b[1;33m★\u001b[0m" : "·";
+                        string prefix = isLeader
+                            ? (GameConfig.ScreenReaderMode ? "*" : "\u001b[1;33m★\u001b[0m")
+                            : (GameConfig.ScreenReaderMode ? "-" : "·");
                         string suffix = isMe ? " \u001b[36m(you)\u001b[0m" : "";
                         term.WriteLine($"  {prefix} \u001b[{mhpColor}m{memberPlayer.DisplayName}\u001b[0m Lv{memberPlayer.Level} {memberPlayer.Class} — HP:{memberPlayer.HP}/{memberPlayer.MaxHP} ({mhpPct}%) MP:{memberPlayer.Mana}/{memberPlayer.MaxMana}{suffix}");
                     }
@@ -14680,8 +14886,10 @@ public class DungeonLocation : BaseLocation
         while (true)
         {
             term.ClearScreen();
-            term.SetColor("bright_cyan");
-            term.WriteLine("  ═══ INVENTORY ═══");
+            if (GameConfig.ScreenReaderMode)
+                term.WriteLine("INVENTORY", "bright_cyan");
+            else
+                term.WriteLine("═══ INVENTORY ═══", "bright_cyan");
             term.WriteLine("");
 
             // Equipped items
@@ -14945,8 +15153,10 @@ public class DungeonLocation : BaseLocation
     private static async Task ShowFollowerStatus(Character player, TerminalEmulator term)
     {
         term.ClearScreen();
-        term.SetColor("bright_cyan");
-        term.WriteLine("  ═══ CHARACTER STATUS ═══");
+        if (GameConfig.ScreenReaderMode)
+            term.WriteLine("CHARACTER STATUS", "bright_cyan");
+        else
+            term.WriteLine("═══ CHARACTER STATUS ═══", "bright_cyan");
         term.WriteLine("");
 
         term.SetColor("white");

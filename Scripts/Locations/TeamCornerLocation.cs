@@ -51,21 +51,13 @@ public class TeamCornerLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (IsScreenReader) { DisplayLocationSR(); return; }
         if (IsBBSSession) { DisplayLocationBBS(); return; }
 
         terminal.ClearScreen();
 
         // Header
-        const string tcTitle    = "ADVENTURERS TEAM CORNER";
-        const string tcSubtitle = "'Where gangs forge their destiny'";
-        int tcTitleL = (78 - tcTitle.Length) / 2,    tcTitleR = 78 - tcTitle.Length - tcTitleL;
-        int tcSubL   = (78 - tcSubtitle.Length) / 2, tcSubR   = 78 - tcSubtitle.Length - tcSubL;
-
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{new string(' ', tcTitleL)}{tcTitle}{new string(' ', tcTitleR)}║");
-        terminal.WriteLine($"║{new string(' ', tcSubL)}{tcSubtitle}{new string(' ', tcSubR)}║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("ADVENTURERS TEAM CORNER", "bright_magenta");
         terminal.WriteLine("");
 
         // Atmospheric description
@@ -126,6 +118,66 @@ public class TeamCornerLocation : BaseLocation
         terminal.WriteLine("Navigation:");
         terminal.SetColor("white");
         WriteMenuOption("R", "Return to Main Street", "S", "Status");
+        terminal.WriteLine("");
+    }
+
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.SetColor("bright_magenta");
+        terminal.WriteLine("Adventurers Team Corner");
+        terminal.WriteLine("");
+
+        // Team status
+        if (!string.IsNullOrEmpty(currentPlayer.Team))
+        {
+            terminal.SetColor("white");
+            terminal.WriteLine($"Your Team: {currentPlayer.Team}");
+            terminal.WriteLine($"Turf Control: {(currentPlayer.CTurf ? "Yes" : "No")}");
+        }
+        else
+        {
+            terminal.SetColor("yellow");
+            terminal.WriteLine("You are not in a team.");
+        }
+        terminal.WriteLine("");
+
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Team Information:");
+        WriteSRMenuOption("T", "Team Rankings");
+        WriteSRMenuOption("I", "Info on Teams");
+        WriteSRMenuOption("Y", "Your Team Status");
+        WriteSRMenuOption("P", "Password Change");
+        WriteSRMenuOption("E", "Examine Member");
+        terminal.WriteLine("");
+
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Team Actions:");
+        WriteSRMenuOption("C", "Create Team");
+        WriteSRMenuOption("J", "Join Team");
+        WriteSRMenuOption("Q", "Quit Team");
+        WriteSRMenuOption("A", "Apply for Membership");
+        WriteSRMenuOption("N", "Recruit NPC");
+        WriteSRMenuOption("2", "Sack Member");
+        WriteSRMenuOption("G", "Equip Member");
+        terminal.WriteLine("");
+
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Communication:");
+        WriteSRMenuOption("M", "Message Teammates");
+        WriteSRMenuOption("!", "Resurrect Teammate");
+        if (DoorMode.IsOnlineMode)
+        {
+            WriteSRMenuOption("W", "Recruit Player Ally");
+            terminal.SetColor("cyan");
+            terminal.WriteLine("Online Features:");
+            WriteSRMenuOption("B", "Team Battle (War)");
+            WriteSRMenuOption("H", "Team Headquarters");
+        }
+        terminal.WriteLine("");
+
+        WriteSRMenuOption("R", "Return to Main Street");
+        WriteSRMenuOption("S", "Status");
         terminal.WriteLine("");
     }
 
@@ -319,10 +371,7 @@ public class TeamCornerLocation : BaseLocation
     private async Task ShowTeamRankings()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "TEAM RANKINGS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("TEAM RANKINGS", "bright_magenta");
         terminal.WriteLine("");
 
         // Get all teams from NPCs, then merge in the player's team
@@ -416,8 +465,11 @@ public class TeamCornerLocation : BaseLocation
         {
             terminal.SetColor("white");
             terminal.WriteLine($"{"Rank",-5} {"Team Name",-24} {"Mbrs",-6} {"Power",-8} {"Avg Lvl",-8} {"Turf",-5}");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine(new string('─', 60));
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("darkgray");
+                terminal.WriteLine(new string('─', 60));
+            }
 
             int rank = 1;
             foreach (var team in teamGroups)
@@ -461,10 +513,7 @@ public class TeamCornerLocation : BaseLocation
             return;
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"Team Information: {teamName}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('═', 50));
+        WriteSectionHeader($"Team Information: {teamName}", "bright_cyan");
         terminal.WriteLine("");
 
         await ShowTeamMembers(teamName, false);
@@ -491,10 +540,7 @@ public class TeamCornerLocation : BaseLocation
         }
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"Team Status: {currentPlayer.Team}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('═', 50));
+        WriteSectionHeader($"Team Status: {currentPlayer.Team}", "bright_cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -528,10 +574,7 @@ public class TeamCornerLocation : BaseLocation
     /// </summary>
     private async Task ShowTeamMembers(string teamName, bool detailed)
     {
-        terminal.SetColor("cyan");
-        terminal.WriteLine("Team Members:");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("─────────────");
+        WriteSectionHeader("Team Members", "cyan");
 
         // Get NPCs in this team
         var allNPCs = NPCSpawnSystem.Instance.ActiveNPCs;
@@ -568,8 +611,11 @@ public class TeamCornerLocation : BaseLocation
         {
             terminal.SetColor("white");
             terminal.WriteLine($"{"Name",-20} {"Class",-12} {"Lvl",-5} {"HP",-12} {"Location",-15} {"Status",-8}");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine(new string('─', 75));
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("darkgray");
+                terminal.WriteLine(new string('─', 75));
+            }
 
             // Show player members first
             foreach (var pm in playerMembers)
@@ -592,7 +638,7 @@ public class TeamCornerLocation : BaseLocation
                 else
                     terminal.SetColor("red");
 
-                string status = member.IsAlive ? "Alive" : "Dead";
+                string status = member.IsAlive ? "Alive" : (member.IsPermaDead ? "Gone" : "Dead");
                 terminal.WriteLine($"{member.DisplayName,-20} {member.Class,-12} {member.Level,-5} {hpDisplay,-12} {location,-15} {status,-8}");
             }
 
@@ -967,10 +1013,7 @@ public class TeamCornerLocation : BaseLocation
         }
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "NPC RECRUITMENT"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("NPC RECRUITMENT", "bright_magenta");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1004,8 +1047,11 @@ public class TeamCornerLocation : BaseLocation
         terminal.WriteLine("Available Recruits:");
         terminal.SetColor("white");
         terminal.WriteLine($"{"#",-3} {"Name",-18} {"Class",-12} {"Lvl",-5} {"Cost",-12} {"Wage/Day",-10}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('─', 65));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(new string('─', 65));
+        }
 
         terminal.SetColor("white");
         for (int i = 0; i < availableNPCs.Count; i++)
@@ -1136,10 +1182,7 @@ public class TeamCornerLocation : BaseLocation
 
         // Show detailed stats
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"═══════════════════════════════════════");
-        terminal.WriteLine($"        {member.DisplayName.ToUpper()}");
-        terminal.WriteLine($"═══════════════════════════════════════");
+        WriteSectionHeader(member.DisplayName.ToUpper(), "bright_cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1370,9 +1413,28 @@ public class TeamCornerLocation : BaseLocation
 
         if (deadMembers.Count == 0)
         {
+            // Check if there are permanently dead members that can't be resurrected
+            var permadeadMembers = allNPCs
+                .Where(n => n.Team == currentPlayer.Team && (n.IsDead || !n.IsAlive) && (n.IsPermaDead || n.IsAgedDeath))
+                .ToList();
+
             terminal.WriteLine("");
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("All your team members are alive!");
+            if (permadeadMembers.Count > 0)
+            {
+                terminal.SetColor("red");
+                terminal.WriteLine("No team members can be resurrected.");
+                terminal.SetColor("darkgray");
+                foreach (var pd in permadeadMembers)
+                {
+                    string reason = pd.IsAgedDeath ? "died of old age" : "permanently slain";
+                    terminal.WriteLine($"  {pd.DisplayName} — {reason}");
+                }
+            }
+            else
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("All your team members are alive!");
+            }
             terminal.WriteLine("");
             await Task.Delay(2000);
             return;
@@ -1461,10 +1523,7 @@ public class TeamCornerLocation : BaseLocation
         }
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "RECRUIT PLAYER ALLY"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("RECRUIT PLAYER ALLY", "bright_magenta");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1475,8 +1534,11 @@ public class TeamCornerLocation : BaseLocation
         terminal.WriteLine("Available Player Allies:");
         terminal.SetColor("white");
         terminal.WriteLine($"{"#",-3} {"Name",-18} {"Class",-12} {"Level",-6} {"Status",-10}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine(new string('─', 52));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine(new string('─', 52));
+        }
 
         terminal.SetColor("white");
         for (int i = 0; i < teammates.Count; i++)
@@ -1563,10 +1625,7 @@ public class TeamCornerLocation : BaseLocation
         }
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "EQUIP TEAM MEMBER"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("EQUIP TEAM MEMBER", "bright_cyan");
         terminal.WriteLine("");
 
         // List team members
@@ -1615,10 +1674,7 @@ public class TeamCornerLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine($"═══════════════════════════════════════════════════════════════════════════════");
-            terminal.WriteLine($"                    EQUIPMENT: {target.DisplayName.ToUpper()}");
-            terminal.WriteLine($"═══════════════════════════════════════════════════════════════════════════════");
+            WriteSectionHeader($"EQUIPMENT: {target.DisplayName.ToUpper()}", "bright_cyan");
             terminal.WriteLine("");
 
             // Show target's stats
@@ -1650,38 +1706,10 @@ public class TeamCornerLocation : BaseLocation
             // Show options
             terminal.SetColor("cyan");
             terminal.WriteLine("Options:");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("E");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Equip item from your inventory");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("U");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Unequip item from them");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("T");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Take all their equipment");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("Q");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Done / Return");
+            WriteSRMenuOption("E", "Equip item from your inventory");
+            WriteSRMenuOption("U", "Unequip item from them");
+            WriteSRMenuOption("T", "Take all their equipment");
+            WriteSRMenuOption("Q", "Done / Return");
             terminal.WriteLine("");
 
             terminal.SetColor("cyan");
@@ -1745,8 +1773,7 @@ public class TeamCornerLocation : BaseLocation
     private async Task EquipItemToCharacter(Character target)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"═══ EQUIP ITEM TO {target.DisplayName.ToUpper()} ═══");
+        WriteSectionHeader($"EQUIP ITEM TO {target.DisplayName.ToUpper()}", "bright_cyan");
         terminal.WriteLine("");
 
         // Collect equippable items from player's inventory and equipped items
@@ -1849,16 +1876,24 @@ public class TeamCornerLocation : BaseLocation
             (selectedItem.Slot == EquipmentSlot.MainHand || selectedItem.Slot == EquipmentSlot.OffHand))
         {
             terminal.WriteLine("");
-            terminal.SetColor("cyan");
-            terminal.Write("Which hand? [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("M");
-            terminal.SetColor("cyan");
-            terminal.Write("]ain hand or [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("O");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("]ff hand?");
+            if (IsScreenReader)
+            {
+                terminal.SetColor("cyan");
+                terminal.WriteLine("Which hand? M for Main hand, O for Off hand.");
+            }
+            else
+            {
+                terminal.SetColor("cyan");
+                terminal.Write("Which hand? [");
+                terminal.SetColor("bright_yellow");
+                terminal.Write("M");
+                terminal.SetColor("cyan");
+                terminal.Write("]ain hand or [");
+                terminal.SetColor("bright_yellow");
+                terminal.Write("O");
+                terminal.SetColor("cyan");
+                terminal.WriteLine("]ff hand?");
+            }
             terminal.Write(": ");
             terminal.SetColor("white");
             var handChoice = (await terminal.ReadLineAsync()).ToUpper().Trim();
@@ -1931,8 +1966,7 @@ public class TeamCornerLocation : BaseLocation
     private async Task UnequipItemFromCharacter(Character target)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"═══ UNEQUIP FROM {target.DisplayName.ToUpper()} ═══");
+        WriteSectionHeader($"UNEQUIP FROM {target.DisplayName.ToUpper()}", "bright_cyan");
         terminal.WriteLine("");
 
         // Get all equipped slots
@@ -2162,38 +2196,14 @@ public class TeamCornerLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "TEAM WARS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("TEAM WARS", "bright_red");
             terminal.SetColor("white");
             terminal.WriteLine($"  Your Team: {currentPlayer.Team}");
             terminal.WriteLine("");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("C");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.Write("Challenge a Team    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("H");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.Write("War History    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("Q");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("Back");
+            WriteSRMenuOption("C", "Challenge a Team");
+            WriteSRMenuOption("H", "War History");
+            WriteSRMenuOption("Q", "Back");
             terminal.SetColor("white");
             terminal.Write("\n  Choice: ");
             string input = (await terminal.ReadLineAsync())?.Trim().ToUpper() ?? "";
@@ -2227,11 +2237,12 @@ public class TeamCornerLocation : BaseLocation
             return;
         }
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("\n  ═══════════ CHOOSE OPPONENT TEAM ═══════════");
+        terminal.WriteLine("");
+        WriteSectionHeader("CHOOSE OPPONENT TEAM", "bright_yellow");
         terminal.SetColor("darkgray");
         terminal.WriteLine($"  {"#",-4} {"Team",-25} {"Members",-10}");
-        terminal.WriteLine("  " + new string('─', 40));
+        if (!IsScreenReader)
+            terminal.WriteLine("  " + new string('─', 40));
 
         for (int i = 0; i < opponents.Count; i++)
         {
@@ -2288,10 +2299,7 @@ public class TeamCornerLocation : BaseLocation
         }
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
-        terminal.WriteLine($"        TEAM WAR: {myTeam} vs {enemyTeam.TeamName}");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        WriteSectionHeader($"TEAM WAR: {myTeam} vs {enemyTeam.TeamName}", "bright_red");
         terminal.WriteLine("");
 
         int myWins = 0, enemyWins = 0;
@@ -2341,16 +2349,14 @@ public class TeamCornerLocation : BaseLocation
         {
             long reward = wager * 2;
             currentPlayer.Gold += reward;
-            terminal.SetColor("bright_green");
-            terminal.WriteLine($"  ═══ YOUR TEAM WINS! ═══");
+            WriteSectionHeader("YOUR TEAM WINS!", "bright_green");
             terminal.SetColor("yellow");
             terminal.WriteLine($"  Score: {myWins} - {enemyWins}");
             terminal.WriteLine($"  War spoils: {reward:N0} gold!");
         }
         else
         {
-            terminal.SetColor("bright_red");
-            terminal.WriteLine($"  ═══ YOUR TEAM LOSES! ═══");
+            WriteSectionHeader("YOUR TEAM LOSES!", "bright_red");
             terminal.SetColor("yellow");
             terminal.WriteLine($"  Score: {myWins} - {enemyWins}");
             terminal.WriteLine($"  Lost {wager:N0} gold in war wager.");
@@ -2372,8 +2378,8 @@ public class TeamCornerLocation : BaseLocation
         var wars = await backend.GetTeamWarHistory(myTeam);
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("\n  ═══════════ WAR HISTORY ═══════════");
+        terminal.WriteLine("");
+        WriteSectionHeader("WAR HISTORY", "bright_red");
 
         if (wars.Count == 0)
         {
@@ -2433,10 +2439,7 @@ public class TeamCornerLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine($"║              TEAM HEADQUARTERS - {teamName,-30}           ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader($"TEAM HEADQUARTERS - {teamName}", "bright_cyan");
             terminal.WriteLine("");
 
             // Show upgrades
@@ -2445,8 +2448,7 @@ public class TeamCornerLocation : BaseLocation
             int vaultLevel = backend.GetTeamUpgradeLevel(teamName, "vault");
             long vaultCapacity = 50000 + (vaultLevel * 50000);
 
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  ═══ Facilities ═══");
+            WriteSectionHeader("Facilities", "bright_yellow");
             terminal.WriteLine("");
 
             int idx = 1;
@@ -2472,38 +2474,10 @@ public class TeamCornerLocation : BaseLocation
             terminal.WriteLine($"  Team Vault: {vaultGold:N0} / {vaultCapacity:N0} gold");
             terminal.WriteLine("");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("U");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.Write("Upgrade Facility    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("D");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.Write("Deposit Gold    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("W");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.Write("Withdraw Gold    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("Q");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("Back");
+            WriteSRMenuOption("U", "Upgrade Facility");
+            WriteSRMenuOption("D", "Deposit Gold");
+            WriteSRMenuOption("W", "Withdraw Gold");
+            WriteSRMenuOption("Q", "Back");
             terminal.SetColor("white");
             terminal.Write("\n  Choice: ");
             string input = (await terminal.ReadLineAsync())?.Trim().ToUpper() ?? "";

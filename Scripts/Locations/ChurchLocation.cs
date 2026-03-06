@@ -45,9 +45,16 @@ namespace UsurperRemake.Locations
             {
                 term.ClearScreen();
                 term.SetColor("bright_red");
-                term.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-                { const string t = "ENTRY DENIED!"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; term.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-                term.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                if (player.ScreenReaderMode)
+                {
+                    term.WriteLine("ENTRY DENIED!");
+                }
+                else
+                {
+                    term.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                    { const string t = "ENTRY DENIED!"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; term.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
+                    term.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                }
                 term.WriteLine("");
                 term.SetColor("red");
                 term.WriteLine(reason);
@@ -149,17 +156,19 @@ namespace UsurperRemake.Locations
         {
             terminal.ClearScreen();
 
+            if (IsScreenReader)
+            {
+                DisplayLocationSR();
+                return;
+            }
+
             if (IsBBSSession)
             {
                 DisplayLocationBBS();
                 return;
             }
 
-            // Church header - standardized format
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine($"║{"CHURCH OF GOOD DEEDS".PadLeft((77 + 20) / 2).PadRight(77)}║");
-            terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("CHURCH OF GOOD DEEDS", "bright_cyan");
             terminal.WriteLine("");
             
             // Church description
@@ -198,7 +207,8 @@ namespace UsurperRemake.Locations
             // Menu options
             terminal.SetColor("bright_green");
             terminal.WriteLine("Church Services Available:");
-            terminal.WriteLine("─────────────────────────");
+            if (!IsScreenReader)
+                terminal.WriteLine("─────────────────────────");
 
             terminal.SetColor("darkgray");
             terminal.Write("[");
@@ -275,6 +285,40 @@ namespace UsurperRemake.Locations
             terminal.WriteLine("");
             
             // Status line (basic)
+            ShowStatusLine();
+        }
+
+        private void DisplayLocationSR()
+        {
+            terminal.WriteLine("CHURCH OF GOOD DEEDS");
+            terminal.WriteLine("");
+            terminal.SetColor("white");
+            terminal.WriteLine("A magnificent cathedral with soaring arches and stained glass windows.");
+            terminal.WriteLine("");
+            terminal.SetColor("cyan");
+            terminal.WriteLine($"Chivalry: {currentPlayer.Chivalry}  Darkness: {currentPlayer.Darkness}  Alignment: {GetAlignmentDescription(currentPlayer)}");
+            terminal.WriteLine("");
+            terminal.SetColor("yellow");
+            if (currentPlayer.Chivalry > currentPlayer.Darkness)
+                terminal.WriteLine($"{bishopName} nods approvingly at your righteous presence.");
+            else if (currentPlayer.Darkness > currentPlayer.Chivalry)
+                terminal.WriteLine($"{bishopName} looks concerned about the darkness in your soul.");
+            else
+                terminal.WriteLine($"{bishopName} welcomes you to this sacred place.");
+            terminal.WriteLine("");
+            ShowNPCsInLocation();
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("Church Services:");
+            WriteSRMenuOption("C", "Make a donation to the Church");
+            WriteSRMenuOption("B", "Purchase a blessing");
+            WriteSRMenuOption("H", "Seek healing services");
+            WriteSRMenuOption("M", "Arrange a marriage ceremony");
+            WriteSRMenuOption("F", "Confess your sins");
+            WriteSRMenuOption("V", "View church records");
+            WriteSRMenuOption("S", "Speak with the Bishop");
+            terminal.WriteLine("");
+            WriteSRMenuOption("R", "Return to Main Street");
+            terminal.WriteLine("");
             ShowStatusLine();
         }
 
@@ -474,7 +518,7 @@ namespace UsurperRemake.Locations
         private async Task ProcessHealingServices()
         {
             terminal.WriteLine("");
-            terminal.WriteLine("═══ CHURCH HEALING SERVICES ═══", "bright_cyan");
+            WriteSectionHeader("CHURCH HEALING SERVICES", "bright_cyan");
             terminal.WriteLine("");
             
             bool needsHealing = currentPlayer.HP < currentPlayer.MaxHP ||
@@ -750,7 +794,8 @@ namespace UsurperRemake.Locations
 
                     terminal.WriteLine("  Your closest relationships:", "cyan");
                     terminal.WriteLine("  Name                     You → Them    Them → You", "darkgray");
-                    terminal.WriteLine("  ─────────────────────────────────────────────────────", "darkgray");
+                    if (!IsScreenReader)
+                        terminal.WriteLine("  ─────────────────────────────────────────────────────", "darkgray");
                     for (int i = 0; i < shown; i++)
                     {
                         var (npc, pf, nf) = prospects[i];
@@ -943,7 +988,7 @@ namespace UsurperRemake.Locations
         private async Task ProcessConfession()
         {
             terminal.WriteLine("");
-            terminal.WriteLine("═══ CONFESSION ═══", "bright_blue");
+            WriteSectionHeader("CONFESSION", "bright_blue");
             terminal.WriteLine("");
             
             terminal.WriteLine($"{priestName} leads you to a private confessional booth.", "white");
@@ -1061,11 +1106,12 @@ namespace UsurperRemake.Locations
         private async Task DisplayChurchRecords()
         {
             terminal.WriteLine("");
-            terminal.WriteLine("═══ CHURCH RECORDS ═══", "bright_cyan");
+            WriteSectionHeader("CHURCH RECORDS", "bright_cyan");
             terminal.WriteLine("");
             
             terminal.WriteLine("Church Records and Statistics:", "white");
-            terminal.WriteLine("─────────────────────────────", "white");
+            if (!IsScreenReader)
+                terminal.WriteLine("─────────────────────────────", "white");
             terminal.WriteLine("");
             
             // Player's church history
@@ -1095,7 +1141,7 @@ namespace UsurperRemake.Locations
         private async Task SpeakWithBishop()
         {
             terminal.WriteLine("");
-            terminal.WriteLine("═══ AUDIENCE WITH THE BISHOP ═══", "bright_yellow");
+            WriteSectionHeader("AUDIENCE WITH THE BISHOP", "bright_yellow");
             terminal.WriteLine("");
             
             terminal.WriteLine($"{bishopName} approaches with a serene expression.", "white");

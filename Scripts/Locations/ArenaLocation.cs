@@ -74,10 +74,7 @@ public class ArenaLocation : BaseLocation
 
     private void ShowArenaBanner()
     {
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"-= THE ARENA =-".PadLeft((78 + 15) / 2).PadRight(78)}║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("-= THE ARENA =-", "bright_red");
         terminal.SetColor("gray");
         terminal.WriteLine("  Torches flicker along the walls of the combat pit. The crowd roars");
         terminal.WriteLine("  as another challenger steps onto the blood-stained sand.");
@@ -176,7 +173,10 @@ public class ArenaLocation : BaseLocation
 
         terminal.ClearScreen();
         terminal.SetColor("bright_red");
-        terminal.WriteLine("  ═══ CHOOSE YOUR OPPONENT ═══");
+        if (IsScreenReader)
+            terminal.WriteLine("  CHOOSE YOUR OPPONENT");
+        else
+            terminal.WriteLine("  ═══ CHOOSE YOUR OPPONENT ═══");
         terminal.WriteLine("");
         terminal.SetColor("bright_cyan");
         terminal.WriteLine($"  Attacks remaining today: {GameConfig.MaxPvPAttacksPerDay - attacksToday}");
@@ -209,8 +209,11 @@ public class ArenaLocation : BaseLocation
         // Display opponent list
         terminal.SetColor("yellow");
         terminal.WriteLine($"  {"#",-4} {"Name",-20} {"Level",-8} {"Class",-12} {"Status"}");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  " + new string('─', 52));
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("darkgray");
+            terminal.WriteLine("  " + new string('─', 52));
+        }
 
         for (int i = 0; i < eligible.Count; i++)
         {
@@ -355,7 +358,10 @@ public class ArenaLocation : BaseLocation
             // Display victory
             terminal.WriteLine("");
             terminal.SetColor("bright_green");
-            terminal.WriteLine("  ═══ VICTORY! ═══");
+            if (IsScreenReader)
+                terminal.WriteLine("  VICTORY!");
+            else
+                terminal.WriteLine("  ═══ VICTORY! ═══");
             if (goldStolen > 0)
             {
                 terminal.SetColor("yellow");
@@ -396,7 +402,10 @@ public class ArenaLocation : BaseLocation
 
             terminal.WriteLine("");
             terminal.SetColor("bright_red");
-            terminal.WriteLine("  ═══ DEFEAT! ═══");
+            if (IsScreenReader)
+                terminal.WriteLine("  DEFEAT!");
+            else
+                terminal.WriteLine("  ═══ DEFEAT! ═══");
             terminal.SetColor("gray");
             terminal.WriteLine($"  You were defeated by {target.DisplayName}'s shadow in the Arena.");
             terminal.WriteLine("");
@@ -478,7 +487,10 @@ public class ArenaLocation : BaseLocation
 
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("  ═══ ARENA LEADERBOARD ═══");
+        if (IsScreenReader)
+            terminal.WriteLine("  ARENA LEADERBOARD");
+        else
+            terminal.WriteLine("  ═══ ARENA LEADERBOARD ═══");
         terminal.WriteLine("");
 
         if (leaderboard.Count == 0)
@@ -490,8 +502,11 @@ public class ArenaLocation : BaseLocation
         {
             terminal.SetColor("darkgray");
             terminal.WriteLine($"  {"#",-4} {"Name",-20} {"W/L",-10} {"Level",-8} {"Gold Stolen"}");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("  " + new string('─', 56));
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("  " + new string('─', 56));
+            }
 
             foreach (var entry in leaderboard)
             {
@@ -526,7 +541,10 @@ public class ArenaLocation : BaseLocation
 
         terminal.ClearScreen();
         terminal.SetColor("bright_red");
-        terminal.WriteLine("  ═══ RECENT ARENA FIGHTS ═══");
+        if (IsScreenReader)
+            terminal.WriteLine("  RECENT ARENA FIGHTS");
+        else
+            terminal.WriteLine("  ═══ RECENT ARENA FIGHTS ═══");
         terminal.WriteLine("");
 
         if (fights.Count == 0)
@@ -570,7 +588,10 @@ public class ArenaLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("  ═══ YOUR PVP RECORD ═══");
+        if (IsScreenReader)
+            terminal.WriteLine("  YOUR PVP RECORD");
+        else
+            terminal.WriteLine("  ═══ YOUR PVP RECORD ═══");
         terminal.WriteLine("");
 
         var stats = currentPlayer.Statistics;

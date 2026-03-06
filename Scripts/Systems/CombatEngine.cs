@@ -153,6 +153,11 @@ public partial class CombatEngine
                 tip = classTips[random.Next(classTips.Length)];
             else
                 tip = CombatTips[random.Next(CombatTips.Length)];
+            if (GameConfig.ScreenReaderMode)
+            {
+                // Strip bracket-key formatting like [P]ower Attack → Power Attack
+                tip = System.Text.RegularExpressions.Regex.Replace(tip, @"\[(\w)\]", "$1");
+            }
             terminal.SetColor("dark_gray");
             terminal.WriteLine($"  {tip}");
             terminal.WriteLine("");
@@ -728,7 +733,10 @@ public partial class CombatEngine
             if (statusMessages.Count > 0)
             {
                 terminal.SetColor("gray");
-                terminal.WriteLine("─── Status Effects ───");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("─── Status Effects ───");
+                else
+                    terminal.WriteLine("Status Effects:");
                 DisplayStatusEffectMessages(statusMessages);
                 terminal.WriteLine("");
             }
@@ -2910,7 +2918,7 @@ public partial class CombatEngine
         // Show poison selection menu
         terminal.WriteLine("");
         terminal.SetColor("dark_green");
-        terminal.WriteLine("═══ Select Poison ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "Select Poison:" : "═══ Select Poison ═══");
         terminal.SetColor("gray");
         terminal.WriteLine($"Vials remaining: {player.PoisonVials}");
         terminal.WriteLine("");
@@ -4767,8 +4775,18 @@ public partial class CombatEngine
         if (isBoss)
         {
             terminal.ClearScreen();
-            await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.BossVictory, 40);
-            terminal.WriteLine("");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("");
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("  BOSS DEFEATED!");
+                terminal.WriteLine("");
+            }
+            else
+            {
+                await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.BossVictory, 40);
+                terminal.WriteLine("");
+            }
             await Task.Delay(GetCombatDelay(1000));
         }
 
@@ -5747,24 +5765,28 @@ public partial class CombatEngine
         {
             case LootGenerator.ItemRarity.Legendary:
             case LootGenerator.ItemRarity.Artifact:
-                terminal.WriteLine("╔════════════════════════════════════════════════════════╗");
-                terminal.WriteLine("║           *** LEGENDARY DROP! ***                ║");
-                terminal.WriteLine("╚════════════════════════════════════════════════════════╝");
+                UIHelper.WriteBoxHeader(terminal, "*** LEGENDARY DROP! ***", "bright_cyan", 56);
                 break;
             case LootGenerator.ItemRarity.Epic:
-                terminal.WriteLine("═══════════════════════════════════════");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("═══════════════════════════════════════");
                 terminal.WriteLine("      ** EPIC DROP! **");
-                terminal.WriteLine("═══════════════════════════════════════");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("═══════════════════════════════════════");
                 break;
             case LootGenerator.ItemRarity.Rare:
-                terminal.WriteLine("═════════════════════════════");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("═════════════════════════════");
                 terminal.WriteLine("     * RARE DROP! *");
-                terminal.WriteLine("═════════════════════════════");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("═════════════════════════════");
                 break;
             default:
-                terminal.WriteLine("─────────────────────────────");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("─────────────────────────────");
                 terminal.WriteLine("       ITEM FOUND!");
-                terminal.WriteLine("─────────────────────────────");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("─────────────────────────────");
                 break;
         }
 
@@ -5911,7 +5933,7 @@ public partial class CombatEngine
             var followerTerm = player.RemoteTerminal;
             followerTerm.SetColor("bright_yellow");
             followerTerm.WriteLine("");
-            followerTerm.WriteLine($"  ── LOOT DROP from {monster.Name} ──");
+            followerTerm.WriteLine(GameConfig.ScreenReaderMode ? $"  LOOT DROP from {monster.Name}:" : $"  ── LOOT DROP from {monster.Name} ──");
             if (lootItem.IsIdentified)
             {
                 followerTerm.SetColor(rarityColor);
@@ -6765,7 +6787,7 @@ public partial class CombatEngine
 
             otherTerm.SetColor("bright_yellow");
             otherTerm.WriteLine("");
-            otherTerm.WriteLine($"  ── LOOT PASSED to you from {monster.Name} ──");
+            otherTerm.WriteLine(GameConfig.ScreenReaderMode ? $"  LOOT PASSED to you from {monster.Name}:" : $"  ── LOOT PASSED to you from {monster.Name} ──");
             if (lootItem.IsIdentified)
             {
                 otherTerm.SetColor(rarityColor);
@@ -7071,7 +7093,8 @@ public partial class CombatEngine
     {
         terminal.WriteLine("");
         terminal.SetColor("gray");
-        terminal.WriteLine("  ─────────────────────────────────────");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("  ─────────────────────────────────────");
         // Determine which slot this item would go in
         EquipmentSlot targetSlot = lootItem.Type switch
         {
@@ -7238,7 +7261,8 @@ public partial class CombatEngine
         }
 
         terminal.SetColor("gray");
-        terminal.WriteLine("  ─────────────────────────────────────");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("  ─────────────────────────────────────");
 
         await Task.CompletedTask; // Keep async signature for consistency
     }
@@ -8275,14 +8299,24 @@ public partial class CombatEngine
                 player.HintsShown.Add(HintSystem.HINT_FIRST_COMBAT_CLASS);
                 var classTip = HintSystem.GetClassCombatTip(player.Class);
                 terminal.WriteLine("");
-                terminal.SetColor("gray");
-                terminal.WriteLine("┌─── TIP ────────────────────────────────────────────────────────────────────┐");
-                terminal.SetColor("bright_green");
-                terminal.WriteLine($"│ Your First Battle!");
-                terminal.SetColor("white");
-                terminal.WriteLine($"│ {classTip}");
-                terminal.SetColor("gray");
-                terminal.WriteLine("└────────────────────────────────────────────────────────────────────────────┘");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("┌─── TIP ────────────────────────────────────────────────────────────────────┐");
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine($"│ Your First Battle!");
+                    terminal.SetColor("white");
+                    terminal.WriteLine($"│ {classTip}");
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("└────────────────────────────────────────────────────────────────────────────┘");
+                }
+                else
+                {
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine("TIP: Your First Battle!");
+                    terminal.SetColor("white");
+                    terminal.WriteLine(classTip);
+                }
                 terminal.WriteLine("");
             }
 
@@ -10998,7 +11032,7 @@ public partial class CombatEngine
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ COMBAT ABILITIES ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "COMBAT ABILITIES:" : "═══ COMBAT ABILITIES ═══");
         terminal.WriteLine("");
 
         var availableAbilities = ClassAbilitySystem.GetAvailableAbilities(player);
@@ -11500,7 +11534,7 @@ public partial class CombatEngine
 
         terminal.WriteLine("");
         terminal.SetColor("bright_green");
-        terminal.WriteLine("═══ HEAL ALLY ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "HEAL ALLY:" : "═══ HEAL ALLY ═══");
         terminal.WriteLine("");
 
         // Show healing options
@@ -12367,6 +12401,20 @@ public partial class CombatEngine
             .ToList();
         if (affordableAbilities.Count == 0) return false;
 
+        // Don't pick heal abilities unless someone in the party actually needs healing
+        // (TryTeammateHealAction already handles heal spells/potions with proper thresholds)
+        var allParty = new List<Character> { currentPlayer };
+        if (currentTeammates != null)
+            allParty.AddRange(currentTeammates.Where(t => t.IsAlive));
+        bool anyoneNeedsHealing = allParty.Any(m => m.IsAlive && m.HP < m.MaxHP * 0.7);
+        if (!anyoneNeedsHealing)
+        {
+            affordableAbilities = affordableAbilities
+                .Where(a => a.Type != ClassAbilitySystem.AbilityType.Heal)
+                .ToList();
+            if (affordableAbilities.Count == 0) return false;
+        }
+
         // 50% chance to use an ability each round (was 30% — too conservative)
         if (random.Next(100) >= 50) return false;
 
@@ -12528,10 +12576,7 @@ public partial class CombatEngine
         terminal.WriteLine("");
         await Task.Delay(500);
 
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║              COMPANION SACRIFICE                    ║");
-        terminal.WriteLine("╚════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "COMPANION SACRIFICE", "bright_red", 52);
         terminal.WriteLine("");
         await Task.Delay(1000);
 
@@ -13025,26 +13070,45 @@ public partial class CombatEngine
     /// </summary>
     private async Task HandleNpcTeammateDeath(Character npc, string killerName, CombatResult result)
     {
-        terminal.WriteLine("");
-        terminal.SetColor("dark_red");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════");
-        terminal.WriteLine($"  {npc.DisplayName} has fallen in battle!");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════");
-        terminal.WriteLine("");
-        await Task.Delay(1500);
-
-        // Mark the NPC as dead with permadeath roll (monster killed them — not player's fault)
+        // Check if this NPC is protected (player team members get healed instead of killed)
         var npcId = npc.ID ?? "";
         var deathLocation = string.IsNullOrEmpty(result.Player?.CurrentLocation) ? "the dungeons" : result.Player.CurrentLocation;
         var worldNpc = UsurperRemake.Systems.NPCSpawnSystem.Instance?.ActiveNPCs?.FirstOrDefault(n => n.ID == npcId);
         if (worldNpc != null)
         {
-            WorldSimulator.Instance?.MarkNPCDead(worldNpc, GameConfig.PermadeathChancePlayerKill,
-                killerName, deathLocation);
-            DebugLogger.Instance.LogInfo("NPC", $"NPC DIED: {worldNpc.Name} (ID: {npcId}) - marked as dead (permadeath rolled)");
+            bool wasPermadeath = WorldSimulator.Instance?.MarkNPCDead(worldNpc, GameConfig.PermadeathChancePlayerKill,
+                killerName, deathLocation) ?? false;
+
+            // If MarkNPCDead returned false AND the NPC was healed (player team protection),
+            // they survived — show a knockdown message instead of death
+            if (!wasPermadeath && worldNpc.IsAlive)
+            {
+                terminal.WriteLine("");
+                terminal.SetColor("yellow");
+                terminal.WriteLine($"  {npc.DisplayName} is knocked down but staggers back to their feet!");
+                terminal.WriteLine("");
+                await Task.Delay(1000);
+
+                // Sync combat reference HP with world NPC (they were healed by MarkNPCDead)
+                npc.HP = worldNpc.HP;
+                DebugLogger.Instance.LogInfo("NPC", $"NPC SURVIVED: {worldNpc.Name} (ID: {npcId}) — player team protection, healed to {worldNpc.HP} HP");
+                return; // Don't proceed with death handling
+            }
+
+            DebugLogger.Instance.LogInfo("NPC", $"NPC DIED: {worldNpc.Name} (ID: {npcId}) - marked as dead (permadeath={wasPermadeath})");
         }
 
-        // Also mark the combat character reference
+        terminal.WriteLine("");
+        terminal.SetColor("dark_red");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════");
+        terminal.WriteLine($"  {npc.DisplayName} has fallen in battle!");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════");
+        terminal.WriteLine("");
+        await Task.Delay(1500);
+
+        // Mark the combat character reference as dead
         if (npc is NPC npcRef)
         {
             npcRef.IsDead = true;
@@ -13111,9 +13175,11 @@ public partial class CombatEngine
     {
         terminal.WriteLine("");
         terminal.SetColor("dark_red");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════");
         terminal.WriteLine($"  {mercenary.DisplayName} has fallen in battle!");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════");
         terminal.SetColor("yellow");
         terminal.WriteLine($"  Your hired bodyguard is gone. You'll need to hire a replacement.");
         terminal.WriteLine("");
@@ -13152,9 +13218,11 @@ public partial class CombatEngine
         // Use enhanced victory message
         var victoryMessage = CombatMessages.GetVictoryMessage(result.DefeatedMonsters.Count);
         terminal.SetColor("bright_green");
-        terminal.WriteLine("═══════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════");
         terminal.WriteLine($"    {victoryMessage}");
-        terminal.WriteLine("═══════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════");
         terminal.WriteLine("");
 
         // Broadcast victory to group followers with details
@@ -13493,16 +13561,26 @@ public partial class CombatEngine
         int boxWidth = 50; // inner width between ║ chars
         terminal.WriteLine("");
         terminal.SetColor("bright_green");
-        terminal.WriteLine("  ╔══════════════════════════════════════════════════╗");
-        terminal.WriteLine("  ║                                                  ║");
-        terminal.WriteLine("  ║            ★  FIRST BLOOD!  ★                    ║");
-        terminal.WriteLine("  ║                                                  ║");
-        terminal.WriteLine("  ║  You slew your first monster!                    ║");
-        terminal.WriteLine($"  ║{bonusLine.PadRight(boxWidth)}║");
-        terminal.WriteLine("  ║                                                  ║");
-        terminal.WriteLine("  ║  The dungeons hold many more challenges...       ║");
-        terminal.WriteLine("  ║                                                  ║");
-        terminal.WriteLine("  ╚══════════════════════════════════════════════════╝");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("  ╔══════════════════════════════════════════════════╗");
+            terminal.WriteLine("  ║                                                  ║");
+            terminal.WriteLine("  ║            ★  FIRST BLOOD!  ★                    ║");
+            terminal.WriteLine("  ║                                                  ║");
+            terminal.WriteLine("  ║  You slew your first monster!                    ║");
+            terminal.WriteLine($"  ║{bonusLine.PadRight(boxWidth)}║");
+            terminal.WriteLine("  ║                                                  ║");
+            terminal.WriteLine("  ║  The dungeons hold many more challenges...       ║");
+            terminal.WriteLine("  ║                                                  ║");
+            terminal.WriteLine("  ╚══════════════════════════════════════════════════╝");
+        }
+        else
+        {
+            terminal.WriteLine("FIRST BLOOD!");
+            terminal.WriteLine("You slew your first monster!");
+            terminal.WriteLine(bonusLine.Trim());
+            terminal.WriteLine("The dungeons hold many more challenges...");
+        }
         terminal.SetColor("white");
         terminal.WriteLine("");
 
@@ -13667,8 +13745,18 @@ public partial class CombatEngine
         terminal.ClearScreen();
 
         // Display dramatic death art
-        await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.Death, 60);
-        terminal.WriteLine("");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("");
+            terminal.SetColor("red");
+            terminal.WriteLine("  YOU DIED");
+            terminal.WriteLine("");
+        }
+        else
+        {
+            await UsurperRemake.UI.ANSIArt.DisplayArtAnimated(terminal, UsurperRemake.UI.ANSIArt.Death, 60);
+            terminal.WriteLine("");
+        }
         await Task.Delay(GetCombatDelay(1000));
 
         // Show NPC teammate reactions to player death
@@ -13721,10 +13809,12 @@ public partial class CombatEngine
         if (DifficultySystem.IsPermadeath())
         {
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
             terminal.WriteLine("        N I G H T M A R E   M O D E", "bright_red");
             terminal.WriteLine("              P E R M A D E A T H", "bright_red");
-            terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
             terminal.WriteLine("");
             await Task.Delay(GetCombatDelay(2000));
             terminal.WriteLine("There is no resurrection. There is no mercy.", "red");
@@ -13842,10 +13932,7 @@ public partial class CombatEngine
         });
 
         // Present choices
-        terminal.SetColor("yellow");
-        terminal.WriteLine("╔════════════════════════════════════════╗");
-        terminal.WriteLine("║         THE VEIL BETWEEN WORLDS        ║");
-        terminal.WriteLine("╚════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "THE VEIL BETWEEN WORLDS", "yellow", 40);
         terminal.WriteLine("");
         terminal.WriteLine("You stand at the threshold between life and death.");
         terminal.WriteLine("Choose your path:");
@@ -14100,10 +14187,7 @@ public partial class CombatEngine
     /// </summary>
     private async Task ExecuteFightToDeath(Character player, Monster monster, CombatResult result)
     {
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔════════════════════════════════════════╗");
-        terminal.WriteLine("║     YOU ENTER A BERSERKER RAGE!        ║");
-        terminal.WriteLine("╚════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "YOU ENTER A BERSERKER RAGE!", "bright_red", 40);
         terminal.SetColor("red");
         terminal.WriteLine("Your eyes turn red with fury! No retreat, no mercy!");
         terminal.WriteLine("You will fight until death - yours or theirs!");
@@ -14119,7 +14203,7 @@ public partial class CombatEngine
         {
             round++;
             terminal.SetColor("red");
-            terminal.WriteLine($"═══ RAGE ROUND {round} ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? $"RAGE ROUND {round}:" : $"═══ RAGE ROUND {round} ═══");
 
             // Player attacks with berserker fury (doubled damage, more attacks)
             int rageAttacks = Math.Max(2, GetAttackCount(player) + 1); // At least 2 attacks, +1 bonus
@@ -14348,7 +14432,7 @@ public partial class CombatEngine
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ COMBAT ABILITIES ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "COMBAT ABILITIES:" : "═══ COMBAT ABILITIES ═══");
         terminal.WriteLine("");
 
         // Get available abilities for this character
@@ -15191,7 +15275,7 @@ public partial class CombatEngine
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_red");
-        terminal.WriteLine("═══ PLAYER FIGHT ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "PLAYER FIGHT:" : "═══ PLAYER FIGHT ═══");
         terminal.WriteLine("");
         
         terminal.SetColor("white");
@@ -15531,7 +15615,7 @@ public partial class CombatEngine
             }
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ COMBAT ABILITIES ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "COMBAT ABILITIES:" : "═══ COMBAT ABILITIES ═══");
             terminal.SetColor("cyan");
             terminal.WriteLine($"Combat Stamina: {attacker.CurrentCombatStamina}/{attacker.MaxCombatStamina}");
             terminal.WriteLine("");
@@ -15981,7 +16065,7 @@ public partial class CombatEngine
     {
         terminal.ClearScreen();
         terminal.SetColor("white");
-        terminal.WriteLine("═══ Spell Casting ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "Spell Casting:" : "═══ Spell Casting ═══");
         
         // Check weapon requirement for spell casting
         if (!SpellSystem.HasRequiredSpellWeapon(player))
@@ -16817,14 +16901,14 @@ public partial class CombatEngine
                         {
                             godPlayer.GodLevel = newLevel;
                             int titleIdx = Math.Clamp(newLevel - 1, 0, GameConfig.GodTitles.Length - 1);
-                            session.EnqueueMessage(
-                                $"\u001b[1;36m  ✦ Your divine power grows! You are now a {GameConfig.GodTitles[titleIdx]}! ✦\u001b[0m");
+                            var divineMsg = $"\u001b[1;36m  ✦ Your divine power grows! You are now a {GameConfig.GodTitles[titleIdx]}! ✦\u001b[0m";
+                            session.EnqueueMessage(session.ScreenReaderMode ? divineMsg.Replace("✦", "*") : divineMsg);
                             NewsSystem.Instance?.Newsy(true, $"{godPlayer.DivineName} has ascended to the rank of {GameConfig.GodTitles[titleIdx]}!");
                         }
                         else
                         {
-                            session.EnqueueMessage(
-                                $"\u001b[33m  ✦ {player.DisplayName} sacrificed {monsterDesc} in your name (+{godXP:N0} divine power) ✦\u001b[0m");
+                            var sacMsg = $"\u001b[33m  ✦ {player.DisplayName} sacrificed {monsterDesc} in your name (+{godXP:N0} divine power) ✦\u001b[0m";
+                            session.EnqueueMessage(session.ScreenReaderMode ? sacMsg.Replace("✦", "*") : sacMsg);
                         }
                         break;
                     }
@@ -17662,7 +17746,7 @@ public partial class CombatEngine
     {
         terminal.WriteLine("");
         terminal.SetColor("bright_red");
-        terminal.WriteLine($"═══ PHASE {newPhase} ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? $"PHASE {newPhase}:" : $"═══ PHASE {newPhase} ═══");
         terminal.WriteLine("");
 
         var dialogue = newPhase switch
@@ -17841,7 +17925,7 @@ public partial class CombatEngine
         // Announce this player's turn to the leader (on their terminal) and other followers
         string turnAnnounce = $"\u001b[1;36m  ── {teammate.DisplayName}'s turn ──\u001b[0m";
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"  ── {teammate.DisplayName}'s turn ──");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? $"  {teammate.DisplayName}'s turn:" : $"  ── {teammate.DisplayName}'s turn ──");
         BroadcastGroupCombatEvent(result, turnAnnounce);
 
         // Swap terminal to follower's BEFORE display so full combat UI renders on their screen
@@ -17978,7 +18062,7 @@ public partial class CombatEngine
         List<Monster> monsters, CombatResult result)
     {
         followerTerm.SetColor("bright_cyan");
-        followerTerm.WriteLine($"\n  ═══ YOUR TURN ({teammate.DisplayName}) ═══");
+        followerTerm.WriteLine(GameConfig.ScreenReaderMode ? $"\nYOUR TURN ({teammate.DisplayName}):" : $"\n  ═══ YOUR TURN ({teammate.DisplayName}) ═══");
 
         // Show alive monsters
         followerTerm.SetColor("yellow");
@@ -18450,7 +18534,9 @@ public partial class CombatEngine
             var gpSession = GroupSystem.GetSession(groupedPlayer.GroupPlayerUsername ?? "");
             if (gpSession != null)
             {
-                string rewardMsg = $"\u001b[1;32m\n  ═══ YOUR REWARDS ({groupedPlayer.DisplayName}) ═══\u001b[0m\n" +
+                string rewardHeader = gpSession.ScreenReaderMode ? "--- YOUR REWARDS" : "═══ YOUR REWARDS";
+                string rewardFooter = gpSession.ScreenReaderMode ? "---" : "═══";
+                string rewardMsg = $"\u001b[1;32m\n  {rewardHeader} ({groupedPlayer.DisplayName}) {rewardFooter}\u001b[0m\n" +
                     $"\u001b[33m  Experience gained: {playerExp:N0}\u001b[0m\n" +
                     $"\u001b[33m  Gold gained: {goldPerPlayer:N0}\u001b[0m";
                 if (groupXPMult < 1.0f)
@@ -18460,7 +18546,8 @@ public partial class CombatEngine
                 if (groupedPlayer.Level > levelBefore)
                 {
                     int levelsGained = groupedPlayer.Level - levelBefore;
-                    rewardMsg += $"\n\u001b[1;35m  ★ LEVEL UP! You are now Level {groupedPlayer.Level}! ★\u001b[0m";
+                    string lvlStar = gpSession.ScreenReaderMode ? "*" : "★";
+                    rewardMsg += $"\n\u001b[1;35m  {lvlStar} LEVEL UP! You are now Level {groupedPlayer.Level}! {lvlStar}\u001b[0m";
                     rewardMsg += $"\n\u001b[35m  HP restored to full. Stats increased!\u001b[0m";
 
                     // Broadcast level-up to the whole group
@@ -18525,14 +18612,14 @@ public partial class CombatEngine
                                 {
                                     godPlayer.GodLevel = gpNewLevel;
                                     int titleIdx = Math.Clamp(gpNewLevel - 1, 0, GameConfig.GodTitles.Length - 1);
-                                    kvp2.Value.EnqueueMessage(
-                                        $"\u001b[1;36m  ✦ Your divine power grows! You are now a {GameConfig.GodTitles[titleIdx]}! ✦\u001b[0m");
+                                    var gpDivineMsg = $"\u001b[1;36m  ✦ Your divine power grows! You are now a {GameConfig.GodTitles[titleIdx]}! ✦\u001b[0m";
+                                    kvp2.Value.EnqueueMessage(kvp2.Value.ScreenReaderMode ? gpDivineMsg.Replace("✦", "*") : gpDivineMsg);
                                     NewsSystem.Instance?.Newsy(true, $"{godPlayer.DivineName} has ascended to the rank of {GameConfig.GodTitles[titleIdx]}!");
                                 }
                                 else
                                 {
-                                    kvp2.Value.EnqueueMessage(
-                                        $"\u001b[33m  ✦ {groupedPlayer.DisplayName} sacrificed {gpMonsterDesc} in your name (+{gpGodXP:N0} divine power) ✦\u001b[0m");
+                                    var gpSacMsg = $"\u001b[33m  ✦ {groupedPlayer.DisplayName} sacrificed {gpMonsterDesc} in your name (+{gpGodXP:N0} divine power) ✦\u001b[0m";
+                                    kvp2.Value.EnqueueMessage(kvp2.Value.ScreenReaderMode ? gpSacMsg.Replace("✦", "*") : gpSacMsg);
                                 }
                                 break;
                             }

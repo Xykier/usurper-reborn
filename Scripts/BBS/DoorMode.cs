@@ -235,6 +235,11 @@ namespace UsurperRemake.BBS
                 {
                     _forceStdio = true;
                 }
+                // --screen-reader enables screen reader mode at startup (used by Play-Accessible launcher)
+                else if (arg == "--screen-reader")
+                {
+                    GameConfig.ScreenReaderMode = true;
+                }
                 // --verbose enables detailed debug output (also keeps console visible for debugging)
                 else if (arg == "--verbose" || arg == "-v")
                 {
@@ -932,6 +937,7 @@ namespace UsurperRemake.BBS
             Console.WriteLine("  --node, -n <dir>     Search node directory for drop files");
             Console.WriteLine("  --local, -l          Run in local mode (no BBS connection)");
             Console.WriteLine("  --stdio              Force Standard I/O mode (usually auto-detected)");
+            Console.WriteLine("  --screen-reader      Enable screen reader mode (plain text, no box-drawing)");
             Console.WriteLine("  --verbose, -v        Enable detailed debug output (keeps console visible)");
             Console.WriteLine("  --sysop-level <num>  Set SysOp security level threshold (default: 100)");
             Console.WriteLine("");

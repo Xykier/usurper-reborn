@@ -51,6 +51,11 @@ public class WeaponShopLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (IsScreenReader && currentPlayer != null && currentPlayer.WeapHag >= 1)
+        {
+            if (currentCategory == null) { DisplayLocationSR(); return; }
+        }
+
         if (IsBBSSession && currentPlayer != null && currentPlayer.WeapHag >= 1)
         {
             if (currentCategory == null) { DisplayLocationBBS(); return; }
@@ -71,10 +76,7 @@ public class WeaponShopLocation : BaseLocation
             return;
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"WEAPON SHOP".PadLeft((77 + 11) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("WEAPON SHOP", "bright_cyan");
         terminal.WriteLine("");
 
         ShowNPCsInLocation();
@@ -142,83 +144,58 @@ public class WeaponShopLocation : BaseLocation
         terminal.WriteLine("Select a category:");
         terminal.WriteLine("");
 
-        // One-handed weapons
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("1");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.WriteLine("One-Handed Weapons (for dual-wield or sword+shield)");
-
-        // Two-handed weapons
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("2");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.WriteLine("Two-Handed Weapons (high damage, both hands occupied)");
-
-        // Bows
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("3");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.WriteLine("Bows (ranged, two-handed)");
-
-        // Shields
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("4");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.WriteLine("Shields (off-hand defense)");
+        WriteSRMenuOption("1", "One-Handed Weapons (for dual-wield or sword+shield)");
+        WriteSRMenuOption("2", "Two-Handed Weapons (high damage, both hands occupied)");
+        WriteSRMenuOption("3", "Bows (ranged, two-handed)");
+        WriteSRMenuOption("4", "Shields (off-hand defense)");
 
         terminal.WriteLine("");
 
-        // Sell option
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("S");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.WriteLine("ell weapons/shields");
-
-        // Auto-equip
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("A");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("cyan");
-        terminal.WriteLine("uto-buy best affordable weapon");
+        WriteSRMenuOption("S", "Sell weapons/shields");
+        WriteSRMenuOption("A", "Auto-buy best affordable weapon");
 
         terminal.WriteLine("");
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("R");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("red");
-        terminal.WriteLine("eturn to street");
+        WriteSRMenuOption("R", "Return to street");
         terminal.WriteLine("");
 
         ShowStatusLine();
 
         // Show first shop hint for new players
         HintSystem.Instance.TryShowHint(HintSystem.HINT_FIRST_SHOP, terminal, currentPlayer.HintsShown);
+    }
+
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.WriteLine("WEAPON SHOP");
+        terminal.WriteLine("");
+        terminal.SetColor("white");
+        terminal.WriteLine($"Run by {shopkeeperName} the troll. You have {FormatNumber(currentPlayer.Gold)} gold.");
+        terminal.WriteLine("");
+
+        // Current weapons
+        var mainHand = currentPlayer.GetEquipment(EquipmentSlot.MainHand);
+        var offHand = currentPlayer.GetEquipment(EquipmentSlot.OffHand);
+        terminal.SetColor("white");
+        terminal.WriteLine($"Main Hand: {(mainHand != null ? $"{mainHand.Name} (Pow:{mainHand.WeaponPower})" : "Empty")}");
+        terminal.WriteLine($"Off Hand: {(offHand != null ? (offHand.WeaponType == WeaponType.Shield || offHand.WeaponType == WeaponType.Buckler || offHand.WeaponType == WeaponType.TowerShield ? $"{offHand.Name} (AC:{offHand.ShieldBonus})" : $"{offHand.Name} (Pow:{offHand.WeaponPower})") : (mainHand?.Handedness == WeaponHandedness.TwoHanded ? "(using 2H weapon)" : "Empty"))}");
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Categories:");
+        WriteSRMenuOption("1", "One-Handed Weapons (for dual-wield or sword+shield)");
+        WriteSRMenuOption("2", "Two-Handed Weapons (high damage, both hands occupied)");
+        WriteSRMenuOption("3", "Bows (ranged, two-handed)");
+        WriteSRMenuOption("4", "Shields (off-hand defense)");
+        terminal.WriteLine("");
+        WriteSRMenuOption("S", "Sell weapons/shields");
+        WriteSRMenuOption("A", "Auto-buy best affordable weapon");
+        terminal.WriteLine("");
+        WriteSRMenuOption("R", "Return to street");
+        terminal.WriteLine("");
+        ShowStatusLine();
     }
 
     /// <summary>
@@ -387,8 +364,7 @@ public class WeaponShopLocation : BaseLocation
 
         List<Equipment> items = GetShopItemsForCategory(category);
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine($"═══ {categoryName} ═══");
+        WriteSectionHeader(categoryName, "bright_yellow");
         terminal.WriteLine("");
 
         // Show current item in this category
@@ -431,15 +407,13 @@ public class WeaponShopLocation : BaseLocation
         {
             terminal.SetColor("bright_blue");
             terminal.WriteLine("  #   Name                        Lvl  AC   Block  Price       Bonus");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("───────────────────────────────────────────────────────────────────────");
+            WriteDivider(67);
         }
         else
         {
             terminal.SetColor("bright_blue");
             terminal.WriteLine("  #   Name                        Lvl  Pow  Type      Price       Bonus");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("──────────────────────────────────────────────────────────────────────────");
+            WriteDivider(74);
         }
 
         int num = 1;
@@ -915,8 +889,7 @@ public class WeaponShopLocation : BaseLocation
     private async Task SellWeapon()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ Sell Weapons/Shields ═══");
+        WriteSectionHeader("Sell Weapons/Shields", "bright_yellow");
         terminal.WriteLine("");
 
         // Get Shadows faction fence bonus modifier (1.0 normal, 1.2 with Shadows)
@@ -1103,8 +1076,7 @@ public class WeaponShopLocation : BaseLocation
     private async Task AutoBuyBestWeapon()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ Auto-Buy Best Affordable Weapon ═══");
+        WriteSectionHeader("Auto-Buy Best Affordable Weapon", "bright_cyan");
         terminal.WriteLine("");
 
         var currentWeapon = currentPlayer.GetEquipment(EquipmentSlot.MainHand);
@@ -1171,8 +1143,7 @@ public class WeaponShopLocation : BaseLocation
             }
 
             // Show the weapon offer
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("─────────────────────────────────────");
+            WriteDivider(37, "bright_yellow");
             terminal.SetColor("cyan");
             terminal.WriteLine($"  {weapon.Name}");
             terminal.SetColor("white");

@@ -377,12 +377,19 @@ namespace UsurperRemake.Systems
             await Task.Delay(1200);
 
             terminal.WriteLine("");
-            terminal.WriteLine($"╔════════════════════════════════════════════════════════════════╗", boss.ThemeColor);
-            terminal.WriteLine($"║                                                                ║", boss.ThemeColor);
-            terminal.WriteLine($"║     {CenterText(boss.Name.ToUpper(), 58)}     ║", boss.ThemeColor);
-            terminal.WriteLine($"║     {CenterText(boss.Title, 58)}     ║", boss.ThemeColor);
-            terminal.WriteLine($"║                                                                ║", boss.ThemeColor);
-            terminal.WriteLine($"╚════════════════════════════════════════════════════════════════╝", boss.ThemeColor);
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine($"╔════════════════════════════════════════════════════════════════╗", boss.ThemeColor);
+                terminal.WriteLine($"║                                                                ║", boss.ThemeColor);
+                terminal.WriteLine($"║     {CenterText(boss.Name.ToUpper(), 58)}     ║", boss.ThemeColor);
+                terminal.WriteLine($"║     {CenterText(boss.Title, 58)}     ║", boss.ThemeColor);
+                terminal.WriteLine($"║                                                                ║", boss.ThemeColor);
+                terminal.WriteLine($"╚════════════════════════════════════════════════════════════════╝", boss.ThemeColor);
+            }
+            else
+            {
+                terminal.WriteLine($"{boss.Name.ToUpper()} - {boss.Title}", boss.ThemeColor);
+            }
             terminal.WriteLine("");
 
             // Show Old God art (skip for screen readers and BBS mode)
@@ -951,11 +958,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            string saveTitle = $"{boss.Name.ToUpper()} SAVED";
-            string paddedSaveTitle = saveTitle.PadLeft((61 + saveTitle.Length) / 2).PadRight(61);
-            terminal.WriteLine($"╔═══════════════════════════════════════════════════════════════╗", "bright_green");
-            terminal.WriteLine($"║{paddedSaveTitle}║", "bright_green");
-            terminal.WriteLine($"╚═══════════════════════════════════════════════════════════════╝", "bright_green");
+            UIHelper.WriteBoxHeader(terminal, $"{boss.Name.ToUpper()} SAVED", "bright_green", 63);
             terminal.WriteLine("");
 
             await Task.Delay(1500);
@@ -1030,11 +1033,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            string defeatTitle = $"{boss.Name.ToUpper()} DEFEATED";
-            string paddedTitle = defeatTitle.PadLeft((61 + defeatTitle.Length) / 2).PadRight(61);
-            terminal.WriteLine($"╔═══════════════════════════════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine($"║{paddedTitle}║", "bright_yellow");
-            terminal.WriteLine($"╚═══════════════════════════════════════════════════════════════╝", "bright_yellow");
+            UIHelper.WriteBoxHeader(terminal, $"{boss.Name.ToUpper()} DEFEATED", "bright_yellow", 63);
             terminal.WriteLine("");
 
             await Task.Delay(1500);
@@ -1118,9 +1117,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════╗", "dark_red");
-            terminal.WriteLine("║                       D E F E A T                             ║", "dark_red");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════╝", "dark_red");
+            UIHelper.WriteBoxHeader(terminal, "D E F E A T", "dark_red", 63);
             terminal.WriteLine("");
 
             await Task.Delay(1500);
@@ -1184,6 +1181,10 @@ namespace UsurperRemake.Systems
 
         private string RenderHealthBar(double percent, int width)
         {
+            if (GameConfig.ScreenReaderMode)
+            {
+                return $"{(int)(percent * 100)}%";
+            }
             int filled = (int)(percent * width);
             return new string('█', filled) + new string('░', width - filled);
         }

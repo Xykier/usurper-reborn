@@ -176,21 +176,33 @@ namespace UsurperRemake.Systems
         private void ShowHintBox(HintDefinition hint, TerminalEmulator terminal)
         {
             terminal.WriteLine("");
-            terminal.SetColor("gray");
-            terminal.WriteLine("┌─── TIP ────────────────────────────────────────────────────────────────────┐");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("┌─── TIP ────────────────────────────────────────────────────────────────────┐");
+            }
             terminal.SetColor(hint.Color);
-            terminal.WriteLine($"│ {hint.Title}");
+            if (GameConfig.ScreenReaderMode)
+                terminal.WriteLine($"TIP: {hint.Title}");
+            else
+                terminal.WriteLine($"│ {hint.Title}");
             terminal.SetColor("white");
 
             // Word wrap the message to fit in the box
             var wrappedLines = WordWrap(hint.Message, 75);
             foreach (var line in wrappedLines)
             {
-                terminal.WriteLine($"│ {line}");
+                if (GameConfig.ScreenReaderMode)
+                    terminal.WriteLine($"  {line}");
+                else
+                    terminal.WriteLine($"│ {line}");
             }
 
-            terminal.SetColor("gray");
-            terminal.WriteLine("└────────────────────────────────────────────────────────────────────────────┘");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("└────────────────────────────────────────────────────────────────────────────┘");
+            }
             terminal.WriteLine("");
         }
 

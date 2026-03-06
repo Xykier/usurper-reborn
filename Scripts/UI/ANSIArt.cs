@@ -33,20 +33,20 @@ namespace UsurperRemake.UI
         /// </summary>
         public static readonly string[] DungeonEntrance = new[]
         {
-            "[gray]",
-            "                    ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄",
-            "                   █░░░░░░░░░░░░░░░░░░░█",
-            "                  █░[white]╔═══════════════╗[gray]░█",
-            "                  █░[white]║[red]▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓[white]║[gray]░█",
-            "                  █░[white]║[red]▓[black]             [red]▓[white]║[gray]░█",
-            "                  █░[white]║[red]▓[black]   DUNGEON   [red]▓[white]║[gray]░█",
-            "                  █░[white]║[red]▓[black]    BELOW    [red]▓[white]║[gray]░█",
-            "                  █░[white]║[red]▓[black]             [red]▓[white]║[gray]░█",
-            "                  █░[white]║[red]▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓[white]║[gray]░█",
-            "                  █░[white]╚═══════════════╝[gray]░█",
-            "                 ██░░░░░░░░░░░░░░░░░░░░░██",
-            "                ████████████████████████████",
-            "[yellow]         You descend into the darkness below...[/]"
+            "[/]",
+            "[bright_yellow]▓▓[/]                                                                            [bright_yellow]▓▓",
+            "[yellow]██[/]                                                                            [yellow]██",
+            "[yellow]██[/]                  [darkgray]╔══════════════════════════════════════╗[/]                  [yellow]██",
+            "[yellow]██[/]                  [darkgray]║[/]                                      [darkgray]║[/]                  [yellow]██",
+            "[yellow]██══════════════════[darkgray]║[/]        [bright_red]T H E   D U N G E O N S[/]       [darkgray]║[yellow]══════════════════██",
+            "[yellow]██[/]                  [darkgray]║[/]                                      [darkgray]║[/]                  [yellow]██",
+            "[yellow]██[/]                  [darkgray]║[/]  [red]Abandon all hope ye who enter here[/]  [darkgray]║[/]                  [yellow]██",
+            "[yellow]██[/]                  [darkgray]║[/]                                      [darkgray]║[/]                  [yellow]██",
+            "[yellow]██[/]                  [darkgray]╚══════════════════════════════════════╝[/]                  [yellow]██",
+            "[yellow]██[/]                                                                            [yellow]██",
+            "[yellow]██[/]                                                                            [yellow]██",
+            "[darkgray]░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░",
+            "[/]"
         };
 
         /// <summary>
@@ -248,6 +248,7 @@ namespace UsurperRemake.UI
         /// </summary>
         public static void DisplayArt(TerminalEmulator terminal, string[] art)
         {
+            if (GameConfig.ScreenReaderMode) return;
             foreach (var line in art)
             {
                 if (line.StartsWith("[") && line.EndsWith("]") && !line.Contains(" "))
@@ -331,6 +332,7 @@ namespace UsurperRemake.UI
         /// </summary>
         public static async System.Threading.Tasks.Task DisplayArtAnimated(TerminalEmulator terminal, string[] art, int delayMs = 50)
         {
+            if (GameConfig.ScreenReaderMode) return;
             foreach (var line in art)
             {
                 if (line.StartsWith("[") && line.EndsWith("]") && !line.Contains(" "))

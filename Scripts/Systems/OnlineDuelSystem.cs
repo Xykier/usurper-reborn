@@ -128,7 +128,9 @@ public class OnlineDuelSystem
     private Task InitializeDuel(Character player, Character opponent, DuelResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.WriteLine($"\n{GameConfig.CombatColor}═══ ONLINE DUEL ═══{GameConfig.TextColor}");
+        terminal.WriteLine(GameConfig.ScreenReaderMode
+            ? $"\n{GameConfig.CombatColor}ONLINE DUEL{GameConfig.TextColor}"
+            : $"\n{GameConfig.CombatColor}═══ ONLINE DUEL ═══{GameConfig.TextColor}");
 
         if (challenger)
         {
@@ -238,7 +240,7 @@ public class OnlineDuelSystem
     /// </summary>
     private async Task<DuelAction> GetDuelAction(Character player, Character enemy, TerminalEmulator terminal)
     {
-        terminal.WriteLine("\n═══ DUEL ACTIONS ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "\nDUEL ACTIONS" : "\n═══ DUEL ACTIONS ═══");
         terminal.WriteLine("(A)ttack  (H)eal  (T)aunt  (S)ay Something");
         terminal.WriteLine("(U)se Item  (R)etreat");
         

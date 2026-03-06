@@ -390,8 +390,16 @@ public static class MudChatSystem
             .ThenBy(s => s.Username)
             .ToList();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Who's Online ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("Who's Online");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Who's Online ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        }
 
         if (sessions.Count == 0)
         {
@@ -444,7 +452,7 @@ public static class MudChatSystem
                 terminal.SetColor(color);
                 terminal.Write($" [{tag}] ");
                 if (isPlayerGod)
-                    terminal.Write("★ ", "bright_yellow");
+                    terminal.Write(GameConfig.ScreenReaderMode ? "(Immortal) " : "★ ", "bright_yellow");
                 terminal.Write(name, color);
                 if (!string.IsNullOrEmpty(title))
                     terminal.WriteRawAnsi(title);
@@ -457,8 +465,11 @@ public static class MudChatSystem
             }
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        }
         int wizCount = sessions.Count(s => s.WizardLevel > WizardLevel.Mortal);
         int immortalCount = sessions.Count(s => s.Context?.Engine?.CurrentPlayer?.IsImmortal == true && s.WizardLevel == WizardLevel.Mortal);
         string summary = $"  {sessions.Count} player(s) online";
@@ -466,8 +477,11 @@ public static class MudChatSystem
         if (immortalCount > 0) summary += $",  {immortalCount} immortal";
         terminal.SetColor("gray");
         terminal.WriteLine(summary);
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        }
         terminal.WriteLine("  Tip: /title <text>  to set your title  |  ANSI color codes supported");
 
         return true;
@@ -638,12 +652,18 @@ public static class MudChatSystem
                 return true;
             }
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  ═══════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("  ═══════════════════════════════════════════");
+            }
             terminal.SetColor("bright_white");
             terminal.WriteLine("  Your Group:");
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  ═══════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("  ═══════════════════════════════════════════");
+            }
 
             List<string> members;
             lock (existingGroup.MemberUsernames)

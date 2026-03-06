@@ -982,58 +982,165 @@ namespace UsurperRemake.Systems
 
         private static void ConnectRooms(DungeonFloor floor)
         {
-            // Create a connected graph of rooms
-            // First, ensure all rooms are reachable (minimum spanning tree)
-            var connected = new HashSet<string> { floor.Rooms[0].Id };
-            var unconnected = new HashSet<string>(floor.Rooms.Skip(1).Select(r => r.Id));
+            // Place rooms on a grid so directions are spatially consistent.
+            // Going North then South always returns you to the same room.
+            var gridSize = (int)Math.Ceiling(Math.Sqrt(floor.Rooms.Count)) + 2;
+            var grid = new string?[gridSize, gridSize];
+            var positions = new Dictionary<string, (int row, int col)>();
 
+            // Place entrance room near center
+            int startRow = gridSize / 2;
+            int startCol = gridSize / 2;
+            grid[startRow, startCol] = floor.Rooms[0].Id;
+            positions[floor.Rooms[0].Id] = (startRow, startCol);
+
+            var connected = new HashSet<string> { floor.Rooms[0].Id };
+            var unconnected = new List<string>(floor.Rooms.Skip(1).Select(r => r.Id));
+
+            // MST phase: connect each room to the graph via spatially valid directions
             while (unconnected.Count > 0)
             {
-                // Pick a random connected room and connect it to a random unconnected room
-                var fromRoom = floor.Rooms.First(r => connected.Contains(r.Id) && r.Exits.Count < 4);
-                var toRoomId = unconnected.First();
-                var toRoom = floor.Rooms.First(r => r.Id == toRoomId);
+                // Shuffle connected rooms for variety instead of always picking first
+                var connectedList = floor.Rooms
+                    .Where(r => connected.Contains(r.Id) && r.Exits.Count < 4)
+                    .ToList();
+                if (connectedList.Count == 0) break;
 
-                // Determine exit directions
-                var availableDirs = GetAvailableDirections(fromRoom);
-                if (availableDirs.Count > 0)
+                bool placed = false;
+                // Try connected rooms in random order
+                for (int attempt = 0; attempt < connectedList.Count * 2 && !placed; attempt++)
                 {
-                    var dir = availableDirs[random.Next(availableDirs.Count)];
-                    var oppositeDir = GetOppositeDirection(dir);
+                    var fromRoom = connectedList[random.Next(connectedList.Count)];
+                    var (fromRow, fromCol) = positions[fromRoom.Id];
 
-                    fromRoom.Exits[dir] = new RoomExit(toRoomId, GetExitDescription(dir, floor.Theme));
-                    toRoom.Exits[oppositeDir] = new RoomExit(fromRoom.Id, GetExitDescription(oppositeDir, floor.Theme));
+                    var availableDirs = GetAvailableDirections(fromRoom);
+                    // Shuffle directions
+                    for (int i = availableDirs.Count - 1; i > 0; i--)
+                    {
+                        int j = random.Next(i + 1);
+                        (availableDirs[i], availableDirs[j]) = (availableDirs[j], availableDirs[i]);
+                    }
 
-                    connected.Add(toRoomId);
-                    unconnected.Remove(toRoomId);
+                    foreach (var dir in availableDirs)
+                    {
+                        var (dr, dc) = DirectionOffset(dir);
+                        int newRow = fromRow + dr;
+                        int newCol = fromCol + dc;
+
+                        // Check grid bounds and that the cell is empty
+                        if (newRow < 0 || newRow >= gridSize || newCol < 0 || newCol >= gridSize)
+                            continue;
+                        if (grid[newRow, newCol] != null)
+                            continue;
+
+                        // Place the next unconnected room here
+                        var toRoomId = unconnected[0];
+                        var toRoom = floor.Rooms.First(r => r.Id == toRoomId);
+
+                        // Check that toRoom also has the opposite direction available
+                        var oppositeDir = GetOppositeDirection(dir);
+                        if (toRoom.Exits.ContainsKey(oppositeDir))
+                            continue;
+
+                        grid[newRow, newCol] = toRoomId;
+                        positions[toRoomId] = (newRow, newCol);
+
+                        fromRoom.Exits[dir] = new RoomExit(toRoomId, GetExitDescription(dir, floor.Theme));
+                        toRoom.Exits[oppositeDir] = new RoomExit(fromRoom.Id, GetExitDescription(oppositeDir, floor.Theme));
+
+                        connected.Add(toRoomId);
+                        unconnected.RemoveAt(0);
+                        placed = true;
+                        break;
+                    }
+                }
+
+                // Safety: if we couldn't place via neighbors, expand grid and force-place
+                if (!placed && unconnected.Count > 0)
+                {
+                    var toRoomId = unconnected[0];
+                    var toRoom = floor.Rooms.First(r => r.Id == toRoomId);
+
+                    // Find any connected room with an available direction and empty neighbor cell
+                    bool forcePlaced = false;
+                    foreach (var fromRoom in connectedList)
+                    {
+                        var (fromRow, fromCol) = positions[fromRoom.Id];
+                        foreach (var dir in GetAvailableDirections(fromRoom))
+                        {
+                            var (dr, dc) = DirectionOffset(dir);
+                            int newRow = fromRow + dr;
+                            int newCol = fromCol + dc;
+                            if (newRow < 0 || newRow >= gridSize || newCol < 0 || newCol >= gridSize)
+                                continue;
+                            if (grid[newRow, newCol] != null)
+                                continue;
+                            var oppositeDir = GetOppositeDirection(dir);
+                            if (toRoom.Exits.ContainsKey(oppositeDir))
+                                continue;
+
+                            grid[newRow, newCol] = toRoomId;
+                            positions[toRoomId] = (newRow, newCol);
+                            fromRoom.Exits[dir] = new RoomExit(toRoomId, GetExitDescription(dir, floor.Theme));
+                            toRoom.Exits[oppositeDir] = new RoomExit(fromRoom.Id, GetExitDescription(oppositeDir, floor.Theme));
+                            connected.Add(toRoomId);
+                            unconnected.RemoveAt(0);
+                            forcePlaced = true;
+                            break;
+                        }
+                        if (forcePlaced) break;
+                    }
+
+                    // Last resort: place without connection (shouldn't happen with adequate grid)
+                    if (!forcePlaced)
+                    {
+                        connected.Add(toRoomId);
+                        unconnected.RemoveAt(0);
+                    }
                 }
             }
 
-            // Add some extra connections for variety (loops)
+            // Add extra connections between adjacent rooms on the grid for variety (loops)
             int extraConnections = floor.Rooms.Count / 3;
             for (int i = 0; i < extraConnections; i++)
             {
                 var room1 = floor.Rooms[random.Next(floor.Rooms.Count)];
-                var room2 = floor.Rooms[random.Next(floor.Rooms.Count)];
+                if (room1.Exits.Count >= 4 || !positions.ContainsKey(room1.Id)) continue;
 
-                if (room1.Id != room2.Id && room1.Exits.Count < 4 && room2.Exits.Count < 4)
+                var (r1, c1) = positions[room1.Id];
+                var availableDirs1 = GetAvailableDirections(room1);
+                if (availableDirs1.Count == 0) continue;
+
+                var dir1 = availableDirs1[random.Next(availableDirs1.Count)];
+                var (dr, dc) = DirectionOffset(dir1);
+                int r2 = r1 + dr;
+                int c2 = c1 + dc;
+
+                if (r2 < 0 || r2 >= gridSize || c2 < 0 || c2 >= gridSize) continue;
+                var neighborId = grid[r2, c2];
+                if (neighborId == null) continue;
+
+                var room2 = floor.Rooms.First(r => r.Id == neighborId);
+                var oppositeDir1 = GetOppositeDirection(dir1);
+
+                if (room2.Exits.Count < 4 && !room2.Exits.ContainsKey(oppositeDir1))
                 {
-                    var availableDirs1 = GetAvailableDirections(room1);
-                    var availableDirs2 = GetAvailableDirections(room2);
-
-                    if (availableDirs1.Count > 0 && availableDirs2.Count > 0)
-                    {
-                        var dir = availableDirs1[random.Next(availableDirs1.Count)];
-                        var oppositeDir = GetOppositeDirection(dir);
-
-                        if (availableDirs2.Contains(oppositeDir))
-                        {
-                            room1.Exits[dir] = new RoomExit(room2.Id, GetExitDescription(dir, floor.Theme));
-                            room2.Exits[oppositeDir] = new RoomExit(room1.Id, GetExitDescription(oppositeDir, floor.Theme));
-                        }
-                    }
+                    room1.Exits[dir1] = new RoomExit(room2.Id, GetExitDescription(dir1, floor.Theme));
+                    room2.Exits[oppositeDir1] = new RoomExit(room1.Id, GetExitDescription(oppositeDir1, floor.Theme));
                 }
             }
+        }
+
+        private static (int dr, int dc) DirectionOffset(Direction dir)
+        {
+            return dir switch
+            {
+                Direction.North => (-1, 0),
+                Direction.South => (1, 0),
+                Direction.East => (0, 1),
+                Direction.West => (0, -1),
+                _ => (0, 0)
+            };
         }
 
         private static List<Direction> GetAvailableDirections(DungeonRoom room)

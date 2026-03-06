@@ -4,4 +4,4 @@
 
 cd "$(dirname "$0")"
 chmod +x UsurperReborn 2>/dev/null
-./UsurperReborn --local
+./UsurperReborn --local --screen-reader

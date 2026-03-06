@@ -71,8 +71,101 @@ public partial class MagicShopLocation : BaseLocation
             ShowAccessoryCategoryItems(_currentAccessoryCategory.Value);
             return;
         }
+        if (IsScreenReader && currentPlayer != null)
+        {
+            DisplayLocationSR();
+            return;
+        }
         if (IsBBSSession) { DisplayLocationBBS(); return; }
         DisplayMagicShopMenu(currentPlayer);
+    }
+
+    /// <summary>
+    /// Screen reader accessible layout — plain text, no box-drawing.
+    /// </summary>
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.SetColor("bright_cyan");
+        terminal.WriteLine("MAGIC SHOP");
+        terminal.SetColor("gray");
+        terminal.WriteLine($"Run by {_ownerName} the gnome.");
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        terminal.SetColor("yellow");
+        terminal.WriteLine($"Gold: {currentPlayer.Gold:N0}");
+
+        // Alignment price modifier
+        var alignMod = AlignmentSystem.Instance.GetPriceModifier(currentPlayer, isShadyShop: false);
+        if (alignMod != 1.0f)
+        {
+            var (alignText, alignColor) = AlignmentSystem.Instance.GetAlignmentDisplay(currentPlayer);
+            if (alignMod < 1.0f)
+                terminal.WriteLine($"{alignText} alignment: {(int)((1.0f - alignMod) * 100)}% discount");
+            else
+                terminal.WriteLine($"{alignText} alignment: {(int)((alignMod - 1.0f) * 100)}% markup");
+        }
+
+        // World event modifier
+        var worldMod = WorldEventSystem.Instance.GlobalPriceModifier;
+        if (Math.Abs(worldMod - 1.0f) > 0.01f)
+        {
+            if (worldMod < 1.0f)
+                terminal.WriteLine($"World Events: {(int)((1.0f - worldMod) * 100)}% discount active");
+            else
+                terminal.WriteLine($"World Events: {(int)((worldMod - 1.0f) * 100)}% price increase");
+        }
+
+        // Loyalty discount
+        float loyaltyDiscount = GetLoyaltyDiscount(currentPlayer);
+        if (loyaltyDiscount < 1.0f)
+        {
+            int discountPct = (int)((1.0f - loyaltyDiscount) * 100);
+            terminal.WriteLine($"Loyal Customer: {discountPct}% discount");
+        }
+        terminal.WriteLine("");
+
+        // Shopping
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Shopping:");
+        WriteSRMenuOption("1", "Rings");
+        WriteSRMenuOption("2", "Necklaces");
+        WriteSRMenuOption("S", "Sell Accessories");
+        WriteSRMenuOption("I", "Identify Item");
+        terminal.WriteLine("");
+
+        // Enchanting
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Enchanting:");
+        WriteSRMenuOption("E", "Enchant Equipment");
+        WriteSRMenuOption("W", "Remove Enchantment");
+        WriteSRMenuOption("C", "Curse Removal");
+        WriteSRMenuOption("F", "Enchantment Forge");
+        terminal.WriteLine("");
+
+        // Potions and Scrolls
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Potions and Scrolls:");
+        WriteSRMenuOption("H", "Healing Potions");
+        WriteSRMenuOption("M", "Mana Potions");
+        WriteSRMenuOption("D", "Dungeon Reset Scroll");
+        terminal.WriteLine("");
+
+        // Arcane Arts
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Arcane Arts:");
+        WriteSRMenuOption("V", "Love Spells");
+        WriteSRMenuOption("K", "Dark Arts");
+        WriteSRMenuOption("Y", "Study Spells");
+        WriteSRMenuOption("G", "Scrying, NPC Info");
+        terminal.WriteLine("");
+
+        // Other
+        WriteSRMenuOption("T", $"Talk to {_ownerName}");
+        WriteSRMenuOption("R", "Return to street");
+        terminal.WriteLine("");
     }
 
     /// <summary>
@@ -271,10 +364,7 @@ public partial class MagicShopLocation : BaseLocation
         terminal.ClearScreen();
 
         // Shop header - standardized format
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"MAGIC SHOP".PadLeft((77 + 10) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("MAGIC SHOP", "bright_cyan");
         DisplayMessage("");
         DisplayMessage($"Run by {_ownerName} the gnome", "gray");
         DisplayMessage("");
@@ -380,7 +470,7 @@ public partial class MagicShopLocation : BaseLocation
 
         long identifyCost = GetIdentificationCost(player.Level);
 
-        DisplayMessage($"═══ Unidentified Items ({unidentifiedItems.Count}) ═══", "cyan");
+        WriteSectionHeader($"Unidentified Items ({unidentifiedItems.Count})", "cyan");
         DisplayMessage($"Identification costs {identifyCost:N0} gold per item. You have {player.Gold:N0} gold.", "gray");
         DisplayMessage("");
 
@@ -430,7 +520,7 @@ public partial class MagicShopLocation : BaseLocation
     
     private void DisplayItemDetails(Item item)
     {
-        DisplayMessage("═══ Item Properties ═══", "cyan");
+        WriteSectionHeader("Item Properties", "cyan");
         DisplayMessage($"Name: {item.Name}", "white");
         DisplayMessage($"Value: {item.Value:N0} gold", "yellow");
         
@@ -546,7 +636,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task RemoveCurse(Character player)
     {
         DisplayMessage("");
-        DisplayMessage("═══ Curse Removal Service ═══", "magenta");
+        WriteSectionHeader("Curse Removal Service", "magenta");
         DisplayMessage("");
         DisplayMessage($"{_ownerName} peers at you with knowing eyes.", "gray");
         DisplayMessage("'Curses are tricky things. They bind to the soul, not just the flesh.'", "cyan");
@@ -726,7 +816,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task EnchantItem(Character player)
     {
         DisplayMessage("");
-        DisplayMessage("═══ Enchantment & Blessing Services ═══", "magenta");
+        WriteSectionHeader("Enchantment & Blessing Services", "magenta");
         DisplayMessage("");
         DisplayMessage($"{_ownerName} waves a gnarled hand over a collection of glowing runes.", "gray");
         DisplayMessage("'I can imbue your items with magical essence, or seek blessings from the divine.'", "cyan");
@@ -1014,10 +1104,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task EnchantEquipment(Character player)
     {
         terminal.ClearScreen();
-        terminal.SetColor("magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "ENCHANTMENT FORGE"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("ENCHANTMENT FORGE", "magenta");
         terminal.WriteLine("");
         terminal.SetColor("gray");
         terminal.Write($"  {_ownerName} examines your equipment with glowing eyes.");
@@ -1038,7 +1125,7 @@ public partial class MagicShopLocation : BaseLocation
         // Column header
         terminal.SetColor("darkgray");
         terminal.WriteLine("   #  Slot      Name                              Stats");
-        terminal.WriteLine("  ─── ──────── ────────────────────────────────── ──────────────────────────");
+        WriteDivider(72);
 
         var equippedItems = new List<(EquipmentSlot slot, Equipment equip)>();
         int idx = 1;
@@ -1107,7 +1194,7 @@ public partial class MagicShopLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("gray");
-        terminal.WriteLine("  [0] Cancel");
+        terminal.WriteLine(IsScreenReader ? "  0. Cancel" : "  [0] Cancel");
         terminal.WriteLine("");
         var slotInput = await terminal.GetInput("  Select item to enchant: ");
         if (!int.TryParse(slotInput, out int slotChoice) || slotChoice < 1 || slotChoice > equippedItems.Count)
@@ -1135,17 +1222,7 @@ public partial class MagicShopLocation : BaseLocation
 
         // Show enchantment options
         terminal.ClearScreen();
-        terminal.SetColor("magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.SetColor("magenta");
-        terminal.Write("║  Enchanting: ");
-        terminal.SetColor(selectedEquip.GetRarityColor());
-        terminal.Write(selectedEquip.Name);
-        int padLen = 63 - selectedEquip.Name.Length;
-        if (padLen < 0) padLen = 0;
-        terminal.SetColor("magenta");
-        terminal.WriteLine(new string(' ', padLen) + "║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader($"Enchanting: {selectedEquip.Name}", "magenta");
         terminal.WriteLine("");
 
         terminal.SetColor("gray");
@@ -1153,12 +1230,10 @@ public partial class MagicShopLocation : BaseLocation
         terminal.WriteLine("");
 
         // Section: Stat enchants (tiers 1-4)
-        terminal.SetColor("white");
-        terminal.WriteLine("  ─── Stat Enchantments (choose a stat) ───");
+        WriteSectionHeader("Stat Enchantments (choose a stat)", "white");
         terminal.SetColor("darkgray");
         terminal.WriteLine("   #  Tier             Effect                  Cost");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ─── ──────────────── ─────────────────────── ──────────────");
+        WriteDivider(60);
 
         for (int i = 0; i < 4; i++)
         {
@@ -1191,12 +1266,10 @@ public partial class MagicShopLocation : BaseLocation
 
         // Section: Special enchants (tiers 5-9)
         terminal.WriteLine("");
-        terminal.SetColor("white");
-        terminal.WriteLine("  ─── Special Enchantments ───");
+        WriteSectionHeader("Special Enchantments", "white");
         terminal.SetColor("darkgray");
         terminal.WriteLine("   #  Tier             Effect                  Cost");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ─── ──────────────── ─────────────────────── ──────────────");
+        WriteDivider(60);
 
         for (int i = 4; i < EnchantTiers.Length; i++)
         {
@@ -1237,12 +1310,10 @@ public partial class MagicShopLocation : BaseLocation
 
         // Section: High-tier and Elemental enchants (tiers 10-14)
         terminal.WriteLine("");
-        terminal.SetColor("white");
-        terminal.WriteLine("  ─── Mythic & Elemental Enchantments ───");
+        WriteSectionHeader("Mythic & Elemental Enchantments", "white");
         terminal.SetColor("darkgray");
         terminal.WriteLine("   #  Tier             Effect                          Cost");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("  ─── ──────────────── ─────────────────────────────── ──────────────");
+        WriteDivider(66);
 
         for (int i = 9; i < EnchantTiers.Length; i++)
         {
@@ -1308,7 +1379,7 @@ public partial class MagicShopLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("gray");
-        terminal.WriteLine("  [0] Cancel");
+        terminal.WriteLine(IsScreenReader ? "  0. Cancel" : "  [0] Cancel");
         terminal.WriteLine("");
         var tierInput = await terminal.GetInput("  Select enchantment: ");
         if (!int.TryParse(tierInput, out int tierChoice) || tierChoice < 1 || tierChoice > EnchantTiers.Length)
@@ -1593,7 +1664,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task RemoveEnchantment(Character player)
     {
         terminal.ClearScreen();
-        DisplayMessage("═══ Enchantment Removal ═══", "magenta");
+        WriteSectionHeader("Enchantment Removal", "magenta");
         DisplayMessage("");
         DisplayMessage($"'{_ownerName} nods gravely. 'Removing an enchantment is delicate work.'", "cyan");
         DisplayMessage("");
@@ -1715,8 +1786,7 @@ public partial class MagicShopLocation : BaseLocation
         terminal.ClearScreen();
 
         // Header
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine($"═══ {categoryName} ═══");
+        WriteSectionHeader(categoryName, "bright_yellow");
         terminal.WriteLine("");
 
         // Gold + item count + page
@@ -1775,8 +1845,7 @@ public partial class MagicShopLocation : BaseLocation
         // Column header
         terminal.SetColor("bright_blue");
         terminal.WriteLine("  #   Name                        Lvl  Price       Bonuses");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("─────────────────────────────────────────────────────────────────────────");
+        WriteDivider(73);
         if (currentItem != null)
         {
             terminal.SetColor("darkgray");
@@ -2034,9 +2103,18 @@ public partial class MagicShopLocation : BaseLocation
                         terminal.SetColor("cyan");
                         terminal.WriteLine($"  Both ring slots are occupied:");
                         terminal.SetColor("white");
-                        terminal.WriteLine($"    [L] Left:  {lf.Name}");
-                        terminal.WriteLine($"    [R] Right: {rf.Name}");
-                        terminal.WriteLine($"    [C] Cancel purchase");
+                        if (IsScreenReader)
+                        {
+                            terminal.WriteLine($"    L. Left:  {lf.Name}");
+                            terminal.WriteLine($"    R. Right: {rf.Name}");
+                            terminal.WriteLine($"    C. Cancel purchase");
+                        }
+                        else
+                        {
+                            terminal.WriteLine($"    [L] Left:  {lf.Name}");
+                            terminal.WriteLine($"    [R] Right: {rf.Name}");
+                            terminal.WriteLine($"    [C] Cancel purchase");
+                        }
                         var fingerChoice = await terminal.GetInput("  Replace which? (L/R/C): ");
                         var fc = fingerChoice.Trim().ToUpper();
                         if (fc.StartsWith("C") || string.IsNullOrEmpty(fc))
@@ -2102,8 +2180,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task SellAccessory(Character player)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ Sell Accessories ═══");
+        WriteSectionHeader("Sell Accessories", "bright_yellow");
         terminal.WriteLine("");
 
         // Find sellable accessories in inventory (non-equipped items)
@@ -2353,17 +2430,7 @@ public partial class MagicShopLocation : BaseLocation
             int endIdx = Math.Min(startIdx + perPage, filtered.Count);
 
             terminal.ClearScreen();
-            terminal.SetColor("magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("magenta");
-            terminal.Write("║  ");
-            terminal.SetColor("bright_magenta");
-            terminal.Write(title);
-            int titlePad = 75 - title.Length;
-            if (titlePad < 0) titlePad = 0;
-            terminal.SetColor("magenta");
-            terminal.WriteLine(new string(' ', titlePad) + "║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader(title, "magenta");
 
             if (searchFilter != null)
             {
@@ -2382,8 +2449,7 @@ public partial class MagicShopLocation : BaseLocation
                 terminal.WriteLine("    #  Name                        Class        Lv  Status");
             else
                 terminal.WriteLine("    #  Name                        Class");
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("   " + new string('-', 65));
+            WriteDivider(68);
 
             if (filtered.Count == 0)
             {
@@ -2445,10 +2511,10 @@ public partial class MagicShopLocation : BaseLocation
 
             terminal.WriteLine("");
             terminal.SetColor("gray");
-            terminal.Write("  [0] Cancel");
+            terminal.Write(IsScreenReader ? "  0. Cancel" : "  [0] Cancel");
             if (totalPages > 1)
             {
-                terminal.Write("   [N]ext   [P]rev");
+                terminal.Write(IsScreenReader ? "   N. Next   P. Prev" : "   [N]ext   [P]rev");
                 terminal.SetColor("darkgray");
                 terminal.Write($"   Page {page + 1}/{totalPages}");
             }
@@ -2486,10 +2552,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task CastLoveSpell(Character player)
     {
         terminal.ClearScreen();
-        terminal.SetColor("magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "ARCANE ROMANCE"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("ARCANE ROMANCE", "magenta");
         terminal.WriteLine("");
         terminal.SetColor("gray");
         terminal.WriteLine($"  {_ownerName} produces a collection of shimmering vials and glowing crystals.");
@@ -2516,7 +2579,7 @@ public partial class MagicShopLocation : BaseLocation
         // Column header
         terminal.SetColor("darkgray");
         terminal.WriteLine("   #  Spell                      Effect                             Cost");
-        terminal.WriteLine("  ─── ────────────────────────── ────────────────────────────────── ──────────");
+        WriteDivider(78);
 
         for (int i = 0; i < LoveSpells.Length; i++)
         {
@@ -2568,7 +2631,7 @@ public partial class MagicShopLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("gray");
-        terminal.WriteLine("  [0] Cancel");
+        terminal.WriteLine(IsScreenReader ? "  0. Cancel" : "  [0] Cancel");
         terminal.WriteLine("");
 
         var spellInput = await terminal.GetInput("  Select spell: ");
@@ -2785,10 +2848,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task CastDeathSpell(Character player)
     {
         terminal.ClearScreen();
-        terminal.SetColor("red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "DARK ARTS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("DARK ARTS", "red");
         terminal.WriteLine("");
         terminal.SetColor("gray");
         terminal.WriteLine($"  {_ownerName}'s eyes darken. 'These are not services I offer lightly.'");
@@ -2811,7 +2871,7 @@ public partial class MagicShopLocation : BaseLocation
         // Column header
         terminal.SetColor("darkgray");
         terminal.WriteLine("   #  Spell              Effect                          Chance  Cost        Mana  Dark");
-        terminal.WriteLine("  ─── ────────────────── ─────────────────────────────── ─────── ─────────── ───── ─────");
+        WriteDivider(86);
 
         for (int i = 0; i < DeathSpells.Length; i++)
         {
@@ -2859,7 +2919,7 @@ public partial class MagicShopLocation : BaseLocation
         }
 
         terminal.SetColor("gray");
-        terminal.WriteLine("  [0] Cancel");
+        terminal.WriteLine(IsScreenReader ? "  0. Cancel" : "  [0] Cancel");
         terminal.WriteLine("");
 
         var spellInput = await terminal.GetInput("  Select spell: ");
@@ -2928,17 +2988,7 @@ public partial class MagicShopLocation : BaseLocation
         int darkShiftAmount = isGood ? selected.darkShift * 2 : selected.darkShift;
 
         terminal.ClearScreen();
-        terminal.SetColor("red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.SetColor("red");
-        terminal.Write("║  Confirm: ");
-        terminal.SetColor("bright_red");
-        terminal.Write(selected.name);
-        int pad = 66 - selected.name.Length;
-        if (pad < 0) pad = 0;
-        terminal.SetColor("red");
-        terminal.WriteLine(new string(' ', pad) + "║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader($"Confirm: {selected.name}", "red");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -3066,7 +3116,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task BuyManaPotions(Character player)
     {
         terminal.ClearScreen();
-        DisplayMessage("═══ Mana Potions ═══", "blue");
+        WriteSectionHeader("Mana Potions", "blue");
         DisplayMessage("");
 
         int potionPrice = (int)ApplyAllPriceModifiers(Math.Max(75, player.Level * 3), player);
@@ -3126,7 +3176,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task ScryNPC(Character player)
     {
         terminal.ClearScreen();
-        DisplayMessage("═══ Scrying Service ═══", "magenta");
+        WriteSectionHeader("Scrying Service", "magenta");
         DisplayMessage("");
         DisplayMessage($"{_ownerName} gazes into a crystal orb that swirls with mist...", "gray");
         DisplayMessage("'Name the soul you seek, and I shall find them.'", "cyan");
@@ -3163,7 +3213,7 @@ public partial class MagicShopLocation : BaseLocation
         DisplayMessage("The mists part to reveal...", "magenta");
         await Task.Delay(500);
         DisplayMessage("");
-        DisplayMessage($"═══ {target.Name1} ═══", "cyan");
+        WriteSectionHeader(target.Name1, "cyan");
         DisplayMessage($"  Class: {target.Class}    Level: {target.Level}", "white");
         DisplayMessage($"  Status: {(target.IsDead ? "DEAD" : "Alive")}", target.IsDead ? "red" : "green");
 
@@ -3197,7 +3247,7 @@ public partial class MagicShopLocation : BaseLocation
     private async Task TalkToOwnerEnhanced(Character player)
     {
         terminal.ClearScreen();
-        DisplayMessage($"═══ Conversation with {_ownerName} ═══", "cyan");
+        WriteSectionHeader($"Conversation with {_ownerName}", "cyan");
         DisplayMessage("");
 
         int awakeningLevel = OceanPhilosophySystem.Instance?.AwakeningLevel ?? 0;

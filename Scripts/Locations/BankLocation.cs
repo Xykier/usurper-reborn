@@ -74,6 +74,12 @@ public class BankLocation : BaseLocation
             return;
         }
 
+        if (IsScreenReader)
+        {
+            DisplayLocationSR();
+            return;
+        }
+
         if (IsBBSSession)
         {
             DisplayLocationBBS();
@@ -81,10 +87,7 @@ public class BankLocation : BaseLocation
         }
 
         // Standardized bank header
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"THE IRONVAULT BANK".PadLeft((77 + 18) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE IRONVAULT BANK", "bright_cyan");
         terminal.WriteLine("");
         terminal.SetColor("gray");
         terminal.WriteLine("              \"Where Your Fortune is Our Foundation\"");
@@ -149,10 +152,7 @@ public class BankLocation : BaseLocation
 
     private void DisplayBannedMessage()
     {
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("+==========================================================+");
-        terminal.WriteLine("|                  !!! ACCESS DENIED !!!                   |");
-        terminal.WriteLine("+==========================================================+");
+        WriteBoxHeader("ACCESS DENIED", "bright_red");
         terminal.WriteLine("");
 
         terminal.SetColor("red");
@@ -174,7 +174,7 @@ public class BankLocation : BaseLocation
         terminal.WriteLine("");
 
         terminal.SetColor("white");
-        terminal.WriteLine("[Q] Leave (the only option)");
+        terminal.WriteLine(IsScreenReader ? "Q. Leave (the only option)" : "[Q] Leave (the only option)");
     }
 
     private void DisplayBankDescription()
@@ -214,8 +214,7 @@ public class BankLocation : BaseLocation
 
     private void DisplayAccountSummary()
     {
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("--- Your Account Status ---");
+        WriteSectionHeader("Your Account Status", "bright_white");
 
         terminal.SetColor("white");
         terminal.Write("Gold on Hand:  ");
@@ -354,6 +353,43 @@ public class BankLocation : BaseLocation
         terminal.WriteLine("");
     }
 
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.WriteLine("THE IRONVAULT BANK");
+        terminal.WriteLine("Where Your Fortune is Our Foundation");
+        terminal.WriteLine("");
+
+        // Account summary
+        terminal.WriteLine($"Gold on Hand: {currentPlayer.Gold:N0}");
+        terminal.WriteLine($"Gold in Bank: {currentPlayer.BankGold:N0}");
+        terminal.WriteLine($"Total Worth: {(currentPlayer.Gold + currentPlayer.BankGold):N0}");
+        if (currentPlayer.BankGuard)
+            terminal.WriteLine($"Guard Status: ACTIVE, Wage: {currentPlayer.BankWage:N0} per day");
+        if (currentPlayer.Loan > 0)
+            terminal.WriteLine($"Outstanding Loan: {currentPlayer.Loan:N0} gold, 5% daily interest");
+        terminal.WriteLine("");
+
+        // Show NPCs
+        ShowNPCsInLocation();
+
+        // Menu
+        terminal.WriteLine("Banking Services:");
+        WriteSRMenuOption("D", "Deposit Gold");
+        WriteSRMenuOption("W", "Withdraw Gold");
+        WriteSRMenuOption("T", "Transfer to Player");
+        WriteSRMenuOption("L", "Loan Services");
+        WriteSRMenuOption("I", "Interest Info");
+        WriteSRMenuOption("A", "Account History");
+        WriteSRMenuOption("G", "Guard Duty");
+        WriteSRMenuOption("*", "Resign Guard");
+        WriteSRMenuOption("O", "Rob the Bank");
+        WriteSRMenuOption("R", "Return to Main Street");
+        terminal.WriteLine("");
+
+        ShowStatusLine();
+    }
+
     protected override async Task<bool> ProcessChoice(string choice)
     {
         // Handle global quick commands first
@@ -417,8 +453,7 @@ public class BankLocation : BaseLocation
     private async Task DepositGold()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_green");
-        terminal.WriteLine("=== DEPOSIT GOLD ===");
+        WriteSectionHeader("DEPOSIT GOLD", "bright_green");
         terminal.WriteLine("");
 
         if (currentPlayer.Gold <= 0)
@@ -504,8 +539,7 @@ public class BankLocation : BaseLocation
     private async Task WithdrawGold()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("=== WITHDRAW GOLD ===");
+        WriteSectionHeader("WITHDRAW GOLD", "bright_yellow");
         terminal.WriteLine("");
 
         if (currentPlayer.BankGold <= 0)
@@ -585,8 +619,7 @@ public class BankLocation : BaseLocation
     private async Task TransferGold()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("=== TRANSFER GOLD ===");
+        WriteSectionHeader("TRANSFER GOLD", "bright_cyan");
         terminal.WriteLine("");
 
         if (currentPlayer.BankGold <= 0)
@@ -698,8 +731,7 @@ public class BankLocation : BaseLocation
     private async Task LoanServices()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("=== LOAN SERVICES ===");
+        WriteSectionHeader("LOAN SERVICES", "bright_yellow");
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
@@ -716,9 +748,18 @@ public class BankLocation : BaseLocation
             terminal.SetColor("white");
             terminal.WriteLine("\"You already have an outstanding loan. Would you like to repay it?\"");
             terminal.WriteLine("");
-            terminal.WriteLine($"  [1] Repay full amount ({currentPlayer.Loan:N0} gold)");
-            terminal.WriteLine($"  [2] Partial repayment");
-            terminal.WriteLine($"  [0] Not now");
+            if (IsScreenReader)
+            {
+                terminal.WriteLine($"  1. Repay full amount ({currentPlayer.Loan:N0} gold)");
+                terminal.WriteLine($"  2. Partial repayment");
+                terminal.WriteLine($"  0. Not now");
+            }
+            else
+            {
+                terminal.WriteLine($"  [1] Repay full amount ({currentPlayer.Loan:N0} gold)");
+                terminal.WriteLine($"  [2] Partial repayment");
+                terminal.WriteLine($"  [0] Not now");
+            }
 
             string choice = await terminal.GetInput("> ");
 
@@ -798,17 +839,14 @@ public class BankLocation : BaseLocation
     private async Task ShowInterestInfo()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("=== INTEREST & RATES ===");
+        WriteSectionHeader("INTEREST & RATES", "bright_cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
         terminal.WriteLine($"{BankerName} produces a well-worn pamphlet.");
         terminal.WriteLine("");
 
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("IRONVAULT BANK RATE SCHEDULE");
-        terminal.WriteLine("============================");
+        WriteSectionHeader("IRONVAULT BANK RATE SCHEDULE", "bright_white");
         terminal.WriteLine("");
 
         terminal.SetColor("green");
@@ -842,8 +880,7 @@ public class BankLocation : BaseLocation
     private async Task ShowAccountHistory()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("=== ACCOUNT SUMMARY ===");
+        WriteSectionHeader("ACCOUNT SUMMARY", "bright_white");
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
@@ -899,8 +936,7 @@ public class BankLocation : BaseLocation
     private async Task ApplyForGuardDuty()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("=== GUARD DUTY APPLICATION ===");
+        WriteSectionHeader("GUARD DUTY APPLICATION", "bright_yellow");
         terminal.WriteLine("");
 
         if (currentPlayer.BankGuard)
@@ -991,8 +1027,7 @@ public class BankLocation : BaseLocation
     private async Task ResignGuardDuty()
     {
         terminal.ClearScreen();
-        terminal.SetColor("yellow");
-        terminal.WriteLine("=== RESIGN FROM GUARD DUTY ===");
+        WriteSectionHeader("RESIGN FROM GUARD DUTY", "yellow");
         terminal.WriteLine("");
 
         if (!currentPlayer.BankGuard)
@@ -1038,10 +1073,7 @@ public class BankLocation : BaseLocation
     private async Task AttemptRobbery()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                         !!! BANK ROBBERY !!!                                |");
-        terminal.WriteLine("+=============================================================================+");
+        WriteBoxHeader("BANK ROBBERY", "bright_red");
         terminal.WriteLine("");
 
         // Check if player is a guard
@@ -1095,9 +1127,18 @@ public class BankLocation : BaseLocation
 
         terminal.SetColor("white");
         terminal.WriteLine("Options:");
-        terminal.WriteLine("  [R] Rob the bank (COMMIT TO CRIME)");
-        terminal.WriteLine("  [I] Inspect guards first");
-        terminal.WriteLine("  [A] Abort - this is crazy");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("  R. Rob the bank (COMMIT TO CRIME)");
+            terminal.WriteLine("  I. Inspect guards first");
+            terminal.WriteLine("  A. Abort - this is crazy");
+        }
+        else
+        {
+            terminal.WriteLine("  [R] Rob the bank (COMMIT TO CRIME)");
+            terminal.WriteLine("  [I] Inspect guards first");
+            terminal.WriteLine("  [A] Abort - this is crazy");
+        }
 
         string choice = await terminal.GetInput("> ");
 
@@ -1281,11 +1322,8 @@ public class BankLocation : BaseLocation
             currentPlayer.Gold = SafeAddGold(currentPlayer.Gold, stolenGold);
             _safeContents -= stolenGold;
 
-            terminal.SetColor("bright_green");
             terminal.WriteLine("");
-            terminal.WriteLine("+=============================================================================+");
-            terminal.WriteLine($"|               SUCCESS! You stole {stolenGold:N0} gold!                     |");
-            terminal.WriteLine("+=============================================================================+");
+            WriteBoxHeader($"SUCCESS! You stole {stolenGold:N0} gold!", "bright_green");
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
@@ -1301,11 +1339,8 @@ public class BankLocation : BaseLocation
             if (currentPlayer.HP <= 0)
                 currentPlayer.HP = 1;
 
-            terminal.SetColor("red");
             terminal.WriteLine("");
-            terminal.WriteLine("+=============================================================================+");
-            terminal.WriteLine("|                    DEFEATED! The guards overwhelm you!                      |");
-            terminal.WriteLine("+=============================================================================+");
+            WriteBoxHeader("DEFEATED! The guards overwhelm you!", "red");
             terminal.WriteLine("");
 
             // Confiscate gold on hand + some bank deposits as damages

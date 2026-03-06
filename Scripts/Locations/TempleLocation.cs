@@ -2498,9 +2498,18 @@ public partial class TempleLocation : BaseLocation
         await Task.Delay(1500);
 
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("[R] Ask her to join you");
-        terminal.WriteLine("[T] Talk about her past");
-        terminal.WriteLine("[L] Leave her to her prayers");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("R. Ask her to join you");
+            terminal.WriteLine("T. Talk about her past");
+            terminal.WriteLine("L. Leave her to her prayers");
+        }
+        else
+        {
+            terminal.WriteLine("[R] Ask her to join you");
+            terminal.WriteLine("[T] Talk about her past");
+            terminal.WriteLine("[L] Leave her to her prayers");
+        }
         terminal.WriteLine("");
 
         var choice = await terminal.GetInputAsync("Your choice: ");
@@ -3140,7 +3149,9 @@ public partial class TempleLocation : BaseLocation
     {
         if (string.IsNullOrEmpty(currentPlayer.WorshippedGod))
         {
-            terminal.WriteLine("  You must worship an immortal god first. Use [J] to join a flock.", "gray");
+            terminal.WriteLine(IsScreenReader
+                ? "  You must worship an immortal god first. Use J to join a flock."
+                : "  You must worship an immortal god first. Use [J] to join a flock.", "gray");
             await terminal.PressAnyKey();
             return;
         }

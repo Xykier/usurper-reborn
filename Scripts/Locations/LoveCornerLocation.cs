@@ -83,12 +83,12 @@ public class LoveCornerLocation : BaseLocation
         terminal.WriteLine("years. You can poison other persons lives here as well.");
         terminal.WriteLine();
 
-        terminal.WriteLine("(A)pproach somebody          (C)hildren in the Realm");
-        terminal.WriteLine("(D)ivorce                    (V)isit " + GameConfig.DefaultGossipMongerName);
-        terminal.WriteLine("(M)arried Couples            (E)xamine child");
-        terminal.WriteLine("(P)ersonal Relations         (G)ift shop");
-        terminal.WriteLine("(S)tatus                     (R)eturn");
-        terminal.WriteLine("(L)ove history");
+        terminal.WriteLine("A. Approach somebody          C. Children in the Realm");
+        terminal.WriteLine("D. Divorce                    V. Visit " + GameConfig.DefaultGossipMongerName);
+        terminal.WriteLine("M. Married Couples            E. Examine child");
+        terminal.WriteLine("P. Personal Relations         G. Gift shop");
+        terminal.WriteLine("S. Status                     R. Return");
+        terminal.WriteLine("L. Love history");
         terminal.WriteLine();
 
         await Task.CompletedTask;
@@ -144,10 +144,10 @@ public class LoveCornerLocation : BaseLocation
             terminal.WriteLine();
             terminal.WriteLine($"Dating with {targetName}", TerminalEmulator.ColorCyan);
             terminal.WriteLine();
-            terminal.WriteLine("(K)iss                       (D)inner");
-            terminal.WriteLine("(H)old hands                 (I)ntimate");
-            terminal.WriteLine("(M)arry                      (C)hange feelings");
-            terminal.WriteLine("(R)eturn");
+            terminal.WriteLine("K. Kiss                       D. Dinner");
+            terminal.WriteLine("H. Hold hands                 I. Intimate");
+            terminal.WriteLine("M. Marry                      C. Change feelings");
+            terminal.WriteLine("R. Return");
             terminal.WriteLine();
 
             string choice = await terminal.GetInput("Choose your action: ");
@@ -350,11 +350,11 @@ public class LoveCornerLocation : BaseLocation
         terminal.WriteLine("Change Your Feelings", TerminalEmulator.ColorCyan);
         terminal.WriteLine("====================");
         terminal.WriteLine();
-        terminal.WriteLine("(L)ove               (P)assion");
-        terminal.WriteLine("(F)riendship         (T)rust");
-        terminal.WriteLine("(R)espect            (N)eutral");
-        terminal.WriteLine("(S)uspicious         (A)nger");
-        terminal.WriteLine("(E)nemy              (H)ate");
+        terminal.WriteLine("L. Love               P. Passion");
+        terminal.WriteLine("F. Friendship         T. Trust");
+        terminal.WriteLine("R. Respect            N. Neutral");
+        terminal.WriteLine("S. Suspicious         A. Anger");
+        terminal.WriteLine("E. Enemy              H. Hate");
         terminal.WriteLine();
 
         string feeling = await terminal.GetInput("How do you feel about them? ");
@@ -621,11 +621,11 @@ public class LoveCornerLocation : BaseLocation
         terminal.WriteLine();
         terminal.WriteLine("Welcome to the Love Corner Gift Shop!");
         terminal.WriteLine();
-        terminal.WriteLine($"(R)oses - {GameConfig.RosesCost} gold");
-        terminal.WriteLine($"(C)hocolates - {GameConfig.ChocolatesCostBase} gold");
-        terminal.WriteLine($"(J)ewelry - {GameConfig.JewelryCostBase} gold");
-        terminal.WriteLine($"(P)oison someone - {GameConfig.PoisonCostBase} gold");
-        terminal.WriteLine("(E)xit shop");
+        terminal.WriteLine($"R. Roses - {GameConfig.RosesCost} gold");
+        terminal.WriteLine($"C. Chocolates - {GameConfig.ChocolatesCostBase} gold");
+        terminal.WriteLine($"J. Jewelry - {GameConfig.JewelryCostBase} gold");
+        terminal.WriteLine($"P. Poison someone - {GameConfig.PoisonCostBase} gold");
+        terminal.WriteLine("E. Exit shop");
         terminal.WriteLine();
 
         string choice = await terminal.GetInput("What would you like to purchase? ");
@@ -765,9 +765,9 @@ public class LoveCornerLocation : BaseLocation
         terminal.WriteLine();
         terminal.WriteLine("See what's happened during the years.");
         terminal.WriteLine();
-        terminal.WriteLine("(M)arriages & Divorces       (C)hild-births & Deaths");
-        terminal.WriteLine("(1) Current Marriages        (H)ated players, Top List");
-        terminal.WriteLine("(L)oved players, Top List    (R)eturn");
+        terminal.WriteLine("M. Marriages & Divorces       C. Child-births & Deaths");
+        terminal.WriteLine("1. Current Marriages          H. Hated players, Top List");
+        terminal.WriteLine("L. Loved players, Top List    R. Return");
         terminal.WriteLine();
 
         string choice = await terminal.GetInput("Your choice: ");

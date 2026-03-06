@@ -33,10 +33,7 @@ public class SettlementLocation : BaseLocation
         int settlers = state.SettlerNames.Count;
 
         // Header
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                        THE  OUTSKIRTS                               ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE  OUTSKIRTS", "bright_yellow", 70);
         terminal.WriteLine("");
 
         // Dynamic description based on settlement size
@@ -99,7 +96,10 @@ public class SettlementLocation : BaseLocation
                     float pct = cost > 0 ? Math.Min(1f, (float)b.ResourcePool / cost) : 0f;
                     int filled = (int)(pct * 15);
                     terminal.SetColor("bright_cyan");
-                    terminal.Write($" [{"".PadRight(filled, '#').PadRight(15, '.')}] {pct * 100:F0}%");
+                    if (IsScreenReader)
+                        terminal.Write($" {pct * 100:F0}% complete");
+                    else
+                        terminal.Write($" [{"".PadRight(filled, '#').PadRight(15, '.')}] {pct * 100:F0}%");
                 }
             }
             terminal.SetColor("yellow");
@@ -152,7 +152,10 @@ public class SettlementLocation : BaseLocation
                         float pct = cost > 0 ? Math.Min(1f, (float)kvp.Value.ResourcePool / cost) : 0f;
                         int filled = (int)(pct * 15);
                         terminal.SetColor("bright_cyan");
-                        terminal.Write($" [{"".PadRight(filled, '#').PadRight(15, '.')}] {pct * 100:F0}%");
+                        if (IsScreenReader)
+                            terminal.Write($" {pct * 100:F0}% complete");
+                        else
+                            terminal.Write($" [{"".PadRight(filled, '#').PadRight(15, '.')}] {pct * 100:F0}%");
                     }
                 }
                 terminal.SetColor("yellow");
@@ -180,20 +183,29 @@ public class SettlementLocation : BaseLocation
 
         // Menu
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("  [V] View Building Details");
-        terminal.WriteLine("  [C] Contribute Gold");
-        terminal.WriteLine("  [P] Proposals");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("  V. View Building Details");
+            terminal.WriteLine("  C. Contribute Gold");
+            terminal.WriteLine("  P. Proposals");
+        }
+        else
+        {
+            terminal.WriteLine("  [V] View Building Details");
+            terminal.WriteLine("  [C] Contribute Gold");
+            terminal.WriteLine("  [P] Proposals");
+        }
 
         var services = SettlementSystem.Instance.GetAvailableServices();
         var proposedServices = SettlementSystem.Instance.GetProposedServices();
         if (services.Count > 0 || proposedServices.Count > 0)
         {
             terminal.SetColor("bright_green");
-            terminal.WriteLine("  [S] Settlement Services");
+            terminal.WriteLine(IsScreenReader ? "  S. Settlement Services" : "  [S] Settlement Services");
         }
 
         terminal.SetColor("gray");
-        terminal.WriteLine("  [R] Return to Main Street");
+        terminal.WriteLine(IsScreenReader ? "  R. Return to Main Street" : "  [R] Return to Main Street");
         terminal.WriteLine("");
 
         ShowStatusLine();
@@ -305,10 +317,7 @@ public class SettlementLocation : BaseLocation
         var state = SettlementSystem.Instance.State;
 
         terminal.WriteLine("");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════╗");
-        terminal.WriteLine("║          BUILDING STATUS             ║");
-        terminal.WriteLine("╚══════════════════════════════════════╝");
+        WriteBoxHeader("BUILDING STATUS", "bright_yellow", 38);
         terminal.WriteLine("");
 
         foreach (SettlementBuilding building in Enum.GetValues(typeof(SettlementBuilding)))
@@ -416,18 +425,18 @@ public class SettlementLocation : BaseLocation
         terminal.SetColor("white");
         foreach (var (key, label, _) in services)
         {
-            terminal.WriteLine($"  [{key}] {label}");
+            terminal.WriteLine(IsScreenReader ? $"  {key}. {label}" : $"  [{key}] {label}");
         }
         if (proposedServices.Count > 0)
         {
             terminal.SetColor("bright_cyan");
             foreach (var (key, label, _) in proposedServices)
             {
-                terminal.WriteLine($"  [{key}] {label}");
+                terminal.WriteLine(IsScreenReader ? $"  {key}. {label}" : $"  [{key}] {label}");
             }
         }
         terminal.SetColor("gray");
-        terminal.WriteLine("  [0] Cancel");
+        terminal.WriteLine(IsScreenReader ? "  0. Cancel" : "  [0] Cancel");
         terminal.WriteLine("");
 
         string input = await terminal.GetInput("Your choice: ");
@@ -709,10 +718,7 @@ public class SettlementLocation : BaseLocation
         var proposal = state.CurrentProposal;
 
         terminal.WriteLine("");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════╗");
-        terminal.WriteLine("║         SETTLEMENT PROPOSALS         ║");
-        terminal.WriteLine("╚══════════════════════════════════════╝");
+        WriteBoxHeader("SETTLEMENT PROPOSALS", "bright_cyan", 38);
         terminal.WriteLine("");
 
         if (proposal != null)
@@ -737,9 +743,13 @@ public class SettlementLocation : BaseLocation
                 terminal.WriteLine("");
 
                 terminal.SetColor("bright_green");
-                terminal.WriteLine($"  [E] Endorse ({GameConfig.SettlementEndorsementCost:N0} gold, +2 support)");
+                terminal.WriteLine(IsScreenReader
+                    ? $"  E. Endorse ({GameConfig.SettlementEndorsementCost:N0} gold, +2 support)"
+                    : $"  [E] Endorse ({GameConfig.SettlementEndorsementCost:N0} gold, +2 support)");
                 terminal.SetColor("red");
-                terminal.WriteLine($"  [O] Oppose (+2 against)");
+                terminal.WriteLine(IsScreenReader
+                    ? $"  O. Oppose (+2 against)"
+                    : $"  [O] Oppose (+2 against)");
             }
         }
         else
@@ -772,7 +782,7 @@ public class SettlementLocation : BaseLocation
 
         terminal.SetColor("gray");
         terminal.WriteLine("");
-        terminal.WriteLine("  [0] Back");
+        terminal.WriteLine(IsScreenReader ? "  0. Back" : "  [0] Back");
         terminal.WriteLine("");
 
         string input = await terminal.GetInput("Your choice: ");

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -449,9 +450,7 @@ namespace UsurperRemake.Systems
                 return;
 
             terminal.Clear();
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "dark_cyan");
-            terminal.WriteLine("║                     M E M O R I E S                              ║", "dark_cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "dark_cyan");
+            UIHelper.WriteBoxHeader(terminal, "M E M O R I E S", "dark_cyan", 66);
             terminal.WriteLine("");
 
             foreach (var memory in companionMemories)

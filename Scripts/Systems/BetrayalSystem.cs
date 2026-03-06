@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -362,15 +363,11 @@ namespace UsurperRemake.Systems
 
             if (profile.IsSacrifice)
             {
-                terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "bright_yellow");
-                terminal.WriteLine("║                    A   S A C R I F I C E                       ║", "bright_yellow");
-                terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "bright_yellow");
+                UIHelper.WriteBoxHeader(terminal, "A   S A C R I F I C E", "bright_yellow", 64);
             }
             else
             {
-                terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "dark_red");
-                terminal.WriteLine("║                    B E T R A Y A L                             ║", "dark_red");
-                terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "dark_red");
+                UIHelper.WriteBoxHeader(terminal, "B E T R A Y A L", "dark_red", 64);
             }
             terminal.WriteLine("");
 
@@ -395,7 +392,8 @@ namespace UsurperRemake.Systems
 
             if (profile.Motivations.Count > 0)
             {
-                terminal.WriteLine("  ─────────────────────────────────────────────", "dark_gray");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("  ─────────────────────────────────────────────", "dark_gray");
                 terminal.WriteLine("");
                 terminal.WriteLine("  [You begin to understand their reasons...]", "dark_cyan");
                 terminal.WriteLine("");
@@ -549,9 +547,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "bright_green");
-            terminal.WriteLine("║                    F O R G I V E N E S S                       ║", "bright_green");
-            terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "bright_green");
+            UIHelper.WriteBoxHeader(terminal, "F O R G I V E N E S S", "bright_green", 64);
             terminal.WriteLine("");
 
             await Task.Delay(1000);
@@ -603,9 +599,7 @@ namespace UsurperRemake.Systems
 
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "dark_red");
-            terminal.WriteLine("║                    R E V E N G E                               ║", "dark_red");
-            terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "dark_red");
+            UIHelper.WriteBoxHeader(terminal, "R E V E N G E", "dark_red", 64);
             terminal.WriteLine("");
 
             await Task.Delay(1000);

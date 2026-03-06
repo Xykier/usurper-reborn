@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -153,9 +154,7 @@ namespace UsurperRemake.Systems
             await SkippableDelay(500);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "dark_cyan");
-            terminal.WriteLine("║                      THE AWAKENING                                ║", "dark_cyan");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "dark_cyan");
+            UIHelper.WriteBoxHeader(terminal, "THE AWAKENING", "dark_cyan", 67);
             terminal.WriteLine("");
 
             await SkippableDelay(1000);
@@ -235,33 +234,65 @@ namespace UsurperRemake.Systems
             }
 
             // The letter - the hook
-            terminal.WriteLine("  ┌─────────────────────────────────────────────────────────┐", "yellow");
-            await SkippableDelay(200);
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  │  To myself, if I survive:                               │", "yellow");
-            await SkippableDelay(500);
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  │  The gods are broken. Corrupted. Manwe has gone mad,    │", "yellow");
-            await SkippableDelay(300);
-            terminal.WriteLine("  │  and the Old Gods fight an endless war in his shadow.   │", "yellow");
-            await SkippableDelay(300);
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  │  There are SEVEN SEALS hidden in the dungeons below.    │", "yellow");
-            await SkippableDelay(300);
-            terminal.WriteLine("  │  Collect them. Break the cycle. End the suffering.      │", "yellow");
-            await SkippableDelay(300);
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  │  Trust no one. Especially not the Stranger.             │", "yellow");
-            await SkippableDelay(300);
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  │  And remember this:                                     │", "yellow");
-            terminal.WriteLine("  │  You are not what you think you are.                    │", "bright_cyan");
-            terminal.WriteLine("  │  You never were.                                        │", "bright_cyan");
-            await SkippableDelay(500);
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  │                                    - You (Before)       │", "gray");
-            terminal.WriteLine("  │                                                         │", "yellow");
-            terminal.WriteLine("  └─────────────────────────────────────────────────────────┘", "yellow");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("  ┌─────────────────────────────────────────────────────────┐", "yellow");
+                await SkippableDelay(200);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  │  To myself, if I survive:                               │", "yellow");
+                await SkippableDelay(500);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  │  The gods are broken. Corrupted. Manwe has gone mad,    │", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  │  and the Old Gods fight an endless war in his shadow.   │", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  │  There are SEVEN SEALS hidden in the dungeons below.    │", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  │  Collect them. Break the cycle. End the suffering.      │", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  │  Trust no one. Especially not the Stranger.             │", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  │  And remember this:                                     │", "yellow");
+                terminal.WriteLine("  │  You are not what you think you are.                    │", "bright_cyan");
+                terminal.WriteLine("  │  You never were.                                        │", "bright_cyan");
+                await SkippableDelay(500);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  │                                    - You (Before)       │", "gray");
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine("  └─────────────────────────────────────────────────────────┘", "yellow");
+            }
+            else
+            {
+                terminal.WriteLine("  --- A Letter to Yourself ---", "yellow");
+                await SkippableDelay(200);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine("  To myself, if I survive:", "yellow");
+                await SkippableDelay(500);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine("  The gods are broken. Corrupted. Manwe has gone mad,", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  and the Old Gods fight an endless war in his shadow.", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine("  There are SEVEN SEALS hidden in the dungeons below.", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  Collect them. Break the cycle. End the suffering.", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine("  Trust no one. Especially not the Stranger.", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine("  And remember this:", "yellow");
+                terminal.WriteLine("  You are not what you think you are.", "bright_cyan");
+                terminal.WriteLine("  You never were.", "bright_cyan");
+                await SkippableDelay(500);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine("                                    - You (Before)", "gray");
+                terminal.WriteLine("", "yellow");
+            }
 
             terminal.WriteLine("");
             await SkippableDelay(1000);
@@ -283,9 +314,7 @@ namespace UsurperRemake.Systems
             await SkippableDelay(500);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_cyan");
-            terminal.WriteLine("║                     YOUR JOURNEY BEGINS                           ║", "bright_cyan");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            UIHelper.WriteBoxHeader(terminal, "YOUR JOURNEY BEGINS", "bright_cyan", 67);
             terminal.WriteLine("");
 
             await SkippableDelay(500);
@@ -330,7 +359,8 @@ namespace UsurperRemake.Systems
 
             // Quick gameplay tips
             terminal.WriteLine("");
-            terminal.WriteLine("  ─────────────────────────────────────────────────────────", "dark_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ─────────────────────────────────────────────────────────", "dark_cyan");
             terminal.WriteLine("");
             terminal.WriteLine("  WHAT TO DO:", "bright_green");
             terminal.WriteLine("  - Explore the town and talk to NPCs", "green");
@@ -339,7 +369,8 @@ namespace UsurperRemake.Systems
             terminal.WriteLine("  - Find the Seven Seals to unlock the true ending", "green");
             terminal.WriteLine("  - Pay attention to dreams and strange visions...", "cyan");
             terminal.WriteLine("");
-            terminal.WriteLine("  ─────────────────────────────────────────────────────────", "dark_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ─────────────────────────────────────────────────────────", "dark_cyan");
             terminal.WriteLine("");
 
             await terminal.GetInputAsync("  Press Enter to begin your journey...");
@@ -428,9 +459,7 @@ namespace UsurperRemake.Systems
             int cycle = StoryProgressionSystem.Instance.CurrentCycle;
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_magenta");
-            terminal.WriteLine($"║                      CYCLE {cycle}                                     ║", "bright_magenta");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_magenta");
+            UIHelper.WriteBoxHeader(terminal, $"CYCLE {cycle}", "bright_magenta", 67);
             terminal.WriteLine("");
 
             await SkippableDelay(1000);
@@ -465,21 +494,38 @@ namespace UsurperRemake.Systems
             }
 
             // NG+ additional revelation
-            terminal.WriteLine("  ┌─────────────────────────────────────────────────────────┐", "bright_magenta");
-            terminal.WriteLine("  │                                                         │", "bright_magenta");
-            terminal.WriteLine("  │  This is not the first time.                            │", "magenta");
-            terminal.WriteLine("  │  You have done this before.                             │", "magenta");
-            terminal.WriteLine("  │  Again and again.                                       │", "magenta");
-            terminal.WriteLine("  │                                                         │", "bright_magenta");
-            terminal.WriteLine("  │  The cycle is not punishment.                           │", "bright_cyan");
-            terminal.WriteLine("  │  It is the ocean, learning to understand its waves.     │", "bright_cyan");
-            terminal.WriteLine("  │                                                         │", "bright_magenta");
-            terminal.WriteLine("  │  Each time, you remember a little more.                 │", "white");
-            terminal.WriteLine("  │  Each time, you get closer to the truth.                │", "white");
-            terminal.WriteLine("  │                                                         │", "bright_magenta");
-            terminal.WriteLine($"  │  This is Cycle {cycle}. How many more until you wake?       │", "bright_yellow");
-            terminal.WriteLine("  │                                                         │", "bright_magenta");
-            terminal.WriteLine("  └─────────────────────────────────────────────────────────┘", "bright_magenta");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("  ┌─────────────────────────────────────────────────────────┐", "bright_magenta");
+                terminal.WriteLine("  │                                                         │", "bright_magenta");
+                terminal.WriteLine("  │  This is not the first time.                            │", "magenta");
+                terminal.WriteLine("  │  You have done this before.                             │", "magenta");
+                terminal.WriteLine("  │  Again and again.                                       │", "magenta");
+                terminal.WriteLine("  │                                                         │", "bright_magenta");
+                terminal.WriteLine("  │  The cycle is not punishment.                           │", "bright_cyan");
+                terminal.WriteLine("  │  It is the ocean, learning to understand its waves.     │", "bright_cyan");
+                terminal.WriteLine("  │                                                         │", "bright_magenta");
+                terminal.WriteLine("  │  Each time, you remember a little more.                 │", "white");
+                terminal.WriteLine("  │  Each time, you get closer to the truth.                │", "white");
+                terminal.WriteLine("  │                                                         │", "bright_magenta");
+                terminal.WriteLine($"  │  This is Cycle {cycle}. How many more until you wake?       │", "bright_yellow");
+                terminal.WriteLine("  │                                                         │", "bright_magenta");
+                terminal.WriteLine("  └─────────────────────────────────────────────────────────┘", "bright_magenta");
+            }
+            else
+            {
+                terminal.WriteLine("  This is not the first time.", "magenta");
+                terminal.WriteLine("  You have done this before.", "magenta");
+                terminal.WriteLine("  Again and again.", "magenta");
+                terminal.WriteLine("", "bright_magenta");
+                terminal.WriteLine("  The cycle is not punishment.", "bright_cyan");
+                terminal.WriteLine("  It is the ocean, learning to understand its waves.", "bright_cyan");
+                terminal.WriteLine("", "bright_magenta");
+                terminal.WriteLine("  Each time, you remember a little more.", "white");
+                terminal.WriteLine("  Each time, you get closer to the truth.", "white");
+                terminal.WriteLine("", "bright_magenta");
+                terminal.WriteLine($"  This is Cycle {cycle}. How many more until you wake?", "bright_yellow");
+            }
 
             terminal.WriteLine("");
             await SkippableDelay(1500);

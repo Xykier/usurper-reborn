@@ -231,8 +231,16 @@ public class InnLocation : BaseLocation
 
         // Recruitment choice
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("[Y] Accept Aldric as a companion");
-        terminal.WriteLine("[N] Thank him but decline");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("Y. Accept Aldric as a companion");
+            terminal.WriteLine("N. Thank him but decline");
+        }
+        else
+        {
+            terminal.WriteLine("[Y] Accept Aldric as a companion");
+            terminal.WriteLine("[N] Thank him but decline");
+        }
         terminal.WriteLine("");
 
         var choice = await terminal.GetInput("Your choice: ");
@@ -1109,12 +1117,14 @@ public class InnLocation : BaseLocation
             var npc = npcsHere[i];
             var alignColor = npc.Darkness > npc.Chivalry ? "red" : (npc.Chivalry > 500 ? "bright_green" : "cyan");
             terminal.SetColor(alignColor);
-            terminal.WriteLine($"  [{i + 1}] {npc.Name2} - Level {npc.Level} {npc.Class} ({GetAlignmentDisplay(npc)})");
+            terminal.WriteLine(IsScreenReader
+                ? $"  {i + 1}. {npc.Name2} - Level {npc.Level} {npc.Class} ({GetAlignmentDisplay(npc)})"
+                : $"  [{i + 1}] {npc.Name2} - Level {npc.Level} {npc.Class} ({GetAlignmentDisplay(npc)})");
         }
 
         terminal.WriteLine("");
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("[0] Return to inn menu");
+        terminal.WriteLine(IsScreenReader ? "0. Return to inn menu" : "[0] Return to inn menu");
         terminal.WriteLine("");
 
         var choice = await terminal.GetInput("Choose someone to approach (0-8): ");
@@ -2282,9 +2292,18 @@ public class InnLocation : BaseLocation
         terminal.WriteLine("");
 
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("[R] Recruit this companion");
-        terminal.WriteLine("[T] Talk more to learn about them");
-        terminal.WriteLine("[0] Leave them be");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("R. Recruit this companion");
+            terminal.WriteLine("T. Talk more to learn about them");
+            terminal.WriteLine("0. Leave them be");
+        }
+        else
+        {
+            terminal.WriteLine("[R] Recruit this companion");
+            terminal.WriteLine("[T] Talk more to learn about them");
+            terminal.WriteLine("[0] Leave them be");
+        }
         terminal.WriteLine("");
 
         var choice = await terminal.GetInput("Your choice: ");
@@ -2706,6 +2725,7 @@ public class InnLocation : BaseLocation
             CombatRole.Healer => CharacterClass.Cleric,
             CombatRole.Damage => CharacterClass.Assassin,
             CombatRole.Hybrid => CharacterClass.Paladin,
+            CombatRole.Bard => CharacterClass.Bard,
             _ => CharacterClass.Warrior
         };
         var abilityChar = new Character { Class = abilityCharClass, Level = companion.Level };
@@ -3145,6 +3165,7 @@ public class InnLocation : BaseLocation
                 CombatRole.Healer => CharacterClass.Cleric,
                 CombatRole.Damage => CharacterClass.Assassin,
                 CombatRole.Hybrid => CharacterClass.Paladin,
+                CombatRole.Bard => CharacterClass.Bard,
                 _ => CharacterClass.Warrior
             },
             BaseStrength = companion.BaseStats.Attack,
@@ -3796,6 +3817,7 @@ public class InnLocation : BaseLocation
             CombatRole.Healer => CharacterClass.Cleric,
             CombatRole.Damage => CharacterClass.Assassin,
             CombatRole.Hybrid => CharacterClass.Paladin,
+            CombatRole.Bard => CharacterClass.Bard,
             _ => CharacterClass.Warrior
         };
 
@@ -3843,7 +3865,9 @@ public class InnLocation : BaseLocation
             terminal.WriteLine($"  {enabledCount}/{abilities.Count} abilities enabled");
             terminal.WriteLine("");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  [1-N] Toggle ability  [A] Enable all  [0] Return");
+            terminal.WriteLine(IsScreenReader
+                ? "  1 through N. Toggle ability  A. Enable all  0. Return"
+                : "  [1-N] Toggle ability  [A] Enable all  [0] Return");
             terminal.WriteLine("");
 
             var input = await terminal.GetInput("Choice: ");

@@ -96,12 +96,18 @@ namespace UsurperRemake.Systems
         {
             var players = await stateManager.GetOnlinePlayers();
 
-            terminal.SetColor("cyan");
-            terminal.WriteLine("════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("cyan");
+                terminal.WriteLine("════════════════════════════════════════════════════════════");
+            }
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("                     WHO'S ONLINE");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("════════════════════════════════════════════════════════════");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "WHO'S ONLINE" : "                     WHO'S ONLINE");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("cyan");
+                terminal.WriteLine("════════════════════════════════════════════════════════════");
+            }
             terminal.WriteLine("");
 
             if (players.Count == 0)
@@ -113,8 +119,11 @@ namespace UsurperRemake.Systems
             {
                 terminal.SetColor("yellow");
                 terminal.WriteLine($"  {"Player",-18} {"Location",-16} {"Via",-5} {"Connected"}");
-                terminal.SetColor("darkgray");
-                terminal.WriteLine($"  {"──────────────────"} {"────────────────"} {"─────"} {"─────────────────"}");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.WriteLine($"  {"──────────────────"} {"────────────────"} {"─────"} {"─────────────────"}");
+                }
 
                 foreach (var player in players)
                 {
@@ -157,8 +166,11 @@ namespace UsurperRemake.Systems
             terminal.WriteLine("");
             terminal.SetColor("cyan");
             terminal.WriteLine($"  {players.Count} player{(players.Count != 1 ? "s" : "")} online");
-            terminal.SetColor("cyan");
-            terminal.WriteLine("════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("cyan");
+                terminal.WriteLine("════════════════════════════════════════════════════════════");
+            }
             await terminal.PressAnyKey();
         }
 
@@ -182,12 +194,18 @@ namespace UsurperRemake.Systems
         {
             var news = await stateManager.GetRecentNews(count);
 
-            terminal.SetColor("yellow");
-            terminal.WriteLine("════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("yellow");
+                terminal.WriteLine("════════════════════════════════════════════════════════════");
+            }
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("                      TOWN NEWS");
-            terminal.SetColor("yellow");
-            terminal.WriteLine("════════════════════════════════════════════════════════════");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "TOWN NEWS" : "                      TOWN NEWS");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("yellow");
+                terminal.WriteLine("════════════════════════════════════════════════════════════");
+            }
             terminal.WriteLine("");
 
             if (news.Count == 0)
@@ -217,8 +235,11 @@ namespace UsurperRemake.Systems
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("yellow");
-            terminal.WriteLine("════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("yellow");
+                terminal.WriteLine("════════════════════════════════════════════════════════════");
+            }
             await terminal.PressAnyKey();
         }
 

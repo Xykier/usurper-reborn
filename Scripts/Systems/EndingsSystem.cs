@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 using UsurperRemake.Server;
 
@@ -241,9 +242,7 @@ namespace UsurperRemake.Systems
             await Task.Delay(1000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "dark_red");
-            terminal.WriteLine("║                     T H E   U S U R P E R                         ║", "dark_red");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "dark_red");
+            UIHelper.WriteBoxHeader(terminal, "T H E   U S U R P E R", "dark_red", 67);
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -301,9 +300,7 @@ namespace UsurperRemake.Systems
             await Task.Delay(1000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_green");
-            terminal.WriteLine("║                      T H E   S A V I O R                          ║", "bright_green");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_green");
+            UIHelper.WriteBoxHeader(terminal, "T H E   S A V I O R", "bright_green", 67);
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -365,9 +362,7 @@ namespace UsurperRemake.Systems
             await Task.Delay(1000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine("║                      T H E   D E F I A N T                        ║", "bright_yellow");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_yellow");
+            UIHelper.WriteBoxHeader(terminal, "T H E   D E F I A N T", "bright_yellow", 67);
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -430,10 +425,17 @@ namespace UsurperRemake.Systems
             await Task.Delay(1000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_magenta");
-            terminal.WriteLine("║                   T H E   T R U E   E N D I N G                   ║", "bright_magenta");
-            terminal.WriteLine("║                      Seeker of Balance                            ║", "bright_magenta");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_magenta");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_magenta");
+                terminal.WriteLine("║                   T H E   T R U E   E N D I N G                   ║", "bright_magenta");
+                terminal.WriteLine("║                      Seeker of Balance                            ║", "bright_magenta");
+                terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_magenta");
+            }
+            else
+            {
+                terminal.WriteLine("THE TRUE ENDING - Seeker of Balance", "bright_magenta");
+            }
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -501,10 +503,18 @@ namespace UsurperRemake.Systems
             await Task.Delay(1000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_cyan");
-            terminal.WriteLine("║            T H E   T R U E   A W A K E N I N G                    ║", "bright_cyan");
-            terminal.WriteLine("║           \"You are the Ocean, dreaming of being a wave\"           ║", "bright_cyan");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_cyan");
+                terminal.WriteLine("║            T H E   T R U E   A W A K E N I N G                    ║", "bright_cyan");
+                terminal.WriteLine("║           \"You are the Ocean, dreaming of being a wave\"           ║", "bright_cyan");
+                terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            }
+            else
+            {
+                terminal.WriteLine("THE TRUE AWAKENING", "bright_cyan");
+                terminal.WriteLine("\"You are the Ocean, dreaming of being a wave\"", "bright_cyan");
+            }
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -594,10 +604,18 @@ namespace UsurperRemake.Systems
             await Task.Delay(2000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "white");
-            terminal.WriteLine("║                     D I S S O L U T I O N                         ║", "white");
-            terminal.WriteLine("║              \"No more cycles. No more grasping.\"                  ║", "white");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "white");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "white");
+                terminal.WriteLine("║                     D I S S O L U T I O N                         ║", "white");
+                terminal.WriteLine("║              \"No more cycles. No more grasping.\"                  ║", "white");
+                terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "white");
+            }
+            else
+            {
+                terminal.WriteLine("DISSOLUTION", "white");
+                terminal.WriteLine("\"No more cycles. No more grasping.\"", "white");
+            }
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -720,12 +738,14 @@ namespace UsurperRemake.Systems
             await Task.Delay(2000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_cyan");
             terminal.WriteLine("");
             terminal.WriteLine("                        U S U R P E R", "bright_yellow");
             terminal.WriteLine("                          REBORN", "yellow");
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_cyan");
             terminal.WriteLine("");
 
             await Task.Delay(3000);
@@ -793,7 +813,8 @@ namespace UsurperRemake.Systems
             }
 
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_cyan");
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -810,7 +831,8 @@ namespace UsurperRemake.Systems
 
             terminal.WriteLine("");
             terminal.WriteLine("                    F I N A L   S T A T S", "bright_yellow");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
             terminal.WriteLine("");
 
             terminal.WriteLine($"  Character: {player.Name2} the {player.Class}", "white");
@@ -836,7 +858,8 @@ namespace UsurperRemake.Systems
             terminal.WriteLine($"  Eternal Cycle: {story.CurrentCycle}", "bright_magenta");
             terminal.WriteLine("");
 
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
             terminal.WriteLine("");
 
             await terminal.GetInputAsync("  Press Enter to continue...");
@@ -857,9 +880,7 @@ namespace UsurperRemake.Systems
             await Task.Delay(1000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_cyan");
-            terminal.WriteLine("║                 Y O U R   L E G A C Y                             ║", "bright_cyan");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            UIHelper.WriteBoxHeader(terminal, "Y O U R   L E G A C Y", "bright_cyan", 67);
             terminal.WriteLine("");
 
             await Task.Delay(500);
@@ -968,7 +989,8 @@ namespace UsurperRemake.Systems
             terminal.WriteLine("");
 
             // Final quote based on ending
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
             string quote = ending switch
             {
                 EndingType.Usurper => "\"Turns out the throne is just a fancy prison.\"",
@@ -1183,9 +1205,7 @@ namespace UsurperRemake.Systems
             await Task.Delay(500);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_green");
-            terminal.WriteLine("║                 U N L O C K S   E A R N E D                       ║", "bright_green");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_green");
+            UIHelper.WriteBoxHeader(terminal, "U N L O C K S   E A R N E D", "bright_green", 67);
             terminal.WriteLine("");
 
             var unlocks = new List<(string name, string description, string color)>();
@@ -1254,7 +1274,8 @@ namespace UsurperRemake.Systems
             // Track unlocks
             MetaProgressionSystem.Instance.RecordEndingUnlock(ending, player);
 
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "gray");
             terminal.WriteLine("");
             terminal.WriteLine("  These bonuses will apply in New Game+!", "bright_green");
             terminal.WriteLine("");
@@ -1283,9 +1304,11 @@ namespace UsurperRemake.Systems
             terminal.Clear();
             terminal.WriteLine("");
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_yellow");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_yellow");
             terminal.WriteLine("              T H E   C O S M O S   A W A I T S", "bright_yellow");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_yellow");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_yellow");
             terminal.WriteLine("");
 
             await Task.Delay(1000);
@@ -1373,12 +1396,14 @@ namespace UsurperRemake.Systems
             await Task.Delay(500);
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  ════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ════════════════════════════════════════════════════════════");
             terminal.WriteLine("");
             terminal.WriteLine($"  {divineName}, Lesser Spirit of {alignment}", "bright_yellow");
             terminal.WriteLine("  has ascended to the Divine Realm!", "bright_yellow");
             terminal.WriteLine("");
-            terminal.WriteLine("  ════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ════════════════════════════════════════════════════════════");
 
             await Task.Delay(1000);
 
@@ -1438,9 +1463,11 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_magenta");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_magenta");
             terminal.WriteLine("                  T H E   W H E E L   T U R N S", "bright_magenta");
-            terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_magenta");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════════════════════", "bright_magenta");
             terminal.WriteLine("");
 
             await Task.Delay(1000);

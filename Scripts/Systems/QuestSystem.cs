@@ -1,3 +1,4 @@
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 using UsurperRemake.Systems;
 using System;
@@ -117,10 +118,19 @@ public partial class QuestSystem
     /// </summary>
     public static QuestCompletionResult CompleteQuest(Character player, string questId, TerminalEmulator terminal)
     {
-        var quest = GetQuestById(questId);
+        // Look up quest by ID, preferring the one owned by this player (handles duplicate IDs
+        // that can occur from concurrent MUD sessions or save/load race conditions)
+        var quest = questDatabase.FirstOrDefault(q => q.Id == questId &&
+            string.Equals(q.Occupier, player.Name2, StringComparison.OrdinalIgnoreCase));
+        if (quest == null)
+        {
+            // Fallback to any quest with this ID
+            quest = GetQuestById(questId);
+        }
         if (quest == null) return QuestCompletionResult.QuestNotFound;
-        
-        if (quest.Occupier != player.Name2) return QuestCompletionResult.NotYourQuest;
+
+        if (!string.Equals(quest.Occupier, player.Name2, StringComparison.OrdinalIgnoreCase))
+            return QuestCompletionResult.NotYourQuest;
         if (quest.Deleted) return QuestCompletionResult.QuestDeleted;
         
         // Check if player completed all quest requirements
@@ -131,9 +141,7 @@ public partial class QuestSystem
 
         // Display completion banner
         terminal.WriteLine("");
-        terminal.WriteLine("╔════════════════════════════════════════╗", "bright_yellow");
-        terminal.WriteLine("║         QUEST COMPLETED!               ║", "bright_yellow");
-        terminal.WriteLine("╚════════════════════════════════════════╝", "bright_yellow");
+        UIHelper.WriteBoxHeader(terminal, "QUEST COMPLETED!", "bright_yellow", 40);
         terminal.WriteLine("");
 
         // For equipment purchase quests, remove the purchased item from the player
@@ -230,7 +238,7 @@ public partial class QuestSystem
     {
         return questDatabase.Where(q =>
             !q.Deleted &&
-            q.Occupier == playerName
+            string.Equals(q.Occupier, playerName, StringComparison.OrdinalIgnoreCase)
         ).ToList();
     }
 

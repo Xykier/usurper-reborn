@@ -94,10 +94,7 @@ public class MainStreetLocation : BaseLocation
         }
 
         // ASCII art header (simplified version)
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"MAIN STREET".PadLeft((78 + 11) / 2).PadRight(78)}║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("MAIN STREET", "bright_blue");
         terminal.WriteLine("");
 
         // Online status bar (only in online mode)
@@ -242,12 +239,19 @@ public class MainStreetLocation : BaseLocation
     private void DisplayLocationBBS()
     {
         // Line 1: Header
-        terminal.SetColor("bright_blue");
-        terminal.Write("╔════════════════════════════════ ");
-        terminal.SetColor("bright_white");
-        terminal.Write("MAIN STREET");
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine(" ════════════════════════════════╗");
+        if (IsScreenReader)
+        {
+            terminal.WriteLine("MAIN STREET", "bright_white");
+        }
+        else
+        {
+            terminal.SetColor("bright_blue");
+            terminal.Write("╔════════════════════════════════ ");
+            terminal.SetColor("bright_white");
+            terminal.Write("MAIN STREET");
+            terminal.SetColor("bright_blue");
+            terminal.WriteLine(" ════════════════════════════════╗");
+        }
 
         // Line 2: Description (one line)
         terminal.SetColor("white");
@@ -376,8 +380,15 @@ public class MainStreetLocation : BaseLocation
         if (DoorMode.IsOnlineMode && OnlineChatSystem.IsActive)
         {
             int onlineCount = OnlineStateManager.Instance?.CachedOnlinePlayerCount ?? 0;
-            terminal.SetColor("bright_green");
-            terminal.Write(" ── Online ── ");
+            if (IsScreenReader)
+            {
+                terminal.WriteLine("Online:", "bright_green");
+            }
+            else
+            {
+                terminal.SetColor("bright_green");
+                terminal.Write(" ── Online ── ");
+            }
             terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("3"); terminal.SetColor("darkgray"); terminal.Write("]");
             terminal.SetColor("white"); terminal.Write($"Who({onlineCount}) ");
             terminal.SetColor("darkgray"); terminal.Write("["); terminal.SetColor("bright_yellow"); terminal.Write("4"); terminal.SetColor("darkgray"); terminal.Write("]");
@@ -474,8 +485,11 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine("");
 
         // Line 16: Bottom border
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("bright_blue");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
     }
 
     /// <summary>
@@ -491,12 +505,20 @@ public class MainStreetLocation : BaseLocation
         if (currentPlayer.Experience >= experienceNeeded)
         {
             terminal.WriteLine("");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("║     * You are eligible for a level raise! Visit your Master to advance! *    ║");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (IsScreenReader)
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("You are eligible for a level raise! Visit your Master to advance!");
+            }
+            else
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("║     * You are eligible for a level raise! Visit your Master to advance! *    ║");
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.WriteLine("");
         }
     }
@@ -653,12 +675,19 @@ public class MainStreetLocation : BaseLocation
         if (DoorMode.IsOnlineMode && OnlineChatSystem.IsActive)
         {
             terminal.WriteLine("");
-            terminal.SetColor("bright_green");
-            terminal.Write(" ═══ ");
-            terminal.SetColor("bright_white");
-            terminal.Write("Online");
-            terminal.SetColor("bright_green");
-            terminal.WriteLine(" ═══");
+            if (IsScreenReader)
+            {
+                terminal.WriteLine("Online:", "bright_white");
+            }
+            else
+            {
+                terminal.SetColor("bright_green");
+                terminal.Write(" ═══ ");
+                terminal.SetColor("bright_white");
+                terminal.Write("Online");
+                terminal.SetColor("bright_green");
+                terminal.WriteLine(" ═══");
+            }
 
             // Show online player count
             int onlineCount = OnlineStateManager.Instance?.CachedOnlinePlayerCount ?? 0;
@@ -714,8 +743,11 @@ public class MainStreetLocation : BaseLocation
         }
 
         terminal.WriteLine("");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        if (!IsScreenReader)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        }
         terminal.SetColor("white");
         terminal.WriteLine("");
     }
@@ -1221,11 +1253,12 @@ public class MainStreetLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                           -= HALL OF FAME =-                                 ║");
-            terminal.WriteLine("║                      The Greatest Heroes of the Realm                        ║");
-            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+            WriteBoxHeader("HALL OF FAME", "bright_yellow");
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("  The Greatest Heroes of the Realm");
+            }
             terminal.WriteLine("");
 
             // Show player's rank
@@ -1236,7 +1269,7 @@ public class MainStreetLocation : BaseLocation
             // Column headers (adjusted for location)
             terminal.SetColor("gray");
             terminal.WriteLine($"  {"Rank",-5} {"Name",-18} {"Lv",3} {"Class",-10} {"Location",-12} {"Experience",10}");
-            terminal.WriteLine($"  {"────",-5} {"──────────────────",-18} {"──",3} {"──────────",-10} {"────────────",-12} {"──────────",10}");
+            WriteDivider(64);
 
             // Display current page
             int startIdx = currentPage * itemsPerPage;
@@ -1269,8 +1302,11 @@ public class MainStreetLocation : BaseLocation
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.WriteLine("");
 
             // Navigation
@@ -1319,17 +1355,11 @@ public class MainStreetLocation : BaseLocation
         while (true)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("║                         -= CITIZENS OF THE REALM =-                          ║");
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+            WriteBoxHeader("CITIZENS OF THE REALM", "bright_cyan");
             terminal.WriteLine("");
 
             // Always show player first
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("  ═══ PLAYERS ═══");
+            WriteSectionHeader("PLAYERS", "bright_green");
             terminal.SetColor("yellow");
             string playerSex = currentPlayer.Sex == CharacterSex.Male ? "M" : "F";
             terminal.WriteLine($"  * {currentPlayer.DisplayName,-18} {playerSex} Lv{currentPlayer.Level,3} {currentPlayer.Class,-10} HP:{currentPlayer.HP}/{currentPlayer.MaxHP} (You)");
@@ -1338,9 +1368,8 @@ public class MainStreetLocation : BaseLocation
             if (!viewingDead)
             {
                 // Show alive NPCs
-                terminal.SetColor("bright_green");
                 int totalPages = Math.Max(1, totalAlivePages);
-                terminal.WriteLine($"  ═══ ADVENTURERS ({aliveNPCs.Count} active) - Page {currentPage + 1}/{totalPages} ═══");
+                WriteSectionHeader($"ADVENTURERS ({aliveNPCs.Count} active) - Page {currentPage + 1}/{totalPages}", "bright_green");
 
                 if (aliveNPCs.Count > 0)
                 {
@@ -1371,9 +1400,8 @@ public class MainStreetLocation : BaseLocation
             else
             {
                 // Show dead NPCs
-                terminal.SetColor("dark_gray");
                 int totalPages = Math.Max(1, totalDeadPages);
-                terminal.WriteLine($"  ═══ FALLEN ({deadNPCs.Count}) - Page {currentPage + 1}/{totalPages} ═══");
+                WriteSectionHeader($"FALLEN ({deadNPCs.Count}) - Page {currentPage + 1}/{totalPages}", "dark_gray");
 
                 if (deadNPCs.Count > 0)
                 {
@@ -1385,7 +1413,8 @@ public class MainStreetLocation : BaseLocation
                         var npc = deadNPCs[i];
                         terminal.SetColor("dark_gray");
                         string sex = npc.Sex == CharacterSex.Male ? "M" : "F";
-                        terminal.WriteLine($"  † {npc.Name,-18} {sex} Lv{npc.Level,3} {npc.Class,-10} - R.I.P.");
+                        string deathMarker = IsScreenReader ? "(dead)" : "†";
+                        terminal.WriteLine($"  {deathMarker} {npc.Name,-18} {sex} Lv{npc.Level,3} {npc.Class,-10} - R.I.P.");
                     }
                 }
                 else
@@ -1396,8 +1425,11 @@ public class MainStreetLocation : BaseLocation
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            }
             terminal.WriteLine("");
 
             // Navigation options
@@ -1477,15 +1509,11 @@ public class MainStreetLocation : BaseLocation
         stats.UpdateSessionTime(); // Ensure current session is counted
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "PLAYER STATISTICS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("PLAYER STATISTICS", "bright_cyan");
         terminal.WriteLine("");
 
         // Combat Stats
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("═══ COMBAT ═══");
+        WriteSectionHeader("COMBAT", "bright_red");
         terminal.SetColor("white");
         terminal.WriteLine($"  Monsters Slain:     {stats.TotalMonstersKilled,10:N0}     Bosses Killed:    {stats.TotalBossesKilled,8:N0}");
         terminal.WriteLine($"  Unique Monsters:    {stats.TotalUniquesKilled,10:N0}     Combat Win Rate:  {stats.GetCombatWinRate(),7:F1}%");
@@ -1498,8 +1526,7 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine("");
 
         // Economic Stats
-        terminal.SetColor("bright_green");
-        terminal.WriteLine("═══ ECONOMY ═══");
+        WriteSectionHeader("ECONOMY", "bright_green");
         terminal.SetColor("white");
         terminal.WriteLine($"  Total Gold Earned:  {stats.TotalGoldEarned,10:N0}     Gold from Monsters:{stats.TotalGoldFromMonsters,7:N0}");
         terminal.WriteLine($"  Gold Spent:         {stats.TotalGoldSpent,10:N0}     Peak Gold Held:   {stats.HighestGoldHeld,8:N0}");
@@ -1507,16 +1534,14 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine("");
 
         // Experience Stats
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("═══ EXPERIENCE ═══");
+        WriteSectionHeader("EXPERIENCE", "bright_magenta");
         terminal.SetColor("white");
         terminal.WriteLine($"  Total XP Earned:    {stats.TotalExperienceEarned,10:N0}     Level Ups:        {stats.TotalLevelUps,8:N0}");
         terminal.WriteLine($"  Highest Level:      {stats.HighestLevelReached,10}     Current Level:    {currentPlayer.Level,8}");
         terminal.WriteLine("");
 
         // Exploration Stats
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine("═══ EXPLORATION ═══");
+        WriteSectionHeader("EXPLORATION", "bright_blue");
         terminal.SetColor("white");
         terminal.WriteLine($"  Deepest Dungeon:    {stats.DeepestDungeonLevel,10}     Floors Explored:  {stats.TotalDungeonFloorsCovered,8:N0}");
         terminal.WriteLine($"  Chests Opened:      {stats.TotalChestsOpened,10:N0}     Secrets Found:    {stats.TotalSecretsFound,8:N0}");
@@ -1524,8 +1549,7 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine("");
 
         // Survival Stats
-        terminal.SetColor("yellow");
-        terminal.WriteLine("═══ SURVIVAL ═══");
+        WriteSectionHeader("SURVIVAL", "yellow");
         terminal.SetColor("white");
         terminal.WriteLine($"  Deaths (Monster):   {stats.TotalMonsterDeaths,10:N0}     Deaths (PvP):     {stats.TotalPlayerDeaths,8:N0}");
         terminal.WriteLine($"  Potions Used:       {stats.TotalHealingPotionsUsed,10:N0}     Health Restored:  {stats.TotalHealthRestored,8:N0}");
@@ -1533,8 +1557,7 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine("");
 
         // Time Stats
-        terminal.SetColor("gray");
-        terminal.WriteLine("═══ TIME ═══");
+        WriteSectionHeader("TIME", "gray");
         terminal.SetColor("white");
         terminal.WriteLine($"  Total Play Time:    {stats.GetFormattedPlayTime(),10}     Sessions Played:  {stats.TotalSessionsPlayed,8:N0}");
         terminal.WriteLine($"  Character Created:  {stats.CharacterCreated:yyyy-MM-dd}     Current Streak:   {stats.CurrentStreak,8} days");
@@ -1560,10 +1583,7 @@ public class MainStreetLocation : BaseLocation
         AchievementSystem.Initialize();
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        { const string t = "* ACHIEVEMENTS *"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        WriteBoxHeader("ACHIEVEMENTS", "bright_yellow");
 
         var achievements = currentPlayer.Achievements;
         int totalAchievements = AchievementSystem.TotalAchievements;
@@ -1571,18 +1591,31 @@ public class MainStreetLocation : BaseLocation
 
         // Summary line
         terminal.SetColor("white");
-        terminal.WriteLine($"║  Unlocked: {unlocked}/{totalAchievements} ({achievements.CompletionPercentage:F1}%)                                            ║");
+        terminal.WriteLine($"  Unlocked: {unlocked}/{totalAchievements} ({achievements.CompletionPercentage:F1}%)");
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"║  Achievement Points: {achievements.TotalPoints}                                                     ║");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        terminal.WriteLine($"  Achievement Points: {achievements.TotalPoints}");
+        terminal.WriteLine("");
 
         // Category selection
-        terminal.SetColor("white");
-        terminal.WriteLine("║  [1] Combat     [2] Progression  [3] Economy    [4] Exploration              ║");
-        terminal.WriteLine("║  [5] Social     [6] Challenge    [7] Secret     [A] All                      ║");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (IsScreenReader)
+        {
+            terminal.SetColor("white");
+            terminal.WriteLine("Categories:");
+            terminal.WriteLine("  1 - Combat");
+            terminal.WriteLine("  2 - Progression");
+            terminal.WriteLine("  3 - Economy");
+            terminal.WriteLine("  4 - Exploration");
+            terminal.WriteLine("  5 - Social");
+            terminal.WriteLine("  6 - Challenge");
+            terminal.WriteLine("  7 - Secret");
+            terminal.WriteLine("  A - All");
+        }
+        else
+        {
+            terminal.SetColor("white");
+            terminal.WriteLine("  [1] Combat     [2] Progression  [3] Economy    [4] Exploration");
+            terminal.WriteLine("  [5] Social     [6] Challenge    [7] Secret     [A] All");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
@@ -1603,9 +1636,8 @@ public class MainStreetLocation : BaseLocation
 
         // Display achievements
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
         var categoryName = selectedCategory?.ToString() ?? "All";
-        terminal.WriteLine($"╔═══════════════════════ {categoryName.ToUpper()} ACHIEVEMENTS ═══════════════════════╗");
+        WriteBoxHeader($"{categoryName.ToUpper()} ACHIEVEMENTS", "bright_yellow");
         terminal.WriteLine("");
 
         var achievementsToShow = selectedCategory.HasValue
@@ -1670,8 +1702,7 @@ public class MainStreetLocation : BaseLocation
                 var key = await terminal.GetKeyInput();
                 if (key?.ToUpper() == "Q") return;
                 terminal.ClearScreen();
-                terminal.SetColor("bright_yellow");
-                terminal.WriteLine($"╔═══════════════════════ {categoryName.ToUpper()} ACHIEVEMENTS ═══════════════════════╗");
+                WriteBoxHeader($"{categoryName.ToUpper()} ACHIEVEMENTS", "bright_yellow");
                 terminal.WriteLine("");
             }
         }
@@ -1688,10 +1719,7 @@ public class MainStreetLocation : BaseLocation
     private async Task AttackSomeone()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                          ATTACK SOMEONE                                      ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("ATTACK SOMEONE", "bright_red");
         terminal.WriteLine("");
 
         // Get NPCs in the area
@@ -1901,10 +1929,7 @@ public class MainStreetLocation : BaseLocation
         {
             var summary = currentPlayer.Statistics.GetSessionSummary();
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                           SESSION SUMMARY                                    ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("SESSION SUMMARY", "bright_cyan");
             terminal.WriteLine("");
 
             // Session duration
@@ -1917,8 +1942,7 @@ public class MainStreetLocation : BaseLocation
                 terminal.WriteLine($"{summary.Duration.Minutes}m {summary.Duration.Seconds}s");
 
             terminal.WriteLine("");
-            terminal.SetColor("gray");
-            terminal.WriteLine("  ─────────────────────────────────────────────────────────");
+            WriteDivider(59);
             terminal.WriteLine("");
 
             // Combat stats
@@ -1970,8 +1994,7 @@ public class MainStreetLocation : BaseLocation
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("gray");
-            terminal.WriteLine("  ─────────────────────────────────────────────────────────");
+            WriteDivider(59);
             terminal.WriteLine("");
         }
 
@@ -2176,10 +2199,7 @@ public class MainStreetLocation : BaseLocation
         while (!exitSettings)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "SETTINGS & SAVE OPTIONS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("SETTINGS & SAVE OPTIONS", "bright_cyan");
             terminal.WriteLine("");
             
             var dailyManager = DailySystemManager.Instance;
@@ -2269,10 +2289,7 @@ public class MainStreetLocation : BaseLocation
         while (!exitPrefs)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                             GAME PREFERENCES                                 ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("GAME PREFERENCES", "bright_cyan");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -2350,10 +2367,7 @@ public class MainStreetLocation : BaseLocation
     private async Task ChangeCombatSpeed()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("           COMBAT SPEED");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("COMBAT SPEED", "bright_cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -2407,10 +2421,7 @@ public class MainStreetLocation : BaseLocation
     private async Task ChangeDailyCycleMode()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         DAILY CYCLE MODES");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("DAILY CYCLE MODES", "bright_cyan");
         terminal.WriteLine("");
         
         terminal.SetColor("white");
@@ -2484,10 +2495,7 @@ public class MainStreetLocation : BaseLocation
     private async Task ConfigureAutoSave()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         AUTO-SAVE SETTINGS");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("AUTO-SAVE SETTINGS", "bright_cyan");
         terminal.WriteLine("");
         
         var dailyManager = DailySystemManager.Instance;
@@ -2556,10 +2564,7 @@ public class MainStreetLocation : BaseLocation
     private async Task LoadDifferentSave()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         LOAD DIFFERENT SAVE");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("LOAD DIFFERENT SAVE", "bright_cyan");
         terminal.WriteLine("");
         
         var saves = SaveSystem.Instance.GetAllSaves();
@@ -2608,10 +2613,7 @@ public class MainStreetLocation : BaseLocation
     private async Task DeleteSaveFiles()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         DELETE SAVE FILES");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("DELETE SAVE FILES", "bright_red");
         terminal.WriteLine("");
         
         terminal.SetColor("red");
@@ -2678,10 +2680,7 @@ public class MainStreetLocation : BaseLocation
     private async Task ViewSaveFileInfo()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         SAVE FILE INFORMATION");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("SAVE FILE INFORMATION", "bright_cyan");
         terminal.WriteLine("");
         
         var saves = SaveSystem.Instance.GetAllSaves();
@@ -2714,10 +2713,7 @@ public class MainStreetLocation : BaseLocation
     private async Task ForceDailyReset()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══════════════════════════════════════");
-        terminal.WriteLine("         FORCE DAILY RESET");
-        terminal.WriteLine("═══════════════════════════════════════");
+        WriteSectionHeader("FORCE DAILY RESET", "bright_yellow");
         terminal.WriteLine("");
         
         terminal.SetColor("white");
@@ -2776,10 +2772,7 @@ public class MainStreetLocation : BaseLocation
     private async Task ShowHelp()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                              HELP & COMMANDS                                 ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("HELP & COMMANDS", "bright_cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("bright_yellow");
@@ -2895,17 +2888,14 @@ public class MainStreetLocation : BaseLocation
         var grief = GriefSystem.Instance;
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                               ✦ YOUR JOURNEY ✦                               ║");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        WriteBoxHeader("YOUR JOURNEY", "bright_cyan");
+        terminal.WriteLine("");
 
         // === SEALS SECTION ===
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("║                            THE SEVEN SEALS                                   ║");
+        WriteSectionHeader("THE SEVEN SEALS", "bright_yellow");
         terminal.SetColor("gray");
-        terminal.WriteLine("║  Ancient artifacts that reveal the truth of creation                         ║");
-        terminal.WriteLine("║                                                                              ║");
+        terminal.WriteLine("  Ancient artifacts that reveal the truth of creation");
+        terminal.WriteLine("");
 
         // Seal status display
         var sealTypes = new[] { SealType.Creation, SealType.FirstWar, SealType.Corruption, SealType.Imprisonment, SealType.Prophecy, SealType.Regret, SealType.Truth };
@@ -2913,7 +2903,7 @@ public class MainStreetLocation : BaseLocation
 
         int sealsCollected = story.CollectedSeals?.Count ?? 0;
         terminal.SetColor("white");
-        terminal.Write($"║  Seals Collected: {sealsCollected}/7   ");
+        terminal.Write($"  Seals Collected: {sealsCollected}/7   ");
 
         for (int i = 0; i < sealTypes.Length; i++)
         {
@@ -2929,8 +2919,7 @@ public class MainStreetLocation : BaseLocation
                 terminal.Write("[ ]");
             }
         }
-        terminal.SetColor("white");
-        terminal.WriteLine($"                                      ║");
+        terminal.WriteLine("");
 
         // Show detailed seal info (without floor numbers - let players discover them)
         for (int i = 0; i < sealTypes.Length; i++)
@@ -2940,18 +2929,15 @@ public class MainStreetLocation : BaseLocation
             string color = hasIt ? "bright_green" : "darkgray";
             string locationHint = hasIt ? "Found" : "Hidden in the depths...";
             terminal.SetColor(color);
-            terminal.WriteLine($"║    {status} Seal of {sealNames[i],-12} - {locationHint,-30}                 ║");
+            terminal.WriteLine($"    {status} Seal of {sealNames[i],-12} - {locationHint}");
         }
-
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        terminal.WriteLine("");
 
         // === GODS SECTION ===
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("║                             THE OLD GODS                                     ║");
+        WriteSectionHeader("THE OLD GODS", "bright_magenta");
         terminal.SetColor("gray");
-        terminal.WriteLine("║  Ancient beings you may challenge for power or wisdom                        ║");
-        terminal.WriteLine("║                                                                              ║");
+        terminal.WriteLine("  Ancient beings you may challenge for power or wisdom");
+        terminal.WriteLine("");
 
         var godData = new[]
         {
@@ -2988,18 +2974,15 @@ public class MainStreetLocation : BaseLocation
             }
 
             terminal.SetColor(color);
-            terminal.WriteLine($"║    {name,-10} {title,-15} {location,-25} [{status,-12}] ║");
+            terminal.WriteLine($"    {name,-10} {title,-15} {location,-25} [{status,-12}]");
         }
-
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        terminal.WriteLine("");
 
         // === AWAKENING SECTION ===
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine("║                          OCEAN PHILOSOPHY                                    ║");
+        WriteSectionHeader("OCEAN PHILOSOPHY", "bright_blue");
         terminal.SetColor("gray");
-        terminal.WriteLine("║  Your spiritual awakening through grief, sacrifice, and understanding        ║");
-        terminal.WriteLine("║                                                                              ║");
+        terminal.WriteLine("  Your spiritual awakening through grief, sacrifice, and understanding");
+        terminal.WriteLine("");
 
         int awakeningLevel = ocean.AwakeningLevel;
         string awakeningDesc = awakeningLevel switch
@@ -3014,12 +2997,10 @@ public class MainStreetLocation : BaseLocation
         };
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"║  Awakening Level: {awakeningLevel}/5                                                        ║");
+        terminal.WriteLine($"  Awakening Level: {awakeningLevel}/5");
         terminal.SetColor("white");
-        terminal.WriteLine($"║  {awakeningDesc,-70} ║");
-
-        // Grief status
-        terminal.WriteLine("║                                                                              ║");
+        terminal.WriteLine($"  {awakeningDesc}");
+        terminal.WriteLine("");
         string griefStatus = grief.CurrentStage switch
         {
             GriefStage.None => "At Peace",
@@ -3035,14 +3016,11 @@ public class MainStreetLocation : BaseLocation
             ? "bright_green"
             : "yellow";
         terminal.SetColor(griefColor);
-        terminal.WriteLine($"║  Grief: {griefStatus,-66} ║");
-
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        terminal.WriteLine($"  Grief: {griefStatus}");
+        terminal.WriteLine("");
 
         // === ALIGNMENT SECTION ===
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("║                              ALIGNMENT                                       ║");
+        WriteSectionHeader("ALIGNMENT", "bright_white");
 
         long chivalry = currentPlayer.Chivalry;
         string alignmentDesc;
@@ -3084,7 +3062,7 @@ public class MainStreetLocation : BaseLocation
         }
 
         terminal.SetColor(alignColor);
-        terminal.WriteLine($"║  Chivalry: {chivalry,4}  -  {alignmentDesc,-55} ║");
+        terminal.WriteLine($"  Chivalry: {chivalry,4}  -  {alignmentDesc}");
 
         // Show Darkness and wanted status
         long darkness = currentPlayer.Darkness;
@@ -3111,10 +3089,7 @@ public class MainStreetLocation : BaseLocation
             darkColor = "bright_green";
         }
         terminal.SetColor(darkColor);
-        terminal.WriteLine($"║  Darkness: {darkness,4}  -  {darkDesc,-55} ║");
-
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        terminal.WriteLine($"  Darkness: {darkness,4}  -  {darkDesc}");
 
         // Next objective hint (vague to encourage exploration)
         terminal.WriteLine("");

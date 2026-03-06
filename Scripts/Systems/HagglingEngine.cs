@@ -23,7 +23,10 @@ public static class HagglingEngine
                                          string shopkeeperName, TerminalEmulator terminal)
     {
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ HAGGLE ═══");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══ HAGGLE ═══");
+        else
+            terminal.WriteLine("HAGGLE");
         terminal.WriteLine("");
         
         // Check if player has haggling attempts left

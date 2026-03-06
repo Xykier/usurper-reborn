@@ -57,6 +57,11 @@ public class ArmorShopLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (IsScreenReader && currentPlayer != null && currentPlayer.ArmHag >= 1)
+        {
+            if (currentSlotCategory == null) { DisplayLocationSR(); return; }
+        }
+
         if (IsBBSSession && currentPlayer != null && currentPlayer.ArmHag >= 1)
         {
             if (currentSlotCategory == null) { DisplayLocationBBS(); return; }
@@ -78,10 +83,7 @@ public class ArmorShopLocation : BaseLocation
             return;
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"ARMOR SHOP".PadLeft((77 + 10) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("ARMOR SHOP", "bright_cyan");
         terminal.WriteLine("");
         terminal.SetColor("gray");
         terminal.WriteLine($"Run by {shopkeeperName} the elf");
@@ -155,70 +157,97 @@ public class ArmorShopLocation : BaseLocation
         foreach (var slot in ArmorSlots)
         {
             var currentItem = currentPlayer.GetEquipment(slot);
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write($"{num}");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.Write($"{slot.GetDisplayName().PadRight(12)}");
-
-            if (currentItem != null)
+            if (IsScreenReader)
             {
-                terminal.SetColor("gray");
-                terminal.Write(" - ");
-                terminal.SetColor("bright_cyan");
-                terminal.Write($"{currentItem.Name}");
-                terminal.SetColor("gray");
-                terminal.Write($" (AC:{currentItem.ArmorClass})");
+                string slotLabel = currentItem != null
+                    ? $"{slot.GetDisplayName()} - {currentItem.Name} (AC:{currentItem.ArmorClass})"
+                    : $"{slot.GetDisplayName()} - Empty";
+                WriteSRMenuOption($"{num}", slotLabel);
             }
             else
             {
                 terminal.SetColor("darkgray");
-                terminal.Write(" - Empty");
+                terminal.Write("[");
+                terminal.SetColor("bright_yellow");
+                terminal.Write($"{num}");
+                terminal.SetColor("darkgray");
+                terminal.Write("] ");
+                terminal.SetColor("white");
+                terminal.Write($"{slot.GetDisplayName().PadRight(12)}");
+
+                if (currentItem != null)
+                {
+                    terminal.SetColor("gray");
+                    terminal.Write(" - ");
+                    terminal.SetColor("bright_cyan");
+                    terminal.Write($"{currentItem.Name}");
+                    terminal.SetColor("gray");
+                    terminal.Write($" (AC:{currentItem.ArmorClass})");
+                }
+                else
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write(" - Empty");
+                }
+                terminal.WriteLine("");
             }
-            terminal.WriteLine("");
             num++;
         }
 
         terminal.WriteLine("");
 
-        // Sell option
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("S");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("white");
-        terminal.WriteLine("ell armor");
-
-        // Auto-equip option
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("A");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("magenta");
-        terminal.WriteLine($"uto-buy best affordable armor for all slots");
+        WriteSRMenuOption("S", "Sell armor");
+        WriteSRMenuOption("A", "Auto-buy best affordable armor for all slots");
 
         terminal.WriteLine("");
-        terminal.SetColor("darkgray");
-        terminal.Write("[");
-        terminal.SetColor("bright_yellow");
-        terminal.Write("R");
-        terminal.SetColor("darkgray");
-        terminal.Write("] ");
-        terminal.SetColor("red");
-        terminal.WriteLine("eturn to street");
+        WriteSRMenuOption("R", "Return to street");
         terminal.WriteLine("");
 
         ShowStatusLine();
 
         // Show first shop hint for new players
         HintSystem.Instance.TryShowHint(HintSystem.HINT_FIRST_SHOP, terminal, currentPlayer.HintsShown);
+    }
+
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.WriteLine("ARMOR SHOP");
+        terminal.WriteLine("");
+        terminal.SetColor("white");
+        terminal.WriteLine($"Run by {shopkeeperName} the elf. You have {FormatNumber(currentPlayer.Gold)} gold.");
+
+        // Total AC summary
+        long totalAC = 0;
+        foreach (var slot in ArmorSlots)
+        {
+            var item = currentPlayer.GetEquipment(slot);
+            if (item != null) totalAC += item.ArmorClass;
+        }
+        terminal.WriteLine($"Total Armor Class: {totalAC}");
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Armor Slots:");
+        int num = 1;
+        foreach (var slot in ArmorSlots)
+        {
+            var currentItem = currentPlayer.GetEquipment(slot);
+            string slotLabel = currentItem != null
+                ? $"{slot.GetDisplayName()} - {currentItem.Name} (AC:{currentItem.ArmorClass})"
+                : $"{slot.GetDisplayName()} - Empty";
+            WriteSRMenuOption($"{num}", slotLabel);
+            num++;
+        }
+        terminal.WriteLine("");
+        WriteSRMenuOption("S", "Sell armor");
+        WriteSRMenuOption("A", "Auto-buy best affordable armor for all slots");
+        terminal.WriteLine("");
+        WriteSRMenuOption("R", "Return to street");
+        terminal.WriteLine("");
+        ShowStatusLine();
     }
 
     /// <summary>
@@ -306,8 +335,7 @@ public class ArmorShopLocation : BaseLocation
 
         var currentItem = currentPlayer.GetEquipment(slot);
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine($"═══ {slot.GetDisplayName()} Armor ═══");
+        WriteSectionHeader($"{slot.GetDisplayName()} Armor", "bright_yellow");
         terminal.WriteLine("");
 
         if (currentItem != null)
@@ -332,8 +360,7 @@ public class ArmorShopLocation : BaseLocation
 
         terminal.SetColor("bright_blue");
         terminal.WriteLine("  #   Name                        Lvl  AC   Price       Bonus");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("───────────────────────────────────────────────────────────────");
+        WriteDivider(63);
 
         int num = 1;
         foreach (var item in pageItems)
@@ -773,8 +800,7 @@ public class ArmorShopLocation : BaseLocation
     private async Task SellArmor()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ Sell Armor ═══");
+        WriteSectionHeader("Sell Armor", "bright_yellow");
         terminal.WriteLine("");
 
         // Get Shadows faction fence bonus modifier (1.0 normal, 1.2 with Shadows)
@@ -957,8 +983,7 @@ public class ArmorShopLocation : BaseLocation
     private async Task AutoBuyBestArmor()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("═══ Auto-Buy Best Affordable Armor ═══");
+        WriteSectionHeader("Auto-Buy Best Affordable Armor", "bright_magenta");
         terminal.WriteLine("");
 
         int purchased = 0;
@@ -1031,8 +1056,7 @@ public class ArmorShopLocation : BaseLocation
 
                 // Display current slot info
                 terminal.WriteLine("");
-                terminal.SetColor("bright_yellow");
-                terminal.WriteLine($"─── {slot.GetDisplayName()} ───");
+                WriteSectionHeader(slot.GetDisplayName(), "bright_yellow");
 
                 if (currentItem != null)
                 {

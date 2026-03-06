@@ -72,16 +72,19 @@ public class HealerLocation : BaseLocation
     {
         terminal.ClearScreen();
 
+        if (IsScreenReader)
+        {
+            DisplayLocationSR();
+            return;
+        }
+
         if (IsBBSSession)
         {
             DisplayLocationBBS();
             return;
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"THE GOLDEN BOW - HEALING HUT".PadLeft((77 + 28) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE GOLDEN BOW - HEALING HUT", "bright_cyan", 77);
         terminal.WriteLine("");
 
         ShowShopkeeperMood(Manager,
@@ -151,6 +154,46 @@ public class HealerLocation : BaseLocation
         ShowBBSMenuRow(("P", "bright_yellow", "Poison Cure"), ("C", "bright_yellow", "Cure Disease"), ("D", "bright_yellow", "Decurse"));
         ShowBBSMenuRow(("N", "bright_yellow", "Buy Antidotes"), ("A", "bright_yellow", "Addiction"), ("S", "bright_yellow", "Status"), ("R", "bright_yellow", "Return"));
         ShowBBSFooter();
+    }
+
+    private void DisplayLocationSR()
+    {
+        terminal.WriteLine("THE GOLDEN BOW - HEALING HUT");
+        terminal.WriteLine("");
+
+        var player = GetCurrentPlayer();
+        terminal.WriteLine($"HP: {player.HP}/{player.MaxHP}, Gold: {player.Gold:N0}, Potions: {player.Healing}");
+
+        // Show afflictions
+        var afflictions = new List<string>();
+        if (player.Poisoned) afflictions.Add("Poisoned");
+        if (player.Blind) afflictions.Add("Blind");
+        if (player.Plague) afflictions.Add("Plague");
+        if (player.Smallpox) afflictions.Add("Smallpox");
+        if (player.Measles) afflictions.Add("Measles");
+        if (player.Leprosy) afflictions.Add("Leprosy");
+        if (player.LoversBane) afflictions.Add("Lover's Bane");
+        if (afflictions.Count > 0)
+            terminal.WriteLine($"Afflictions: {string.Join(", ", afflictions)}");
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        terminal.WriteLine("Services:");
+        WriteSRMenuOption("H", "Heal HP");
+        WriteSRMenuOption("F", "Full Heal");
+        WriteSRMenuOption("B", "Buy Potions");
+        WriteSRMenuOption("M", "Mana Potions");
+        WriteSRMenuOption("P", "Poison Cure");
+        WriteSRMenuOption("C", "Cure Disease");
+        WriteSRMenuOption("D", "Decurse Item");
+        WriteSRMenuOption("N", "Buy Antidotes");
+        WriteSRMenuOption("A", "Addiction Rehab");
+        WriteSRMenuOption("S", "Status");
+        WriteSRMenuOption("R", "Return to Main Street");
+        terminal.WriteLine("");
+
+        ShowStatusLine();
     }
 
     protected override async Task<bool> ProcessChoice(string choice)
@@ -352,14 +395,12 @@ public class HealerLocation : BaseLocation
     private void ShowFullMenu()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine($"-*- {HealerName} - Services -*-");
+        WriteSectionHeader($"{HealerName} - Services", "bright_magenta");
         terminal.WriteLine("");
 
         var player = GetCurrentPlayer();
 
-        terminal.SetColor("cyan");
-        terminal.WriteLine("═══ Healing Services ═══");
+        WriteSectionHeader("Healing Services", "cyan");
         terminal.SetColor("white");
         terminal.WriteLine($"(H)eal HP        - Restore some HP ({FullHealCostPerHP} gold per HP)");
         terminal.WriteLine($"(F)ull Heal      - Restore all HP (costs vary)");
@@ -368,8 +409,7 @@ public class HealerLocation : BaseLocation
         terminal.WriteLine($"(P)oison Cure    - Remove poison ({CalculateDiseaseCost(PoisonBaseCost, player.Level):N0} gold)");
         terminal.WriteLine("");
 
-        terminal.SetColor("cyan");
-        terminal.WriteLine("═══ Disease Treatment ═══");
+        WriteSectionHeader("Disease Treatment", "cyan");
         terminal.SetColor("white");
         terminal.WriteLine($"(C)ure Disease   - Cure afflictions (cost varies by disease)");
         terminal.WriteLine("                   Blindness:    " + CalculateDiseaseCost(BlindnessBaseCost, player.Level).ToString("N0") + " gold");
@@ -380,8 +420,7 @@ public class HealerLocation : BaseLocation
         terminal.WriteLine("                   Lover's Bane: " + CalculateDiseaseCost(LoversBaneBaseCost, player.Level).ToString("N0") + " gold");
         terminal.WriteLine("");
 
-        terminal.SetColor("cyan");
-        terminal.WriteLine("═══ Other Services ═══");
+        WriteSectionHeader("Other Services", "cyan");
         terminal.SetColor("white");
         terminal.WriteLine($"(D)ecurse Item   - Remove curse from equipment ({CalculateDiseaseCost(CursedItemBaseCost, player.Level):N0} gold)");
         long rehabCost = GameConfig.RehabBaseCost + (player.Addict * GameConfig.RehabPerAddictionCost);
@@ -448,8 +487,7 @@ public class HealerLocation : BaseLocation
 
         if (player.HP >= player.MaxHP)
         {
-            terminal.WriteLine($"\"{player.Name2}, you are already at full health!\"", "cyan");
-            terminal.WriteLine($", {Manager} says with a shrug.", "gray");
+            terminal.WriteLine($"\"{player.Name2}, you are already at full health,\" {Manager} says with a shrug.", "cyan");
             await terminal.PressAnyKey();
             return;
         }
@@ -538,8 +576,7 @@ public class HealerLocation : BaseLocation
         long cost = hpNeeded * FullHealCostPerHP;
         var (fullHealKingTax, fullHealCityTax, fullHealTotalWithTax) = CityControlSystem.CalculateHealingTaxedPrice(cost);
 
-        terminal.WriteLine($"\"A full restoration will cost you {fullHealTotalWithTax:N0} gold.\"", "cyan");
-        terminal.WriteLine($", {Manager} says, examining your wounds.", "gray");
+        terminal.WriteLine($"\"A full restoration will cost you {fullHealTotalWithTax:N0} gold,\" {Manager} says, examining your wounds.", "cyan");
         terminal.WriteLine("");
 
         CityControlSystem.Instance.DisplayTaxBreakdown(terminal, "Full Healing", cost);
@@ -600,8 +637,7 @@ public class HealerLocation : BaseLocation
         terminal.WriteLine("");
         terminal.SetColor("cyan");
         var (_, _, singlePotionWithTax) = CityControlSystem.CalculateHealingTaxedPrice(HealingPotionCost);
-        terminal.WriteLine($"\"Healing potions are {singlePotionWithTax} gold each (with taxes).\"");
-        terminal.WriteLine($", {Manager} says, gesturing to his shelf of vials.", "gray");
+        terminal.WriteLine($"\"Healing potions are {singlePotionWithTax} gold each (with taxes),\" {Manager} says, gesturing to his shelf of vials.");
         terminal.WriteLine("");
 
         long maxAfford = singlePotionWithTax > 0 ? player.Gold / singlePotionWithTax : 0;
@@ -683,8 +719,7 @@ public class HealerLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("cyan");
-        terminal.WriteLine($"\"Mana potions are {singleManaWithTax} gold each (with taxes). Each restores {manaRestored} mana.\"");
-        terminal.WriteLine($", {Manager} says, pulling blue vials from a shelf.", "gray");
+        terminal.WriteLine($"\"Mana potions are {singleManaWithTax} gold each (with taxes). Each restores {manaRestored} mana,\" {Manager} says, pulling blue vials from a shelf.");
         terminal.WriteLine("");
 
         long maxAfford = singleManaWithTax > 0 ? player.Gold / singleManaWithTax : 0;
@@ -811,8 +846,7 @@ public class HealerLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         terminal.WriteLine("");
-        terminal.WriteLine($"\"Let me check for poison in your blood...\"", "cyan");
-        terminal.WriteLine($", {Manager} says, examining you carefully.", "gray");
+        terminal.WriteLine($"\"Let me check for poison in your blood...\" {Manager} says, examining you carefully.", "cyan");
         terminal.WriteLine("");
 
         await Task.Delay(1000);
@@ -875,8 +909,7 @@ public class HealerLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         terminal.WriteLine("");
-        terminal.WriteLine($"\"Alright, let's have a look at you!\"", "cyan");
-        terminal.WriteLine($", {Manager} says.", "gray");
+        terminal.WriteLine($"\"Alright, let's have a look at you!\" {Manager} says.", "cyan");
         terminal.WriteLine("");
 
         // Check for diseases
@@ -899,8 +932,7 @@ public class HealerLocation : BaseLocation
         {
             terminal.WriteLine("No diseases found!", "green");
             terminal.WriteLine("");
-            terminal.WriteLine($"\"You are wasting my time!\"", "cyan");
-            terminal.WriteLine($", {Manager} says and returns to his desk.", "gray");
+            terminal.WriteLine($"\"You are wasting my time!\" {Manager} says and returns to his desk.", "cyan");
             await terminal.PressAnyKey();
             return;
         }
@@ -939,8 +971,7 @@ public class HealerLocation : BaseLocation
             var (cureAllKingTax, cureAllCityTax, cureAllTotalWithTax) = CityControlSystem.CalculateHealingTaxedPrice(totalCost);
 
             terminal.WriteLine("");
-            terminal.WriteLine($"\"A complete healing process will cost you {totalCost:N0} gold.\"", "cyan");
-            terminal.WriteLine($", {Manager} says.", "gray");
+            terminal.WriteLine($"\"A complete healing process will cost you {totalCost:N0} gold,\" {Manager} says.", "cyan");
 
             CityControlSystem.Instance.DisplayTaxBreakdown(terminal, "Disease Cures", totalCost);
 
@@ -975,8 +1006,7 @@ public class HealerLocation : BaseLocation
             var (cureOneKingTax, cureOneCityTax, cureOneTotalWithTax) = CityControlSystem.CalculateHealingTaxedPrice(disease.Cost);
 
             terminal.WriteLine("");
-            terminal.WriteLine($"\"For healing {disease.Name} I want {disease.Cost:N0} gold.\"", "cyan");
-            terminal.WriteLine($", {Manager} says.", "gray");
+            terminal.WriteLine($"\"For healing {disease.Name} I want {disease.Cost:N0} gold,\" {Manager} says.", "cyan");
 
             CityControlSystem.Instance.DisplayTaxBreakdown(terminal, "Disease Cure", disease.Cost);
 
@@ -1042,8 +1072,7 @@ public class HealerLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         terminal.WriteLine("");
-        terminal.WriteLine($"\"Alright, let's have a look at your equipment!\"", "cyan");
-        terminal.WriteLine($", {Manager} says.", "gray");
+        terminal.WriteLine($"\"Alright, let's have a look at your equipment!\" {Manager} says.", "cyan");
         terminal.WriteLine("");
 
         // Check equipped items for curses using BOTH legacy and modern equipment systems
@@ -1172,10 +1201,7 @@ public class HealerLocation : BaseLocation
         var player = GetCurrentPlayer();
 
         terminal.ClearScreen();
-        terminal.SetColor("cyan");
-        terminal.WriteLine("═══════════════════════════════════════════");
-        terminal.WriteLine("             YOUR HEALTH STATUS            ");
-        terminal.WriteLine("═══════════════════════════════════════════");
+        WriteBoxHeader("YOUR HEALTH STATUS", "cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1293,8 +1319,7 @@ public class HealerLocation : BaseLocation
 
         if (!player.IsAddicted && !player.OnDrugs)
         {
-            terminal.WriteLine($"\"{player.Name2}, you show no signs of substance dependency.\"", "cyan");
-            terminal.WriteLine($", {Manager} says after examining you.", "gray");
+            terminal.WriteLine($"\"{player.Name2}, you show no signs of substance dependency,\" {Manager} says after examining you.", "cyan");
             await terminal.PressAnyKey();
             return;
         }
@@ -1304,12 +1329,10 @@ public class HealerLocation : BaseLocation
         long totalCost = baseCost + addictionCost;
         var (_, _, totalWithTax) = CityControlSystem.CalculateHealingTaxedPrice(totalCost);
 
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("═══ Addiction Rehabilitation Program ═══");
+        WriteSectionHeader("Addiction Rehabilitation Program", "bright_magenta");
         terminal.WriteLine("");
         terminal.SetColor("cyan");
-        terminal.WriteLine($"\"{player.Name2}, I can see the substance has taken hold of you.\"");
-        terminal.WriteLine($", {Manager} says gravely.", "gray");
+        terminal.WriteLine($"\"{player.Name2}, I can see the substance has taken hold of you,\" {Manager} says gravely.");
         terminal.WriteLine("");
 
         terminal.SetColor("white");

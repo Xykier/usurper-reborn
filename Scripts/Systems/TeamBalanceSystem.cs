@@ -262,7 +262,10 @@ namespace UsurperRemake.Systems
 
             terminal.WriteLine("");
             terminal.SetColor("yellow");
-            terminal.WriteLine("═══ PARTY BALANCE ═══");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══ PARTY BALANCE ═══");
+            else
+                terminal.WriteLine("PARTY BALANCE");
 
             // Show fee breakdown
             if (breakdown.Any(b => b.fee > 0))

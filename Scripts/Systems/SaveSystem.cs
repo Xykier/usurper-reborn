@@ -344,7 +344,9 @@ namespace UsurperRemake.Systems
                 MaxHP = player.MaxHP,
                 Gold = player.Gold,
                 BankGold = player.BankGold,
-                
+                BankGuard = player.BankGuard,
+                BankWage = player.BankWage,
+
                 // Attributes
                 Strength = player.Strength,
                 Defence = player.Defence,

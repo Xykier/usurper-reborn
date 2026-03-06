@@ -1,3 +1,4 @@
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 using UsurperRemake.Systems;
 using UsurperRemake.BBS;
@@ -262,7 +263,9 @@ namespace UsurperRemake.Systems
             if (_updateCheckComplete && _updateAvailable)
             {
                 terminal.SetColor("bright_green");
-                terminal.WriteLine($" ★ UPDATE: v{_latestVersion} available (current: {GameConfig.Version})");
+                terminal.WriteLine(GameConfig.ScreenReaderMode
+                    ? $" UPDATE: v{_latestVersion} available (current: {GameConfig.Version})"
+                    : $" ★ UPDATE: v{_latestVersion} available (current: {GameConfig.Version})");
             }
             terminal.WriteLine("");
 
@@ -317,7 +320,9 @@ namespace UsurperRemake.Systems
             if (_updateCheckComplete && _updateAvailable)
             {
                 terminal.SetColor("bright_green");
-                terminal.WriteLine($" ★ UPDATE: v{_latestVersion} available (current: {GameConfig.Version})");
+                terminal.WriteLine(GameConfig.ScreenReaderMode
+                    ? $" UPDATE: v{_latestVersion} available (current: {GameConfig.Version})"
+                    : $" ★ UPDATE: v{_latestVersion} available (current: {GameConfig.Version})");
             }
             terminal.WriteLine("");
 
@@ -372,26 +377,45 @@ namespace UsurperRemake.Systems
 
         private void ShowSysOpHeader(string title)
         {
-            terminal.SetColor("bright_red");
-            int padLen = Math.Max(0, (76 - title.Length) / 2);
-            string padL = new string('═', padLen);
-            string padR = new string('═', 76 - title.Length - padLen);
-            terminal.Write("╔" + padL + " ");
-            terminal.SetColor("bright_white");
-            terminal.Write(title);
-            terminal.SetColor("bright_red");
-            terminal.WriteLine(" " + padR + "╗");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_white");
+                terminal.WriteLine(title);
+            }
+            else
+            {
+                terminal.SetColor("bright_red");
+                int padLen = Math.Max(0, (76 - title.Length) / 2);
+                string padL = new string('═', padLen);
+                string padR = new string('═', 76 - title.Length - padLen);
+                terminal.Write("╔" + padL + " ");
+                terminal.SetColor("bright_white");
+                terminal.Write(title);
+                terminal.SetColor("bright_red");
+                terminal.WriteLine(" " + padR + "╗");
+            }
         }
 
         private void SysOpMenuRow(params (string key, string label)[] items)
         {
             terminal.Write(" ");
-            foreach (var (key, label) in items)
+            if (GameConfig.ScreenReaderMode)
             {
-                terminal.SetColor("darkgray"); terminal.Write("[");
-                terminal.SetColor("bright_yellow"); terminal.Write(key);
-                terminal.SetColor("darkgray"); terminal.Write("]");
-                terminal.SetColor("white"); terminal.Write(label + " ");
+                foreach (var (key, label) in items)
+                {
+                    terminal.SetColor("white");
+                    terminal.Write($"{key}.{label} ");
+                }
+            }
+            else
+            {
+                foreach (var (key, label) in items)
+                {
+                    terminal.SetColor("darkgray"); terminal.Write("[");
+                    terminal.SetColor("bright_yellow"); terminal.Write(key);
+                    terminal.SetColor("darkgray"); terminal.Write("]");
+                    terminal.SetColor("white"); terminal.Write(label + " ");
+                }
             }
             terminal.WriteLine("");
         }
@@ -428,11 +452,16 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine($" ═══ Players ({page + 1}/{totalPages}, {players.Count} total) ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode
+                    ? $" Players ({page + 1}/{totalPages}, {players.Count} total)"
+                    : $" ═══ Players ({page + 1}/{totalPages}, {players.Count} total) ═══");
                 terminal.SetColor("yellow");
                 terminal.WriteLine($" {"#",-4}{"Name",-16}{"Lvl",4} {"Class",-11}{"Gold",10} {"Status",-8}");
-                terminal.SetColor("dark_gray");
-                terminal.WriteLine(" " + new string('─', 55));
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("dark_gray");
+                    terminal.WriteLine(" " + new string('─', 55));
+                }
 
                 var pageItems = players.Skip(page * pageSize).Take(pageSize).ToList();
                 for (int i = 0; i < pageItems.Count; i++)
@@ -505,11 +534,14 @@ namespace UsurperRemake.Systems
 
             terminal.ClearScreen();
             terminal.SetColor("bright_red");
-            terminal.WriteLine(" ═══ Ban Player ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? " Ban Player" : " ═══ Ban Player ═══");
             terminal.SetColor("yellow");
             terminal.WriteLine($" {"#",-4}{"Name",-16}{"Lvl",4} {"Class",-11}{"Status",-8}");
-            terminal.SetColor("dark_gray");
-            terminal.WriteLine(" " + new string('─', 45));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("dark_gray");
+                terminal.WriteLine(" " + new string('─', 45));
+            }
 
             for (int i = 0; i < players.Count; i++)
             {
@@ -558,7 +590,7 @@ namespace UsurperRemake.Systems
 
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine(" ═══ Unban Player ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? " Unban Player" : " ═══ Unban Player ═══");
 
             if (banned.Count == 0)
             {
@@ -568,8 +600,11 @@ namespace UsurperRemake.Systems
                 return;
             }
 
-            terminal.SetColor("dark_gray");
-            terminal.WriteLine(" " + new string('─', 50));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("dark_gray");
+                terminal.WriteLine(" " + new string('─', 50));
+            }
             for (int i = 0; i < banned.Count; i++)
             {
                 var (username, displayName, banReason) = banned[i];
@@ -617,11 +652,14 @@ namespace UsurperRemake.Systems
 
             terminal.ClearScreen();
             terminal.SetColor("bright_red");
-            terminal.WriteLine(" ═══ Delete Player ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? " Delete Player" : " ═══ Delete Player ═══");
             terminal.SetColor("yellow");
             terminal.WriteLine($" {"#",-4}{"Name",-16}{"Lvl",4} {"Class",-11}{"Status",-8}");
-            terminal.SetColor("dark_gray");
-            terminal.WriteLine(" " + new string('─', 45));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("dark_gray");
+                terminal.WriteLine(" " + new string('─', 45));
+            }
 
             for (int i = 0; i < players.Count; i++)
             {
@@ -683,7 +721,7 @@ namespace UsurperRemake.Systems
 
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine(" ═══ Pardon Player ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? " Pardon Player" : " ═══ Pardon Player ═══");
 
             if (imprisoned.Count == 0)
             {
@@ -695,8 +733,11 @@ namespace UsurperRemake.Systems
 
             terminal.SetColor("yellow");
             terminal.WriteLine($" {"#",-4}{"Name",-16}{"Lvl",4}  {"Prison",-10}{"Darkness",-10}");
-            terminal.SetColor("dark_gray");
-            terminal.WriteLine(" " + new string('─', 48));
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("dark_gray");
+                terminal.WriteLine(" " + new string('─', 48));
+            }
 
             for (int i = 0; i < imprisoned.Count; i++)
             {
@@ -767,7 +808,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ ALL PLAYERS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "ALL PLAYERS" : "═══ ALL PLAYERS ═══");
             terminal.WriteLine("");
 
             try
@@ -831,7 +872,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_red");
-            terminal.WriteLine("═══ DELETE PLAYER ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "DELETE PLAYER" : "═══ DELETE PLAYER ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
@@ -906,7 +947,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ PARDON PLAYER ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "PARDON PLAYER" : "═══ PARDON PLAYER ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1005,10 +1046,7 @@ namespace UsurperRemake.Systems
         private async Task ResetGame()
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                     !!! DANGER: GAME RESET !!!                               ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "!!! DANGER: GAME RESET !!!", "bright_red");
             terminal.WriteLine("");
 
             terminal.SetColor("yellow");
@@ -1160,7 +1198,7 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine("═══ GAME DIFFICULTY SETTINGS ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode ? "GAME DIFFICULTY SETTINGS" : "═══ GAME DIFFICULTY SETTINGS ═══");
                 terminal.WriteLine("");
 
                 terminal.SetColor("white");
@@ -1278,7 +1316,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ IDLE TIMEOUT SETTINGS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "IDLE TIMEOUT SETTINGS" : "═══ IDLE TIMEOUT SETTINGS ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1317,7 +1355,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ DEFAULT COLOR THEME ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "DEFAULT COLOR THEME" : "═══ DEFAULT COLOR THEME ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1331,7 +1369,8 @@ namespace UsurperRemake.Systems
             var themes = new[] { ColorThemeType.Default, ColorThemeType.ClassicDark, ColorThemeType.AmberRetro, ColorThemeType.GreenPhosphor, ColorThemeType.HighContrast };
             for (int i = 0; i < themes.Length; i++)
             {
-                var marker = themes[i] == GameConfig.DefaultColorTheme ? " ◄" : "";
+                var marker = themes[i] == GameConfig.DefaultColorTheme
+                    ? (GameConfig.ScreenReaderMode ? " (current)" : " ◄") : "";
                 terminal.SetColor("white");
                 terminal.Write($"  [{i + 1}] ");
                 terminal.SetColor("cyan");
@@ -1386,7 +1425,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ ONLINE SERVER SETTINGS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "ONLINE SERVER SETTINGS" : "═══ ONLINE SERVER SETTINGS ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1436,7 +1475,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ MESSAGE OF THE DAY ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "MESSAGE OF THE DAY" : "═══ MESSAGE OF THE DAY ═══");
             terminal.WriteLine("");
 
             var currentMOTD = GameConfig.MessageOfTheDay;
@@ -1476,7 +1515,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ RECENT NEWS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "RECENT NEWS" : "═══ RECENT NEWS ═══");
             terminal.WriteLine("");
 
             try
@@ -1503,7 +1542,7 @@ namespace UsurperRemake.Systems
                         {
                             terminal.ClearScreen();
                             terminal.SetColor("bright_yellow");
-                            terminal.WriteLine("═══ RECENT NEWS ═══");
+                            terminal.WriteLine(GameConfig.ScreenReaderMode ? "RECENT NEWS" : "═══ RECENT NEWS ═══");
                             terminal.WriteLine("");
                         }
 
@@ -1573,7 +1612,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ KICK ONLINE PLAYER ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "KICK ONLINE PLAYER" : "═══ KICK ONLINE PLAYER ═══");
             terminal.WriteLine("");
 
             try
@@ -1653,7 +1692,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ GAME STATISTICS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "GAME STATISTICS" : "═══ GAME STATISTICS ═══");
 
             try
             {
@@ -1692,7 +1731,7 @@ namespace UsurperRemake.Systems
 
             // Players section
             terminal.SetColor("cyan");
-            terminal.WriteLine("── Players ──");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "Players" : "── Players ──");
             terminal.SetColor("white");
             terminal.WriteLine($"  Total: {s.TotalPlayers}    Active: {s.ActivePlayers}    Online: {s.OnlinePlayers}    Banned: {s.BannedPlayers}");
             terminal.WriteLine($"  Avg Level: {s.AverageLevel:F1}    Highest: {s.TopPlayerName} (Lv {s.TopPlayerLevel} {className(s.TopPlayerClassId)})");
@@ -1702,7 +1741,7 @@ namespace UsurperRemake.Systems
 
             // Economy section
             terminal.SetColor("cyan");
-            terminal.WriteLine("── Economy ──");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "Economy" : "── Economy ──");
             terminal.SetColor("white");
             terminal.WriteLine($"  Gold in Circulation: {s.TotalGoldOnHand:N0}    Bank: {s.TotalBankGold:N0}");
             terminal.WriteLine($"  Total Earned: {s.TotalGoldEarned:N0}    Spent: {s.TotalGoldSpent:N0}");
@@ -1711,7 +1750,7 @@ namespace UsurperRemake.Systems
 
             // Combat section
             terminal.SetColor("cyan");
-            terminal.WriteLine("── Combat ──");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "Combat" : "── Combat ──");
             terminal.SetColor("white");
             terminal.WriteLine($"  Monsters Killed: {s.TotalMonstersKilled:N0}    Bosses: {s.TotalBossesKilled:N0}");
             terminal.WriteLine($"  PvP Fights: {s.TotalPvPFights}    PvP Kills: {s.TotalPvPKills}    PvE Deaths: {s.TotalPvEDeaths}");
@@ -1719,7 +1758,7 @@ namespace UsurperRemake.Systems
 
             // World section
             terminal.SetColor("cyan");
-            terminal.WriteLine("── World ──");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "World" : "── World ──");
             terminal.SetColor("white");
             terminal.WriteLine($"  Active Teams: {s.ActiveTeams}    News: {s.NewsEntries}    Messages: {s.TotalMessages}");
             long hours = s.TotalPlaytimeMinutes / 60;
@@ -1746,14 +1785,14 @@ namespace UsurperRemake.Systems
             terminal.WriteLine("");
 
             terminal.SetColor("cyan");
-            terminal.WriteLine("── NPCs ──");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "NPCs" : "── NPCs ──");
             terminal.SetColor("white");
             var activeNPCs = NPCSpawnSystem.Instance.ActiveNPCs;
             terminal.WriteLine($"  Active: {activeNPCs.Count}    Dead: {activeNPCs.Count(n => n.IsDead)}    Married: {activeNPCs.Count(n => n.IsMarried)}");
             terminal.WriteLine("");
 
             terminal.SetColor("cyan");
-            terminal.WriteLine("── Story ──");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "Story" : "── Story ──");
             terminal.SetColor("white");
             var story = StoryProgressionSystem.Instance;
             terminal.WriteLine($"  Seals: {story.CollectedSeals.Count}/7    Chapter: {story.CurrentChapter}");
@@ -1796,7 +1835,9 @@ namespace UsurperRemake.Systems
                 {
                     terminal.ClearScreen();
                     terminal.SetColor("bright_yellow");
-                    terminal.WriteLine($"═══ DEBUG LOG (Page {page + 1}/{totalPages}, {lines.Count} total lines) ═══");
+                    terminal.WriteLine(GameConfig.ScreenReaderMode
+                        ? $"DEBUG LOG (Page {page + 1}/{totalPages}, {lines.Count} total lines)"
+                        : $"═══ DEBUG LOG (Page {page + 1}/{totalPages}, {lines.Count} total lines) ═══");
                     terminal.WriteLine("");
 
                     var pageLines = lines.Skip(page * pageSize).Take(pageSize);
@@ -1865,7 +1906,9 @@ namespace UsurperRemake.Systems
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine($"═══ ACTIVE NPCs (Page {page + 1}/{totalPages}) ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode
+                    ? $"ACTIVE NPCs (Page {page + 1}/{totalPages})"
+                    : $"═══ ACTIVE NPCs (Page {page + 1}/{totalPages}) ═══");
                 terminal.WriteLine("");
 
                 var pageNPCs = npcs.Skip(page * pageSize).Take(pageSize);
@@ -1907,7 +1950,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ CHECK FOR UPDATES ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "CHECK FOR UPDATES" : "═══ CHECK FOR UPDATES ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1972,10 +2015,7 @@ namespace UsurperRemake.Systems
                 _latestVersion = checker.LatestVersion;
                 _updateCheckComplete = true;
 
-                terminal.SetColor("bright_yellow");
-                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-                terminal.WriteLine("║                         NEW VERSION AVAILABLE                                ║");
-                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                UIHelper.WriteBoxHeader(terminal, "NEW VERSION AVAILABLE", "bright_yellow");
                 terminal.WriteLine("");
 
                 terminal.SetColor("white");
@@ -2083,7 +2123,9 @@ namespace UsurperRemake.Systems
                 {
                     int filled = progress / 5;
                     int empty = 20 - filled;
-                    string bar = new string('█', filled) + new string('░', empty);
+                    string bar = GameConfig.ScreenReaderMode
+                        ? new string('#', filled) + new string('-', empty)
+                        : new string('█', filled) + new string('░', empty);
                     terminal.Write($"\r  [{bar}] {progress}%   ");
                     lastProgress = progress;
                 }
@@ -2094,10 +2136,7 @@ namespace UsurperRemake.Systems
 
             if (success)
             {
-                terminal.SetColor("bright_green");
-                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-                { const string t = "UPDATE DOWNLOADED SUCCESSFULLY"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                UIHelper.WriteBoxHeader(terminal, "UPDATE DOWNLOADED SUCCESSFULLY", "bright_green");
                 terminal.WriteLine("");
                 terminal.SetColor("white");
                 terminal.WriteLine("The game will now close and update automatically.");

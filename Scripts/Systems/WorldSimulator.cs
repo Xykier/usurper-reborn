@@ -1214,8 +1214,9 @@ public class WorldSimulator
         // Also create the NPC entity so the guard has real combat stats
         OrphanBecomesNPC(orphan);
 
+        string guardPrefix = GameConfig.ScreenReaderMode ? "" : "⚔ ";
         NewsSystem.Instance?.Newsy(
-            $"⚔ {orphan.Name}, raised in the Royal Orphanage, has come of age and joined the Royal Guard!");
+            $"{guardPrefix}{orphan.Name}, raised in the Royal Orphanage, has come of age and joined the Royal Guard!");
 
         DebugLogger.Instance.LogInfo("ORPHANAGE",
             $"{orphan.Name} came of age and became a Royal Guard");
@@ -1460,8 +1461,9 @@ public class WorldSimulator
             }
             else
             {
+                string childPrefix = GameConfig.ScreenReaderMode ? "" : "♥ ";
                 NewsSystem.Instance?.Newsy(
-                    $"♥ {npc.Name2} and {father.Name2} are expecting a child!");
+                    $"{childPrefix}{npc.Name2} and {father.Name2} are expecting a child!");
             }
 
             UsurperRemake.Systems.DebugLogger.Instance.LogInfo("LIFECYCLE",

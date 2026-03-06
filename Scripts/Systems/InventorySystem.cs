@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UsurperRemake.Data;
+using UsurperRemake.UI;
 
 namespace UsurperRemake.Systems
 {
@@ -42,10 +43,7 @@ namespace UsurperRemake.Systems
 
         private void DisplayInventoryHeader()
         {
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                              INVENTORY                                       ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "INVENTORY", "bright_cyan");
             terminal.WriteLine("");
 
             // Show weapon configuration
@@ -66,7 +64,10 @@ namespace UsurperRemake.Systems
         private void DisplayEquipmentOverview()
         {
             terminal.SetColor("yellow");
-            terminal.WriteLine("═══ EQUIPPED ITEMS ═══");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══ EQUIPPED ITEMS ═══");
+            else
+                terminal.WriteLine("EQUIPPED ITEMS");
             terminal.WriteLine("");
 
             // Weapons section
@@ -108,7 +109,10 @@ namespace UsurperRemake.Systems
         private void DisplayBackpack()
         {
             terminal.SetColor("yellow");
-            terminal.WriteLine("═══ BACKPACK ═══");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══ BACKPACK ═══");
+            else
+                terminal.WriteLine("BACKPACK");
 
             if (player.Inventory == null || player.Inventory.Count == 0)
             {
@@ -265,7 +269,10 @@ namespace UsurperRemake.Systems
         private void DisplayStatsSummary()
         {
             terminal.SetColor("yellow");
-            terminal.WriteLine("═══ EQUIPMENT BONUSES ═══");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══ EQUIPMENT BONUSES ═══");
+            else
+                terminal.WriteLine("EQUIPMENT BONUSES");
 
             // Calculate total bonuses from equipment
             int totalWeapPow = 0, totalArmPow = 0;
@@ -331,8 +338,11 @@ namespace UsurperRemake.Systems
 
         private void DisplayInventoryMenu()
         {
-            terminal.SetColor("gray");
-            terminal.WriteLine("────────────────────────────────────────────────────────────────────────────────");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("────────────────────────────────────────────────────────────────────────────────");
+            }
             terminal.SetColor("white");
             terminal.WriteLine("Options: [1-9,F,C,N,L,R] Manage Slot  |  [B#] Manage Backpack Item  |  [U]nequip All");
             terminal.WriteLine("         [D]rop Item  |  [Q]uit Inventory");
@@ -424,10 +434,7 @@ namespace UsurperRemake.Systems
             var item = player.Inventory[index - 1];
 
             terminal.ClearScreen();
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                           MANAGE ITEM                                        ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "MANAGE ITEM", "bright_cyan");
             terminal.WriteLine("");
 
             if (item.IsIdentified)
@@ -700,8 +707,11 @@ namespace UsurperRemake.Systems
                 };
 
                 terminal.WriteLine("");
-                terminal.SetColor("gray");
-                terminal.WriteLine("  ─────────────────────────────────────");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("  ─────────────────────────────────────");
+                }
                 terminal.SetColor("white");
                 terminal.WriteLine($"  COMPARISON ({slotDisplayName} slot):");
                 terminal.SetColor("cyan");
@@ -776,8 +786,11 @@ namespace UsurperRemake.Systems
                         : "  New bonuses: (none)");
                 }
 
-                terminal.SetColor("gray");
-                terminal.WriteLine("  ─────────────────────────────────────");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("gray");
+                    terminal.WriteLine("  ─────────────────────────────────────");
+                }
                 terminal.WriteLine("");
 
                 terminal.SetColor("white");
@@ -915,7 +928,10 @@ namespace UsurperRemake.Systems
             var slotName = GetSlotDisplayName(slot);
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"═══ {slotName.ToUpper()} SLOT ═══");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine($"═══ {slotName.ToUpper()} SLOT ═══");
+            else
+                terminal.WriteLine($"{slotName.ToUpper()} SLOT");
             terminal.WriteLine("");
 
             // Show current item

@@ -98,10 +98,7 @@ public class SysOpLocation : BaseLocation
     protected override void DisplayLocation()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                        S Y S O P   C O N S O L E                             ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("S Y S O P   C O N S O L E", "bright_red");
         terminal.WriteLine("");
 
         // Show session info
@@ -122,26 +119,46 @@ public class SysOpLocation : BaseLocation
         // Show update notification if available
         if (_updateCheckComplete && _updateAvailable)
         {
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.Write("║  ");
-            terminal.SetColor("white");
-            terminal.Write("UPDATE AVAILABLE: ");
-            terminal.SetColor("bright_green");
-            terminal.Write($"v{_latestVersion}");
-            terminal.SetColor("white");
-            terminal.Write($" (current: {GameConfig.Version})");
-            terminal.SetColor("bright_yellow");
-            // Pad to fit the box
-            int contentLen = 18 + _latestVersion.Length + 11 + GameConfig.Version.Length + 1;
-            terminal.WriteLine(new string(' ', Math.Max(0, 74 - contentLen)) + "║");
-            terminal.WriteLine("║  Press [9] to download and install the update                                ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (IsScreenReader)
+            {
+                WriteSectionHeader("UPDATE AVAILABLE", "bright_yellow");
+                terminal.SetColor("white");
+                terminal.WriteLine($"  Version {_latestVersion} available (current: {GameConfig.Version})");
+                terminal.WriteLine("  Press 9 to download and install the update");
+            }
+            else
+            {
+                if (GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine($"UPDATE AVAILABLE: v{_latestVersion} (current: {GameConfig.Version})");
+                    terminal.SetColor("white");
+                    terminal.WriteLine("  Press [9] to download and install the update");
+                }
+                else
+                {
+                    terminal.SetColor("bright_yellow");
+                    terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+                    terminal.Write("║  ");
+                    terminal.SetColor("white");
+                    terminal.Write("UPDATE AVAILABLE: ");
+                    terminal.SetColor("bright_green");
+                    terminal.Write($"v{_latestVersion}");
+                    terminal.SetColor("white");
+                    terminal.Write($" (current: {GameConfig.Version})");
+                    terminal.SetColor("bright_yellow");
+                    // Pad to fit the box
+                    int contentLen = 18 + _latestVersion.Length + 11 + GameConfig.Version.Length + 1;
+                    terminal.WriteLine(new string(' ', Math.Max(0, 74 - contentLen)) + "║");
+                    terminal.WriteLine("║  Press [9] to download and install the update                                ║");
+                    terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+                }
+            }
             terminal.WriteLine("");
         }
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ GAME MANAGEMENT ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "GAME MANAGEMENT" : "═══ GAME MANAGEMENT ═══");
         terminal.SetColor("white");
         terminal.WriteLine("  [1] View All Players");
         terminal.WriteLine("  [2] Delete Player");
@@ -149,14 +166,14 @@ public class SysOpLocation : BaseLocation
         terminal.WriteLine("");
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ GAME SETTINGS ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "GAME SETTINGS" : "═══ GAME SETTINGS ═══");
         terminal.SetColor("white");
         terminal.WriteLine("  [4] View/Edit Game Configuration");
         terminal.WriteLine("  [5] Set Message of the Day (MOTD)");
         terminal.WriteLine("");
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ MONITORING ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "MONITORING" : "═══ MONITORING ═══");
         terminal.SetColor("white");
         terminal.WriteLine("  [6] View Game Statistics");
         terminal.WriteLine("  [7] View Debug Log");
@@ -164,7 +181,7 @@ public class SysOpLocation : BaseLocation
         terminal.WriteLine("");
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("═══ SYSTEM MAINTENANCE ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "SYSTEM MAINTENANCE" : "═══ SYSTEM MAINTENANCE ═══");
         if (_updateCheckComplete && _updateAvailable)
         {
             terminal.SetColor("bright_green");
@@ -236,7 +253,7 @@ public class SysOpLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ ALL PLAYERS ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "ALL PLAYERS" : "═══ ALL PLAYERS ═══");
         terminal.WriteLine("");
 
         try
@@ -299,7 +316,7 @@ public class SysOpLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_red");
-        terminal.WriteLine("═══ DELETE PLAYER ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "DELETE PLAYER" : "═══ DELETE PLAYER ═══");
         terminal.WriteLine("");
 
         terminal.SetColor("yellow");
@@ -391,10 +408,7 @@ public class SysOpLocation : BaseLocation
     private async Task ResetGame()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                     !!! DANGER: GAME RESET !!!                               ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("!!! DANGER: GAME RESET !!!", "bright_red");
         terminal.WriteLine("");
 
         terminal.SetColor("yellow");
@@ -556,7 +570,7 @@ public class SysOpLocation : BaseLocation
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ GAME DIFFICULTY SETTINGS ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "GAME DIFFICULTY SETTINGS" : "═══ GAME DIFFICULTY SETTINGS ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -706,7 +720,7 @@ public class SysOpLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ MESSAGE OF THE DAY ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "MESSAGE OF THE DAY" : "═══ MESSAGE OF THE DAY ═══");
         terminal.WriteLine("");
 
         var currentMOTD = GameConfig.MessageOfTheDay;
@@ -746,7 +760,7 @@ public class SysOpLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ GAME STATISTICS ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "GAME STATISTICS" : "═══ GAME STATISTICS ═══");
         terminal.WriteLine("");
 
         try
@@ -833,7 +847,7 @@ public class SysOpLocation : BaseLocation
             {
                 terminal.ClearScreen();
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine($"═══ DEBUG LOG (Page {page + 1}/{totalPages}, {lines.Count} total lines) ═══");
+                terminal.WriteLine(GameConfig.ScreenReaderMode ? $"DEBUG LOG (Page {page + 1}/{totalPages}, {lines.Count} total lines)" : $"═══ DEBUG LOG (Page {page + 1}/{totalPages}, {lines.Count} total lines) ═══");
                 terminal.WriteLine("");
 
                 var pageLines = lines.Skip(page * pageSize).Take(pageSize);
@@ -904,7 +918,7 @@ public class SysOpLocation : BaseLocation
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"═══ ACTIVE NPCs (Page {page + 1}/{totalPages}) ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? $"ACTIVE NPCs (Page {page + 1}/{totalPages})" : $"═══ ACTIVE NPCs (Page {page + 1}/{totalPages}) ═══");
             terminal.WriteLine("");
 
             var pageNPCs = npcs.Skip(page * pageSize).Take(pageSize);
@@ -946,7 +960,7 @@ public class SysOpLocation : BaseLocation
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══ CHECK FOR UPDATES ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "CHECK FOR UPDATES" : "═══ CHECK FOR UPDATES ═══");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1012,10 +1026,7 @@ public class SysOpLocation : BaseLocation
             }
 
             // New version is available
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                         NEW VERSION AVAILABLE                                ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("NEW VERSION AVAILABLE", "bright_yellow");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -1126,10 +1137,17 @@ public class SysOpLocation : BaseLocation
             if (progress >= lastProgress + 10 || progress == 100)
             {
                 // Create a simple progress bar
-                int filled = progress / 5; // 20 chars total
-                int empty = 20 - filled;
-                string bar = new string('█', filled) + new string('░', empty);
-                terminal.Write($"\r  [{bar}] {progress}%   ");
+                if (GameConfig.ScreenReaderMode)
+                {
+                    terminal.Write($"\r  Downloading: {progress}%   ");
+                }
+                else
+                {
+                    int filled = progress / 5; // 20 chars total
+                    int empty = 20 - filled;
+                    string bar = new string('█', filled) + new string('░', empty);
+                    terminal.Write($"\r  [{bar}] {progress}%   ");
+                }
                 lastProgress = progress;
             }
         });
@@ -1139,10 +1157,7 @@ public class SysOpLocation : BaseLocation
 
         if (success)
         {
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "UPDATE DOWNLOADED SUCCESSFULLY"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("UPDATE DOWNLOADED SUCCESSFULLY", "bright_green");
             terminal.WriteLine("");
             terminal.SetColor("white");
             terminal.WriteLine("The game will now close and update automatically.");

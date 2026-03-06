@@ -349,9 +349,11 @@ public class LocationManager
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_red");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
         terminal.WriteLine("                        YOU HAVE DIED!                          ");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════════");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════════════════════════════");
         terminal.WriteLine("");
 
         terminal.SetColor("gray");
@@ -387,7 +389,8 @@ public class LocationManager
         // Apply death penalties
         terminal.SetColor("red");
         terminal.WriteLine("Death Penalties Applied:");
-        terminal.WriteLine("─────────────────────────");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("─────────────────────────");
 
         // Calculate penalties
         long expLoss = player.Experience / 10;  // Lose 10% experience
@@ -646,8 +649,11 @@ public class PlaceholderLocation : BaseLocation
         // Location header
         terminal.SetColor("bright_yellow");
         terminal.WriteLine(Name);
-        terminal.SetColor("yellow");
-        terminal.WriteLine(new string('═', Name.Length));
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("yellow");
+            terminal.WriteLine(new string('═', Name.Length));
+        }
         terminal.WriteLine("");
         
         // Description

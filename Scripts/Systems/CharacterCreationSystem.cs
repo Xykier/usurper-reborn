@@ -412,9 +412,7 @@ public class CharacterCreationSystem
     {
         terminal.Clear();
         terminal.WriteLine("");
-        terminal.WriteLine("╔════════════════════════════════════════════════════════════════╗", "bright_cyan");
-        terminal.WriteLine("║                   SELECT DIFFICULTY MODE                       ║", "bright_cyan");
-        terminal.WriteLine("╚════════════════════════════════════════════════════════════════╝", "bright_cyan");
+        UIHelper.WriteBoxHeader(terminal, "SELECT DIFFICULTY MODE", "bright_cyan", 64);
         terminal.WriteLine("");
 
         while (true)
@@ -453,9 +451,11 @@ public class CharacterCreationSystem
 
                 case "!":
                     terminal.WriteLine("");
-                    terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
+                    if (!GameConfig.ScreenReaderMode)
+                        terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
                     terminal.WriteLine("    NIGHTMARE MODE — PERMADEATH", DifficultySystem.GetColor(DifficultyMode.Nightmare));
-                    terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
+                    if (!GameConfig.ScreenReaderMode)
+                        terminal.WriteLine("═══════════════════════════════════════════", "bright_red");
                     terminal.WriteLine("");
                     terminal.WriteLine("Death is permanent. Your save will be", "red");
                     terminal.WriteLine("deleted if you die. No resurrections.", "red");
@@ -1718,7 +1718,10 @@ public class CharacterCreationSystem
 
                 // Always show prestige classes — unlocked ones selectable, locked ones grayed out
                 terminal.WriteLine("");
-                terminal.WriteLine("  ═══ PRESTIGE CLASSES (NG+) ═══", "bright_magenta");
+                if (!GameConfig.ScreenReaderMode)
+                    terminal.WriteLine("  ═══ PRESTIGE CLASSES (NG+) ═══", "bright_magenta");
+                else
+                    terminal.WriteLine("  PRESTIGE CLASSES (NG+)", "bright_magenta");
                 var allPrestige = new[]
                 {
                     (CharacterClass.Tidesworn, "Savior ending"),
@@ -1901,7 +1904,10 @@ public class CharacterCreationSystem
             // Display the rolled stats
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("═══ STAT ROLL ═══", "bright_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══ STAT ROLL ═══", "bright_cyan");
+            else
+                terminal.WriteLine("STAT ROLL", "bright_cyan");
             terminal.WriteLine("");
             terminal.WriteLine($"Class: {character.Class}", "yellow");
             terminal.WriteLine($"Race: {GameConfig.RaceNames[(int)character.Race]}", "yellow");

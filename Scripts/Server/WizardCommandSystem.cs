@@ -166,78 +166,91 @@ public static class WizardCommandSystem
 
     private static bool HandleWizHelp(WizardLevel level, TerminalEmulator terminal)
     {
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("║");
-        terminal.SetColor("bright_white");
-        { const string t = "Wizard Commands"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("║");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        bool sr = GameConfig.ScreenReaderMode;
+
+        if (sr)
+        {
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("Wizard Commands");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("║");
+            terminal.SetColor("bright_white");
+            { const string t = "Wizard Commands"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("║");
+            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        }
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("║  Builder Commands:                                                         ║");
+        terminal.WriteLine(sr ? "  Builder Commands:" : "║  Builder Commands:                                                         ║");
         terminal.SetColor("white");
-        terminal.WriteLine("║  /wizhelp              - Show this help                                    ║");
-        terminal.WriteLine("║  /wiznet <msg> /wiz    - Wizard chat channel                               ║");
-        terminal.WriteLine("║  /wizwho               - Show online wizards                               ║");
-        terminal.WriteLine("║  /stat <player>        - Inspect a player's stats                          ║");
-        terminal.WriteLine("║  /where                - Show all player locations                         ║");
+        terminal.WriteLine(sr ? "  /wizhelp              - Show this help" : "║  /wizhelp              - Show this help                                    ║");
+        terminal.WriteLine(sr ? "  /wiznet <msg> /wiz    - Wizard chat channel" : "║  /wiznet <msg> /wiz    - Wizard chat channel                               ║");
+        terminal.WriteLine(sr ? "  /wizwho               - Show online wizards" : "║  /wizwho               - Show online wizards                               ║");
+        terminal.WriteLine(sr ? "  /stat <player>        - Inspect a player's stats" : "║  /stat <player>        - Inspect a player's stats                          ║");
+        terminal.WriteLine(sr ? "  /where                - Show all player locations" : "║  /where                - Show all player locations                         ║");
 
         if (level >= WizardLevel.Immortal)
         {
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("║  Immortal Commands:                                                        ║");
+            terminal.WriteLine(sr ? "  Immortal Commands:" : "║  Immortal Commands:                                                        ║");
             terminal.SetColor("white");
-            terminal.WriteLine("║  /invis / /visible     - Toggle invisibility                               ║");
-            terminal.WriteLine("║  /goto <loc|player>    - Teleport to location or player                    ║");
-            terminal.WriteLine("║  /godmode              - Toggle invulnerability                             ║");
-            terminal.WriteLine("║  /heal [player]        - Heal self or player                               ║");
-            terminal.WriteLine("║  /restore [player]     - Full HP + Mana restore                            ║");
-            terminal.WriteLine("║  /echo <message>       - Send room message as narrator                     ║");
+            terminal.WriteLine(sr ? "  /invis / /visible     - Toggle invisibility" : "║  /invis / /visible     - Toggle invisibility                               ║");
+            terminal.WriteLine(sr ? "  /goto <loc|player>    - Teleport to location or player" : "║  /goto <loc|player>    - Teleport to location or player                    ║");
+            terminal.WriteLine(sr ? "  /godmode              - Toggle invulnerability" : "║  /godmode              - Toggle invulnerability                             ║");
+            terminal.WriteLine(sr ? "  /heal [player]        - Heal self or player" : "║  /heal [player]        - Heal self or player                               ║");
+            terminal.WriteLine(sr ? "  /restore [player]     - Full HP + Mana restore" : "║  /restore [player]     - Full HP + Mana restore                            ║");
+            terminal.WriteLine(sr ? "  /echo <message>       - Send room message as narrator" : "║  /echo <message>       - Send room message as narrator                     ║");
         }
 
         if (level >= WizardLevel.Wizard)
         {
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("║  Wizard Commands:                                                          ║");
+            terminal.WriteLine(sr ? "  Wizard Commands:" : "║  Wizard Commands:                                                          ║");
             terminal.SetColor("white");
-            terminal.WriteLine("║  /summon <player>      - Pull player to your location                      ║");
-            terminal.WriteLine("║  /transfer <p> <loc>   - Send player to a location                         ║");
-            terminal.WriteLine("║  /snoop <player>       - Watch a player's screen                           ║");
-            terminal.WriteLine("║  /force <player> <cmd> - Force player to execute command                   ║");
-            terminal.WriteLine("║  /set <p> <field> <v>  - Modify player stats                               ║");
-            terminal.WriteLine("║  /slay <player>        - Instantly kill a player                            ║");
-            terminal.WriteLine("║  /freeze / /thaw <p>   - Freeze/unfreeze a player                          ║");
-            terminal.WriteLine("║  /mute / /unmute <p>   - Mute/unmute a player                              ║");
+            terminal.WriteLine(sr ? "  /summon <player>      - Pull player to your location" : "║  /summon <player>      - Pull player to your location                      ║");
+            terminal.WriteLine(sr ? "  /transfer <p> <loc>   - Send player to a location" : "║  /transfer <p> <loc>   - Send player to a location                         ║");
+            terminal.WriteLine(sr ? "  /snoop <player>       - Watch a player's screen" : "║  /snoop <player>       - Watch a player's screen                           ║");
+            terminal.WriteLine(sr ? "  /force <player> <cmd> - Force player to execute command" : "║  /force <player> <cmd> - Force player to execute command                   ║");
+            terminal.WriteLine(sr ? "  /set <p> <field> <v>  - Modify player stats" : "║  /set <p> <field> <v>  - Modify player stats                               ║");
+            terminal.WriteLine(sr ? "  /slay <player>        - Instantly kill a player" : "║  /slay <player>        - Instantly kill a player                            ║");
+            terminal.WriteLine(sr ? "  /freeze / /thaw <p>   - Freeze/unfreeze a player" : "║  /freeze / /thaw <p>   - Freeze/unfreeze a player                          ║");
+            terminal.WriteLine(sr ? "  /mute / /unmute <p>   - Mute/unmute a player" : "║  /mute / /unmute <p>   - Mute/unmute a player                              ║");
         }
 
         if (level >= WizardLevel.Archwizard)
         {
             terminal.SetColor("bright_magenta");
-            terminal.WriteLine("║  Archwizard Commands:                                                      ║");
+            terminal.WriteLine(sr ? "  Archwizard Commands:" : "║  Archwizard Commands:                                                      ║");
             terminal.SetColor("white");
-            terminal.WriteLine("║  /ban <player> [rsn]   - Ban a player                                      ║");
-            terminal.WriteLine("║  /unban <player>       - Unban a player                                    ║");
-            terminal.WriteLine("║  /kick <player> [rsn]  - Disconnect a player                               ║");
-            terminal.WriteLine("║  /broadcast <msg>      - Global system message                             ║");
-            terminal.WriteLine("║  /promote <p> <level>  - Promote player to wizard level                    ║");
-            terminal.WriteLine("║  /demote <player>      - Demote player one wizard level                    ║");
+            terminal.WriteLine(sr ? "  /ban <player> [rsn]   - Ban a player" : "║  /ban <player> [rsn]   - Ban a player                                      ║");
+            terminal.WriteLine(sr ? "  /unban <player>       - Unban a player" : "║  /unban <player>       - Unban a player                                    ║");
+            terminal.WriteLine(sr ? "  /kick <player> [rsn]  - Disconnect a player" : "║  /kick <player> [rsn]  - Disconnect a player                               ║");
+            terminal.WriteLine(sr ? "  /broadcast <msg>      - Global system message" : "║  /broadcast <msg>      - Global system message                             ║");
+            terminal.WriteLine(sr ? "  /promote <p> <level>  - Promote player to wizard level" : "║  /promote <p> <level>  - Promote player to wizard level                    ║");
+            terminal.WriteLine(sr ? "  /demote <player>      - Demote player one wizard level" : "║  /demote <player>      - Demote player one wizard level                    ║");
         }
 
         if (level >= WizardLevel.God)
         {
             terminal.SetColor("bright_red");
-            terminal.WriteLine("║  God Commands:                                                             ║");
+            terminal.WriteLine(sr ? "  God Commands:" : "║  God Commands:                                                             ║");
             terminal.SetColor("white");
-            terminal.WriteLine("║  /shutdown <sec> [rsn] - Initiate server shutdown                          ║");
-            terminal.WriteLine("║  /reboot <sec> [rsn]   - Alias for shutdown                                ║");
-            terminal.WriteLine("║  /admin                - Open full admin console                            ║");
-            terminal.WriteLine("║  /wizlog               - View wizard audit log                             ║");
+            terminal.WriteLine(sr ? "  /shutdown <sec> [rsn] - Initiate server shutdown" : "║  /shutdown <sec> [rsn] - Initiate server shutdown                          ║");
+            terminal.WriteLine(sr ? "  /reboot <sec> [rsn]   - Alias for shutdown" : "║  /reboot <sec> [rsn]   - Alias for shutdown                                ║");
+            terminal.WriteLine(sr ? "  /admin                - Open full admin console" : "║  /admin                - Open full admin console                            ║");
+            terminal.WriteLine(sr ? "  /wizlog               - View wizard audit log" : "║  /wizlog               - View wizard audit log                             ║");
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (!sr)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         return true;
     }
 
@@ -259,14 +272,23 @@ public static class WizardCommandSystem
         var server = MudServer.Instance;
         if (server == null) return true;
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("║");
-        terminal.SetColor("bright_white");
-        { const string t = "Wizards Online"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("║");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        bool sr = GameConfig.ScreenReaderMode;
+        if (sr)
+        {
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("Wizards Online");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("║");
+            terminal.SetColor("bright_white");
+            { const string t = "Wizards Online"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("║");
+            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        }
 
         var wizards = server.ActiveSessions.Values
             .Where(s => s.WizardLevel >= WizardLevel.Builder)
@@ -276,7 +298,7 @@ public static class WizardCommandSystem
         if (wizards.Count == 0)
         {
             terminal.SetColor("gray");
-            terminal.WriteLine("║  No wizards online.                                                        ║");
+            terminal.WriteLine(sr ? "  No wizards online." : "║  No wizards online.                                                        ║");
         }
         else
         {
@@ -288,16 +310,24 @@ public static class WizardCommandSystem
                 var locName = loc.HasValue ? BaseLocation.GetLocationName(loc.Value) : "Unknown";
                 terminal.SetColor(WizardConstants.GetColor(wiz.WizardLevel));
                 var line = $"  [{title}] {wiz.Username}{invis} - {locName}";
-                terminal.WriteLine($"║{line.PadRight(78)}║");
+                terminal.WriteLine(sr ? line : $"║{line.PadRight(78)}║");
             }
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"╠══════════════════════════════════════════════════════════════════════════════╣");
-        terminal.SetColor("gray");
-        terminal.WriteLine($"║  {wizards.Count} wizard(s) online                                                        ║");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (sr)
+        {
+            terminal.SetColor("gray");
+            terminal.WriteLine($"  {wizards.Count} wizard(s) online");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine($"╠══════════════════════════════════════════════════════════════════════════════╣");
+            terminal.SetColor("gray");
+            terminal.WriteLine($"║  {wizards.Count} wizard(s) online                                                        ║");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         return true;
     }
 
@@ -361,43 +391,74 @@ public static class WizardCommandSystem
         var intel = player?.Intelligence ?? offlineData?.Intelligence ?? 0;
         var con = player?.Constitution ?? offlineData?.Constitution ?? 0;
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("║");
-        terminal.SetColor("bright_white");
-        terminal.Write($"  Player Stats: {name,-62}");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("║");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
-        terminal.SetColor("white");
-        terminal.WriteLine($"║  Status: {(isOnline ? "\u001b[1;32mONLINE\u001b[0;37m" : "\u001b[90mOffline\u001b[0;37m"),-69}║");
-        if (wizLevelTarget > WizardLevel.Mortal)
-            terminal.WriteLine($"║  Wizard Level: {WizardConstants.GetTitle(wizLevelTarget),-62}║");
-        terminal.WriteLine($"║  Level: {level,-13} Class: {cls,-13} Race: {race,-16}║");
-        terminal.WriteLine($"║  HP: {hp}/{maxHp,-13} Mana: {mana}/{maxMana,-36}║");
-        terminal.WriteLine($"║  XP: {xp,-72}║");
-        terminal.WriteLine($"║  Gold: {gold,-15} Bank: {bankGold,-50}║");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("║  ── Attributes ─────────────────────────────────────────────────────────── ║");
-        terminal.SetColor("white");
-        terminal.WriteLine($"║  STR: {str,-8} DEF: {def,-8} STA: {sta,-8} AGI: {agi,-15}║");
-        terminal.WriteLine($"║  CHA: {cha,-8} DEX: {dex,-8} WIS: {wis,-8} INT: {intel,-15}║");
-        terminal.WriteLine($"║  CON: {con,-69}║");
-
-        if (session != null)
+        bool sr = GameConfig.ScreenReaderMode;
+        if (sr)
         {
-            var loc = RoomRegistry.Instance?.GetPlayerLocation(session.Username);
-            var locName = loc.HasValue ? BaseLocation.GetLocationName(loc.Value) : "Unknown";
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("║  ── Session Info ───────────────────────────────────────────────────────── ║");
+            terminal.SetColor("bright_white");
+            terminal.WriteLine($"Player Stats: {name}");
             terminal.SetColor("white");
-            terminal.WriteLine($"║  Location: {locName,-66}║");
-            terminal.WriteLine($"║  Connection: {session.ConnectionType,-64}║");
-            terminal.WriteLine($"║  Frozen: {(session.IsFrozen ? "YES" : "No"),-10} Muted: {(session.IsMuted ? "YES" : "No"),-10} GodMode: {(session.WizardGodMode ? "YES" : "No"),-18}║");
-        }
+            terminal.WriteLine($"  Status: {(isOnline ? "ONLINE" : "Offline")}");
+            if (wizLevelTarget > WizardLevel.Mortal)
+                terminal.WriteLine($"  Wizard Level: {WizardConstants.GetTitle(wizLevelTarget)}");
+            terminal.WriteLine($"  Level: {level}  Class: {cls}  Race: {race}");
+            terminal.WriteLine($"  HP: {hp}/{maxHp}  Mana: {mana}/{maxMana}");
+            terminal.WriteLine($"  XP: {xp}");
+            terminal.WriteLine($"  Gold: {gold}  Bank: {bankGold}");
+            terminal.WriteLine("  Attributes:");
+            terminal.WriteLine($"  STR: {str}  DEF: {def}  STA: {sta}  AGI: {agi}");
+            terminal.WriteLine($"  CHA: {cha}  DEX: {dex}  WIS: {wis}  INT: {intel}");
+            terminal.WriteLine($"  CON: {con}");
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (session != null)
+            {
+                var loc = RoomRegistry.Instance?.GetPlayerLocation(session.Username);
+                var locName = loc.HasValue ? BaseLocation.GetLocationName(loc.Value) : "Unknown";
+                terminal.WriteLine("  Session Info:");
+                terminal.WriteLine($"  Location: {locName}");
+                terminal.WriteLine($"  Connection: {session.ConnectionType}");
+                terminal.WriteLine($"  Frozen: {(session.IsFrozen ? "YES" : "No")}  Muted: {(session.IsMuted ? "YES" : "No")}  GodMode: {(session.WizardGodMode ? "YES" : "No")}");
+            }
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("║");
+            terminal.SetColor("bright_white");
+            terminal.Write($"  Player Stats: {name,-62}");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("║");
+            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+            terminal.SetColor("white");
+            terminal.WriteLine($"║  Status: {(isOnline ? "\u001b[1;32mONLINE\u001b[0;37m" : "\u001b[90mOffline\u001b[0;37m"),-69}║");
+            if (wizLevelTarget > WizardLevel.Mortal)
+                terminal.WriteLine($"║  Wizard Level: {WizardConstants.GetTitle(wizLevelTarget),-62}║");
+            terminal.WriteLine($"║  Level: {level,-13} Class: {cls,-13} Race: {race,-16}║");
+            terminal.WriteLine($"║  HP: {hp}/{maxHp,-13} Mana: {mana}/{maxMana,-36}║");
+            terminal.WriteLine($"║  XP: {xp,-72}║");
+            terminal.WriteLine($"║  Gold: {gold,-15} Bank: {bankGold,-50}║");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("║  ── Attributes ─────────────────────────────────────────────────────────── ║");
+            terminal.SetColor("white");
+            terminal.WriteLine($"║  STR: {str,-8} DEF: {def,-8} STA: {sta,-8} AGI: {agi,-15}║");
+            terminal.WriteLine($"║  CHA: {cha,-8} DEX: {dex,-8} WIS: {wis,-8} INT: {intel,-15}║");
+            terminal.WriteLine($"║  CON: {con,-69}║");
+
+            if (session != null)
+            {
+                var loc = RoomRegistry.Instance?.GetPlayerLocation(session.Username);
+                var locName = loc.HasValue ? BaseLocation.GetLocationName(loc.Value) : "Unknown";
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("║  ── Session Info ───────────────────────────────────────────────────────── ║");
+                terminal.SetColor("white");
+                terminal.WriteLine($"║  Location: {locName,-66}║");
+                terminal.WriteLine($"║  Connection: {session.ConnectionType,-64}║");
+                terminal.WriteLine($"║  Frozen: {(session.IsFrozen ? "YES" : "No"),-10} Muted: {(session.IsMuted ? "YES" : "No"),-10} GodMode: {(session.WizardGodMode ? "YES" : "No"),-18}║");
+            }
+
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         return true;
     }
 
@@ -406,14 +467,23 @@ public static class WizardCommandSystem
         var server = MudServer.Instance;
         if (server == null) return true;
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.Write("║");
-        terminal.SetColor("bright_white");
-        { const string t = "Player Locations"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("║");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        bool sr = GameConfig.ScreenReaderMode;
+        if (sr)
+        {
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("Player Locations");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.Write("║");
+            terminal.SetColor("bright_white");
+            { const string t = "Player Locations"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.Write(new string(' ', l) + t + new string(' ', r)); }
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("║");
+            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        }
 
         var sessions = server.ActiveSessions.Values.OrderBy(s => s.Username).ToList();
         foreach (var session in sessions)
@@ -427,15 +497,23 @@ public static class WizardCommandSystem
             terminal.SetColor(session.WizardLevel > WizardLevel.Mortal
                 ? WizardConstants.GetColor(session.WizardLevel) : "white");
             var line = $"  {session.Username}{wizTag}{invisTag} - {locName} [{session.ConnectionType}]";
-            terminal.WriteLine($"║{line.PadRight(78)}║");
+            terminal.WriteLine(sr ? line : $"║{line.PadRight(78)}║");
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine($"╠══════════════════════════════════════════════════════════════════════════════╣");
-        terminal.SetColor("gray");
-        terminal.WriteLine($"║  {sessions.Count} player(s) online                                                       ║");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (sr)
+        {
+            terminal.SetColor("gray");
+            terminal.WriteLine($"  {sessions.Count} player(s) online");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine($"╠══════════════════════════════════════════════════════════════════════════════╣");
+            terminal.SetColor("gray");
+            terminal.WriteLine($"║  {sessions.Count} player(s) online                                                       ║");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         return true;
     }
 
@@ -1400,17 +1478,26 @@ public static class WizardCommandSystem
 
         var entries = await backend.GetRecentWizardLog(30);
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("║                         Wizard Audit Log                                   ║");
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        bool sr = GameConfig.ScreenReaderMode;
+        if (sr)
+        {
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("Wizard Audit Log");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
+            terminal.SetColor("bright_white");
+            terminal.WriteLine("║                         Wizard Audit Log                                   ║");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╠══════════════════════════════════════════════════════════════════════════════╣");
+        }
 
         if (entries.Count == 0)
         {
             terminal.SetColor("gray");
-            terminal.WriteLine("║  No wizard actions logged yet.                                             ║");
+            terminal.WriteLine(sr ? "  No wizard actions logged yet." : "║  No wizard actions logged yet.                                             ║");
         }
         else
         {
@@ -1420,13 +1507,16 @@ public static class WizardCommandSystem
                 var details = entry.Details != null ? $" ({entry.Details})" : "";
                 terminal.SetColor("white");
                 var line = $"  {entry.CreatedAt} {entry.WizardName}: {entry.Action}{target}{details}";
-                if (line.Length > 78) line = line.Substring(0, 75) + "...";
-                terminal.WriteLine($"║{line.PadRight(78)}║");
+                if (!sr && line.Length > 78) line = line.Substring(0, 75) + "...";
+                terminal.WriteLine(sr ? line : $"║{line.PadRight(78)}║");
             }
         }
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        if (!sr)
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        }
         return true;
     }
 

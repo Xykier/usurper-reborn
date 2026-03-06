@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UsurperRemake.Utils;
 using UsurperRemake.Systems;
+using UsurperRemake.UI;
 
 /// <summary>
 /// Class Ability System - Manages combat abilities for all classes
@@ -2077,7 +2078,7 @@ public static class ClassAbilitySystem
         while (true)
         {
             terminal.ClearScreen();
-            terminal.WriteLine("═══ COMBAT ABILITIES ═══", "bright_yellow");
+            UIHelper.WriteSectionHeader(terminal, "COMBAT ABILITIES", "bright_yellow");
             terminal.WriteLine($"Class: {player.Class} | Level: {player.Level} | Stamina: {player.MaxCombatStamina}", "cyan");
             terminal.WriteLine("");
 
@@ -2164,7 +2165,9 @@ public static class ClassAbilitySystem
             }
 
             terminal.WriteLine("");
-            terminal.WriteLine("[1-9] Equip/change slot  [C] Clear a slot  [A] Auto-fill  [X] Exit", "bright_yellow");
+            terminal.WriteLine(GameConfig.ScreenReaderMode
+                ? "1-9. Equip or change slot, C. Clear a slot, A. Auto-fill, X. Exit"
+                : "[1-9] Equip/change slot  [C] Clear a slot  [A] Auto-fill  [X] Exit", "bright_yellow");
             var input = await terminal.GetInput("> ");
             if (string.IsNullOrWhiteSpace(input)) continue;
 

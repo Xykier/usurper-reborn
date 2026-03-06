@@ -128,17 +128,20 @@ public partial class NewsSystem
 
     public void WriteDeathNews(string playerName, string killerName, string location)
     {
-        Newsy($"† {playerName} was slain by {killerName} at {location}!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "† ";
+        Newsy($"{prefix}{playerName} was slain by {killerName} at {location}!");
     }
 
     public void WriteBirthNews(string motherName, string fatherName, string childName, bool isNPC = false)
     {
-        Newsy($"♥ {motherName} and {fatherName} are proud parents of {childName}!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "♥ ";
+        Newsy($"{prefix}{motherName} and {fatherName} are proud parents of {childName}!");
     }
 
     public void WriteNaturalDeathNews(string npcName, int age, string race)
     {
-        Newsy($"⚱ {npcName}, a {race} of {age} years, has passed away peacefully. The soul moves on...");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "⚱ ";
+        Newsy($"{prefix}{npcName}, a {race} of {age} years, has passed away peacefully. The soul moves on...");
     }
 
     public void WriteComingOfAgeNews(string childName, string motherName, string fatherName)
@@ -148,7 +151,8 @@ public partial class NewsSystem
 
     public void WriteBirthdayNews(string npcName, int age, string race)
     {
-        Newsy($"🎂 {npcName} the {race} celebrates their {age}{GetOrdinalSuffix(age)} birthday!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "🎂 ";
+        Newsy($"{prefix}{npcName} the {race} celebrates their {age}{GetOrdinalSuffix(age)} birthday!");
     }
 
     private static string GetOrdinalSuffix(int number)
@@ -166,48 +170,57 @@ public partial class NewsSystem
 
     public void WriteNPCLevelUpNews(string npcName, int level, string className, string race)
     {
-        Newsy($"⬆ {npcName} the {race} {className} has achieved Level {level}!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "⬆ ";
+        Newsy($"{prefix}{npcName} the {race} {className} has achieved Level {level}!");
     }
 
     public void WriteMarriageNews(string player1Name, string player2Name, string location = "Temple")
     {
-        Newsy($"♥ {player1Name} and {player2Name} were married at the {location}!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "♥ ";
+        Newsy($"{prefix}{player1Name} and {player2Name} were married at the {location}!");
     }
 
     public void WriteDivorceNews(string player1Name, string player2Name)
     {
-        Newsy($"✗ {player1Name} and {player2Name} have divorced!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "✗ ";
+        Newsy($"{prefix}{player1Name} and {player2Name} have divorced!");
     }
 
     public void WriteAffairNews(string npcName, string loverName)
     {
-        Newsy($"💋 Scandal! {npcName} and {loverName} are having a secret affair!");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "💋 ";
+        Newsy($"{prefix}Scandal! {npcName} and {loverName} are having a secret affair!");
     }
 
     public void WriteRoyalNews(string kingName, string proclamation)
     {
-        Newsy($"♔ King {kingName} proclaims: {proclamation}");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "♔ ";
+        Newsy($"{prefix}King {kingName} proclaims: {proclamation}");
     }
 
     public void WriteHolyNews(string godName, string event_description)
     {
-        Newsy($"✝ {godName}: {event_description}");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "✝ ";
+        Newsy($"{prefix}{godName}: {event_description}");
     }
 
     public void WriteQuestNews(string playerName, string questDescription, bool completed = true)
     {
         string status = completed ? "completed" : "failed";
-        Newsy($"⚔ {playerName} {status} quest: {questDescription}");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "⚔ ";
+        Newsy($"{prefix}{playerName} {status} quest: {questDescription}");
     }
 
     public void WriteTeamNews(string teamName, string event_description)
     {
-        Newsy($"⚑ Team {teamName}: {event_description}");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "⚑ ";
+        Newsy($"{prefix}Team {teamName}: {event_description}");
     }
 
     public void WritePrisonNews(string playerName, string event_description)
     {
-        Newsy($"⛓ {playerName}: {event_description}");
+        string prefix = GameConfig.ScreenReaderMode ? "" : "⛓ ";
+        Newsy($"{prefix}{playerName}: {event_description}");
     }
 
     /// <summary>

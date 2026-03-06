@@ -28,6 +28,12 @@ namespace UsurperRemake.UI
         /// </summary>
         public static void DrawBoxTop(TerminalEmulator terminal, string title = "", string color = "bright_blue")
         {
+            if (GameConfig.ScreenReaderMode)
+            {
+                if (!string.IsNullOrEmpty(title))
+                    terminal.WriteLine(title, color);
+                return;
+            }
             if (string.IsNullOrEmpty(title))
             {
                 terminal.WriteLine($"{TopLeft}{new string(Horizontal, BoxWidth)}{TopRight}", color);
@@ -47,6 +53,12 @@ namespace UsurperRemake.UI
         /// </summary>
         public static void DrawBoxLine(TerminalEmulator terminal, string text, string borderColor = "bright_blue", string textColor = "white")
         {
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine(text.TrimEnd(), textColor);
+                return;
+            }
+
             // Word-wrap if too long instead of truncating
             if (text.Length > BoxWidth)
             {
@@ -96,6 +108,12 @@ namespace UsurperRemake.UI
         public static void DrawBoxLabelValue(TerminalEmulator terminal, string label, string value,
             string borderColor = "bright_blue", string labelColor = "cyan", string valueColor = "white")
         {
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine($"  {label}: {value}", labelColor);
+                return;
+            }
+
             string combined = $"{label}: {value}";
             if (combined.Length > BoxWidth)
                 combined = combined.Substring(0, BoxWidth);
@@ -111,6 +129,7 @@ namespace UsurperRemake.UI
         /// </summary>
         public static void DrawBoxEmpty(TerminalEmulator terminal, string color = "bright_blue")
         {
+            if (GameConfig.ScreenReaderMode) { terminal.WriteLine(""); return; }
             terminal.WriteLine($"{Vertical}{new string(' ', BoxWidth)}{Vertical}", color);
         }
 
@@ -119,6 +138,7 @@ namespace UsurperRemake.UI
         /// </summary>
         public static void DrawBoxSeparator(TerminalEmulator terminal, string color = "bright_blue")
         {
+            if (GameConfig.ScreenReaderMode) return;
             terminal.WriteLine($"{TeeLeft}{new string(Horizontal, BoxWidth)}{TeeRight}", color);
         }
 
@@ -127,6 +147,7 @@ namespace UsurperRemake.UI
         /// </summary>
         public static void DrawBoxBottom(TerminalEmulator terminal, string color = "bright_blue")
         {
+            if (GameConfig.ScreenReaderMode) return;
             terminal.WriteLine($"{BottomLeft}{new string(Horizontal, BoxWidth)}{BottomRight}", color);
         }
 
@@ -137,6 +158,12 @@ namespace UsurperRemake.UI
             string borderColor = "bright_blue", string keyColor = "bright_yellow", string textColor = "white",
             string bracketColor = "green")
         {
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine($"  {key}. {description}", textColor);
+                return;
+            }
+
             string line = $"  [{key}] {description}";
             if (line.Length > BoxWidth)
                 line = line.Substring(0, BoxWidth);
@@ -188,6 +215,13 @@ namespace UsurperRemake.UI
         public static void DrawStatBar(TerminalEmulator terminal, string label, long current, long max,
             string borderColor = "bright_blue", string labelColor = "cyan", string barColor = "bright_green")
         {
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.Write($"  {label}: ", labelColor);
+                terminal.WriteLine($"{current}/{max}", "white");
+                return;
+            }
+
             int barWidth = 30;
             double ratio = max > 0 ? (double)current / max : 0;
             int filled = (int)(ratio * barWidth);
@@ -232,6 +266,52 @@ namespace UsurperRemake.UI
         {
             int filled = (int)(ratio * width);
             return $"[{new string('█', filled)}{new string('░', width - filled)}]";
+        }
+
+        /// <summary>
+        /// Write a centered box header (╔═══╗ / ║ TITLE ║ / ╚═══╝).
+        /// In screen reader mode, outputs plain text title only.
+        /// Usable from any class (Systems, etc.) that has a TerminalEmulator reference.
+        /// </summary>
+        public static void WriteBoxHeader(TerminalEmulator terminal, string title, string color = "bright_cyan", int width = 78)
+        {
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine(title);
+                return;
+            }
+            terminal.SetColor(color);
+            terminal.WriteLine($"╔{new string('═', width)}╗");
+            int l = (width - title.Length) / 2;
+            int r = width - title.Length - l;
+            terminal.WriteLine($"║{new string(' ', l)}{title}{new string(' ', r)}║");
+            terminal.WriteLine($"╚{new string('═', width)}╝");
+        }
+
+        /// <summary>
+        /// Write a section header like "═══ Title ═══".
+        /// In screen reader mode, outputs plain text title only.
+        /// </summary>
+        public static void WriteSectionHeader(TerminalEmulator terminal, string title, string color = "white")
+        {
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine(title);
+                return;
+            }
+            terminal.SetColor(color);
+            terminal.WriteLine($"═══ {title} ═══");
+        }
+
+        /// <summary>
+        /// Write a divider line (───────).
+        /// In screen reader mode, outputs nothing.
+        /// </summary>
+        public static void WriteDivider(TerminalEmulator terminal, int width = 40, string color = "gray")
+        {
+            if (GameConfig.ScreenReaderMode) return;
+            terminal.SetColor(color);
+            terminal.WriteLine(new string('─', width));
         }
     }
 }

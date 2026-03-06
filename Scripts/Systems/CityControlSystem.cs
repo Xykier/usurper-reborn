@@ -449,7 +449,8 @@ public class CityControlSystem
                 : $"City Tax ({king.CityTaxPercent}%)";
             terminal.WriteLine($"  {cityLabel}: {cityTax:N0} gold", "cyan");
         }
-        terminal.WriteLine($"  ─────────────────────────────", "gray");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine($"  ─────────────────────────────", "gray");
         terminal.WriteLine($"  Total: {total:N0} gold", "bright_white");
     }
 }

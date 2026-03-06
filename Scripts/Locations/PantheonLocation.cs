@@ -110,10 +110,7 @@ public class PantheonLocation : BaseLocation
         int believers = CountBelievers(currentPlayer.DivineName);
         int deedsMax = GetDeedsPerDay(currentPlayer.GodLevel);
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"THE DIVINE REALM".PadLeft((77 + 16) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE DIVINE REALM", "bright_yellow", 77);
         terminal.WriteLine("");
 
         terminal.SetColor("bright_yellow");
@@ -166,10 +163,7 @@ public class PantheonLocation : BaseLocation
         long nextLevelExp = GetNextLevelExp(currentPlayer.GodLevel);
         int deedsMax = GetDeedsPerDay(currentPlayer.GodLevel);
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"DIVINE STATUS".PadLeft((77 + 13) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("DIVINE STATUS", "bright_yellow", 77);
         terminal.WriteLine("");
 
         terminal.SetColor("bright_yellow");
@@ -251,10 +245,7 @@ public class PantheonLocation : BaseLocation
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"YOUR FAITHFUL FLOCK".PadLeft((77 + 19) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("YOUR FAITHFUL FLOCK", "bright_yellow", 77);
         terminal.WriteLine("");
 
         var believers = await GetBelieverListAsync(currentPlayer.DivineName);
@@ -309,10 +300,7 @@ public class PantheonLocation : BaseLocation
         {
             terminal.ClearScreen();
 
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine($"║{"CONFIGURE DIVINE FAVORS".PadLeft((77 + 23) / 2).PadRight(77)}║");
-            terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("CONFIGURE DIVINE FAVORS", "bright_yellow", 77);
             terminal.WriteLine("");
 
             // Budget display
@@ -530,10 +518,7 @@ public class PantheonLocation : BaseLocation
         terminal.ClearScreen();
 
         string godTitle = GetGodTitle(currentPlayer.GodLevel);
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"DIVINE DEEDS".PadLeft((77 + 12) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("DIVINE DEEDS", "bright_yellow", 77);
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -974,10 +959,7 @@ public class PantheonLocation : BaseLocation
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"THE PANTHEON — IMMORTAL RANKINGS".PadLeft((77 + 32) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("THE PANTHEON \u2014 IMMORTAL RANKINGS", "bright_yellow", 77);
         terminal.WriteLine("");
 
         var gods = await GetAllImmortalsAsync();
@@ -994,8 +976,11 @@ public class PantheonLocation : BaseLocation
             terminal.SetColor("cyan");
             terminal.Write($"  {"#",-4}{"Divine Name",-22}{"Title",-14}{"Lvl",4}{"Exp",12}{"Blvrs",7}{"Status",9}");
             terminal.WriteLine("");
-            terminal.SetColor("gray");
-            terminal.WriteLine("  " + new string('─', 72));
+            if (!IsScreenReader)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine("  " + new string('─', 72));
+            }
 
             int rank = 1;
             foreach (var god in gods.OrderByDescending(g => g.GodExperience))
@@ -1033,10 +1018,7 @@ public class PantheonLocation : BaseLocation
     private async Task ShowNews()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"DIVINE & MORTAL NEWS".PadLeft((77 + 20) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("DIVINE & MORTAL NEWS", "bright_yellow", 77);
         terminal.WriteLine("");
 
         var allNews = NewsSystem.Instance?.GetTodaysNews() ?? new List<string>();
@@ -1168,10 +1150,7 @@ public class PantheonLocation : BaseLocation
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"RENOUNCE IMMORTALITY".PadLeft((77 + 20) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("RENOUNCE IMMORTALITY", "bright_red", 77);
         terminal.WriteLine("");
 
         terminal.SetColor("white");

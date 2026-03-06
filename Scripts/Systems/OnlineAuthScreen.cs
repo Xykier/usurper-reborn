@@ -105,12 +105,19 @@ namespace UsurperRemake.Systems
             const int innerWidth = 78;
             int leftPad  = (innerWidth - titleText.Length) / 2;
             int rightPad = innerWidth - titleText.Length - leftPad;
-            string titleLine = $"║{new string(' ', leftPad)}{titleText}{new string(' ', rightPad)}║";
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine(titleLine);
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(titleText);
+            }
+            else
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"╔{new string('═', innerWidth)}╗");
+                terminal.WriteLine($"║{new string(' ', leftPad)}{titleText}{new string(' ', rightPad)}║");
+                terminal.WriteLine($"╚{new string('═', innerWidth)}╝");
+            }
             terminal.WriteLine("");
             terminal.SetColor("gray");
             terminal.WriteLine("  Welcome to the Usurper Reborn online server!");
@@ -168,7 +175,10 @@ namespace UsurperRemake.Systems
         {
             terminal.WriteLine("");
             terminal.SetColor("bright_green");
-            terminal.WriteLine("  ═══ Create New Account ═══");
+            if (GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  Create New Account");
+            else
+                terminal.WriteLine("  ═══ Create New Account ═══");
             terminal.WriteLine("");
 
             terminal.SetColor("gray");

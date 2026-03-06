@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -174,8 +175,11 @@ namespace UsurperRemake.Systems
             if (player?.SkipIntimateScenes != true && _matchCount >= 0)
             {
                 terminal.WriteLine("");
-                terminal.SetColor("bright_cyan");
-                terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+                }
                 switch (_matchCount)
                 {
                     case 3:
@@ -199,8 +203,11 @@ namespace UsurperRemake.Systems
                         terminal.WriteLine($"  An awkward encounter. You and {primaryPartner.Name2} aren't quite in sync yet.");
                         break;
                 }
-                terminal.SetColor("bright_cyan");
-                terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+                if (!GameConfig.ScreenReaderMode)
+                {
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+                }
                 terminal.WriteLine("");
                 await terminal.GetInput("  Press Enter to continue...");
             }
@@ -305,10 +312,7 @@ namespace UsurperRemake.Systems
         {
             terminal!.ClearScreen();
 
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "BLESSED NEWS!"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "BLESSED NEWS!", "bright_yellow");
             terminal.WriteLine("");
 
             await Task.Delay(500);
@@ -366,14 +370,20 @@ namespace UsurperRemake.Systems
             // Update spouse's child count in RomanceTracker
             RomanceTracker.Instance.AddChildToSpouse(partner.ID);
 
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+            }
             terminal.SetColor("bright_green");
             terminal.WriteLine($"  After nine months, a healthy {(child.Sex == CharacterSex.Male ? "baby boy" : "baby girl")} is born!");
             terminal.SetColor("bright_yellow");
             terminal.WriteLine($"  You name {(child.Sex == CharacterSex.Male ? "him" : "her")}: {child.Name}");
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("  ════════════════════════════════════════════════════════════════");
+            }
             terminal.WriteLine("");
 
             // Generate birth news for the realm
@@ -470,12 +480,7 @@ namespace UsurperRemake.Systems
         /// </summary>
         private async Task ShowSceneHeader(NPC partner, IntimacyMood mood)
         {
-            terminal!.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("║                              INTIMATE ENCOUNTER                              ║");
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal!, "INTIMATE ENCOUNTER", "dark_red");
             terminal.WriteLine("");
 
             terminal.SetColor("gray");

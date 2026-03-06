@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -115,7 +116,8 @@ namespace UsurperRemake.Systems
         {
             // Set up the atmosphere
             terminal.WriteLine("");
-            terminal.WriteLine("═══════════════════════════════════════════════════", "dark_magenta");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════════════════", "dark_magenta");
             terminal.WriteLine("");
 
             await Task.Delay(1000);
@@ -298,9 +300,7 @@ namespace UsurperRemake.Systems
 
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine("║               T H E   E T E R N A L   C Y C L E                   ║", "bright_yellow");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_yellow");
+            UIHelper.WriteBoxHeader(terminal, "T H E   E T E R N A L   C Y C L E", "bright_yellow", 67);
             terminal.WriteLine("");
 
             await Task.Delay(1000);

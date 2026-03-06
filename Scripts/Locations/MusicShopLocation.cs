@@ -107,6 +107,11 @@ public class MusicShopLocation : BaseLocation
 
     protected override void DisplayLocation()
     {
+        if (IsScreenReader && currentPlayer != null)
+        {
+            DisplayLocationSR();
+            return;
+        }
         if (IsBBSSession && currentPlayer != null)
         {
             DisplayLocationBBS();
@@ -119,10 +124,7 @@ public class MusicShopLocation : BaseLocation
         var state = GetMelodiaState();
 
         // Header box — matches Weapon/Armor/Healer pattern
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"MELODIA'S MUSIC SHOP".PadLeft((77 + 20) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("MELODIA'S MUSIC SHOP", "bright_cyan");
         terminal.WriteLine("");
 
         // Room description — changes based on Melodia's state
@@ -251,12 +253,60 @@ public class MusicShopLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write(" [");
         terminal.SetColor("bright_yellow");
-        terminal.Write("Q");
+        terminal.Write("R");
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("white");
         terminal.WriteLine("Return to Main Street");
 
+        terminal.WriteLine("");
+    }
+
+    /// <summary>
+    /// Screen reader accessible layout — plain text, no box-drawing.
+    /// </summary>
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        var state = GetMelodiaState();
+
+        terminal.SetColor("bright_cyan");
+        terminal.WriteLine("MELODIA'S MUSIC SHOP");
+        terminal.SetColor("gray");
+        switch (state)
+        {
+            case MelodiaState.InShop:
+                terminal.WriteLine("Melodia and her apprentice Cadence are here.");
+                break;
+            case MelodiaState.Adventuring:
+                terminal.WriteLine("Cadence runs the shop. Melodia is out adventuring.");
+                break;
+            case MelodiaState.Dead:
+                terminal.WriteLine("Cadence keeps the music going in Melodia's memory.");
+                break;
+        }
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        terminal.SetColor("yellow");
+        terminal.WriteLine($"Gold: {FormatNumber(currentPlayer.Gold)}");
+        if (currentPlayer.Class == CharacterClass.Bard)
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("Bard discount: 25% off performances.");
+        }
+        terminal.WriteLine("");
+
+        terminal.SetColor("cyan");
+        terminal.WriteLine("Services:");
+        bool isBard = currentPlayer.Class == CharacterClass.Bard;
+        WriteSRMenuOption("B", isBard ? "Buy Instruments" : "Buy Instruments (Bards only)", isBard);
+        WriteSRMenuOption("P", "Hire a Performance, combat buffs for 5 fights");
+        if (state == MelodiaState.InShop)
+            WriteSRMenuOption("T", "Talk to Melodia");
+        WriteSRMenuOption("L", "Lore Songs of the Old Gods");
+        WriteSRMenuOption("R", "Return to Main Street");
         terminal.WriteLine("");
     }
 
@@ -294,9 +344,9 @@ public class MusicShopLocation : BaseLocation
             ("L", "bright_yellow", "ore Songs"));
 
         if (state == MelodiaState.InShop)
-            ShowBBSMenuRow(("T", currentPlayer.Level >= 20 ? "bright_green" : "white", "alk to Melodia"), ("Q", "bright_red", "uit"));
+            ShowBBSMenuRow(("T", currentPlayer.Level >= 20 ? "bright_green" : "white", "alk to Melodia"), ("R", "bright_red", "eturn"));
         else
-            ShowBBSMenuRow(("Q", "bright_red", "eturn"));
+            ShowBBSMenuRow(("R", "bright_red", "eturn"));
 
         ShowBBSFooter();
     }
@@ -321,7 +371,7 @@ public class MusicShopLocation : BaseLocation
                 await ShowLoreSongs();
                 return false;
 
-            case "Q":
+            case "R":
                 await NavigateToLocation(GameLocation.MainStreet);
                 return true;
 
@@ -370,9 +420,8 @@ public class MusicShopLocation : BaseLocation
             return;
         }
 
-        terminal.SetColor("bright_cyan");
         terminal.WriteLine("");
-        terminal.WriteLine("═══ Instruments ═══");
+        WriteSectionHeader("Instruments", "bright_cyan");
         terminal.WriteLine("");
 
         // Show current weapon
@@ -399,8 +448,7 @@ public class MusicShopLocation : BaseLocation
 
         terminal.SetColor("bright_blue");
         terminal.WriteLine("  #   Name                        Lvl  Pow  Price       Bonus");
-        terminal.SetColor("darkgray");
-        terminal.WriteLine("────────────────────────────────────────────────────────────────");
+        WriteDivider(64);
 
         int num = 1;
         foreach (var item in pageItems)
@@ -705,9 +753,8 @@ public class MusicShopLocation : BaseLocation
 
     private async Task HirePerformance()
     {
-        terminal.SetColor("bright_cyan");
         terminal.WriteLine("");
-        terminal.WriteLine("═══ Hire a Performance ═══");
+        WriteSectionHeader("Hire a Performance", "bright_cyan");
         var state = GetMelodiaState();
         string performer = state == MelodiaState.InShop ? "Melodia" : "Cadence";
 
@@ -1045,9 +1092,8 @@ public class MusicShopLocation : BaseLocation
     {
         var state = GetMelodiaState();
 
-        terminal.SetColor("magenta");
         terminal.WriteLine("");
-        terminal.WriteLine("═══ Lore Songs of the Old Gods ═══");
+        WriteSectionHeader("Lore Songs of the Old Gods", "magenta");
         terminal.SetColor("gray");
         if (state == MelodiaState.Dead)
             terminal.WriteLine("Ancient ballads Melodia passed down to Cadence before she fell.");
@@ -1129,8 +1175,7 @@ public class MusicShopLocation : BaseLocation
     private async Task PlayLoreSong(OldGodType god, string title, string color, string[] verses)
     {
         terminal.WriteLine("");
-        terminal.SetColor(color);
-        terminal.WriteLine($"═══ {title} ═══");
+        WriteSectionHeader(title, color);
         terminal.SetColor("gray");
         terminal.WriteLine("");
 

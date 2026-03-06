@@ -28,9 +28,16 @@ public static class BugReportSystem
     {
         terminal.WriteLine("");
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════");
-        terminal.WriteLine("                         BUG REPORT");
-        terminal.WriteLine("═══════════════════════════════════════════════════════════");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("BUG REPORT");
+        }
+        else
+        {
+            terminal.WriteLine("═══════════════════════════════════════════════════════════");
+            terminal.WriteLine("                         BUG REPORT");
+            terminal.WriteLine("═══════════════════════════════════════════════════════════");
+        }
         terminal.SetColor("white");
         terminal.WriteLine("");
         terminal.WriteLine("Describe the bug briefly. What happened? What did you expect?");

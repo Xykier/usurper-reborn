@@ -223,9 +223,16 @@ public partial class PrisonLocation : BaseLocation
         await terminal.WriteLineAsync();
         
         // Prison header
-        await terminal.WriteColorLineAsync("IIIIIIIIIIIIIIIIIIIIIIII", TerminalEmulator.ColorCyan);
-        await terminal.WriteColorLineAsync("III The Royal Prison III", TerminalEmulator.ColorCyan);
-        await terminal.WriteColorLineAsync("IIIIIIIIIIIIIIIIIIIIIIII", TerminalEmulator.ColorCyan);
+        if (!IsScreenReader)
+        {
+            await terminal.WriteColorLineAsync("IIIIIIIIIIIIIIIIIIIIIIII", TerminalEmulator.ColorCyan);
+            await terminal.WriteColorLineAsync("III The Royal Prison III", TerminalEmulator.ColorCyan);
+            await terminal.WriteColorLineAsync("IIIIIIIIIIIIIIIIIIIIIIII", TerminalEmulator.ColorCyan);
+        }
+        else
+        {
+            await terminal.WriteColorLineAsync("The Royal Prison", TerminalEmulator.ColorCyan);
+        }
         await terminal.WriteLineAsync();
         
         // Prison atmosphere description
@@ -237,19 +244,39 @@ public partial class PrisonLocation : BaseLocation
         await terminal.WriteLineAsync();
         
         // Menu options
-        await terminal.WriteLineAsync("(W)ho else is here          (D)emand to be released!");
-        await terminal.WriteLineAsync("(O)pen cell door            (E)scape!");
-        await terminal.WriteLineAsync("(S)tatus                    (A)ctivities - Exercise!");
-
-        // Check for Vex companion availability - get player from game engine
-        var currentPlayer = gameEngine?.CurrentPlayer;
-        if (currentPlayer != null && CanMeetVex(currentPlayer))
+        if (IsScreenReader)
         {
-            await terminal.WriteColorAsync("(V)", TerminalEmulator.ColorYellow);
-            await terminal.WriteColorLineAsync("oice in the darkness     (A peculiar prisoner whispers...)", TerminalEmulator.ColorCyan);
-        }
+            await terminal.WriteLineAsync("W. Who else is here");
+            await terminal.WriteLineAsync("D. Demand to be released!");
+            await terminal.WriteLineAsync("O. Open cell door");
+            await terminal.WriteLineAsync("E. Escape!");
+            await terminal.WriteLineAsync("S. Status");
+            await terminal.WriteLineAsync("A. Activities - Exercise!");
 
-        await terminal.WriteLineAsync("(Q)uit");
+            var currentPlayer = gameEngine?.CurrentPlayer;
+            if (currentPlayer != null && CanMeetVex(currentPlayer))
+            {
+                await terminal.WriteLineAsync("V. Voice in the darkness (A peculiar prisoner whispers...)");
+            }
+
+            await terminal.WriteLineAsync("Q. Quit");
+        }
+        else
+        {
+            await terminal.WriteLineAsync("(W)ho else is here          (D)emand to be released!");
+            await terminal.WriteLineAsync("(O)pen cell door            (E)scape!");
+            await terminal.WriteLineAsync("(S)tatus                    (A)ctivities - Exercise!");
+
+            // Check for Vex companion availability - get player from game engine
+            var currentPlayer = gameEngine?.CurrentPlayer;
+            if (currentPlayer != null && CanMeetVex(currentPlayer))
+            {
+                await terminal.WriteColorAsync("(V)", TerminalEmulator.ColorYellow);
+                await terminal.WriteColorLineAsync("oice in the darkness     (A peculiar prisoner whispers...)", TerminalEmulator.ColorCyan);
+            }
+
+            await terminal.WriteLineAsync("(Q)uit");
+        }
     }
 
     /// <summary>
@@ -313,9 +340,16 @@ public partial class PrisonLocation : BaseLocation
     private async Task HandleActivities(Character player)
     {
         await terminal.ClearScreenAsync();
-        await terminal.WriteColorLineAsync("═══════════════════════════════════════", TerminalEmulator.ColorCyan);
-        await terminal.WriteColorLineAsync("           PRISON ACTIVITIES           ", TerminalEmulator.ColorCyan);
-        await terminal.WriteColorLineAsync("═══════════════════════════════════════", TerminalEmulator.ColorCyan);
+        if (IsScreenReader)
+        {
+            await terminal.WriteColorLineAsync("PRISON ACTIVITIES", TerminalEmulator.ColorCyan);
+        }
+        else
+        {
+            await terminal.WriteColorLineAsync("═══════════════════════════════════════", TerminalEmulator.ColorCyan);
+            await terminal.WriteColorLineAsync("           PRISON ACTIVITIES           ", TerminalEmulator.ColorCyan);
+            await terminal.WriteColorLineAsync("═══════════════════════════════════════", TerminalEmulator.ColorCyan);
+        }
         await terminal.WriteLineAsync();
         await terminal.WriteLineAsync("While imprisoned, you can pass the time");
         await terminal.WriteLineAsync("with activities that improve your body and mind.");
@@ -658,10 +692,8 @@ public partial class PrisonLocation : BaseLocation
 
         await terminal.ClearScreenAsync();
         await terminal.WriteLineAsync();
-        await terminal.WriteColorLineAsync("╔══════════════════════════════════════════════════════════════════╗", TerminalEmulator.ColorCyan);
-        await terminal.WriteColorLineAsync("║                 VOICE IN THE DARKNESS                            ║", TerminalEmulator.ColorCyan);
-        await terminal.WriteColorLineAsync("╚══════════════════════════════════════════════════════════════════╝", TerminalEmulator.ColorCyan);
-        await terminal.WriteLineAsync();
+        WriteBoxHeader("VOICE IN THE DARKNESS", "cyan", 66);
+        terminal.WriteLine("");
         await Task.Delay(1000);
 
         await terminal.WriteLineAsync("A voice drifts from the cell next to yours:");

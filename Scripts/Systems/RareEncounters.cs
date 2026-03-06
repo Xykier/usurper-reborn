@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -137,10 +138,17 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("yellow");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║            * THE WAYWARD WANDERER *                   ║");
-            terminal.WriteLine("║              A Hidden Tavern                          ║");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════╝");
+            if (!GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("╔═══════════════════════════════════════════════════════╗");
+                terminal.WriteLine("║            * THE WAYWARD WANDERER *                   ║");
+                terminal.WriteLine("║              A Hidden Tavern                          ║");
+                terminal.WriteLine("╚═══════════════════════════════════════════════════════╝");
+            }
+            else
+            {
+                terminal.WriteLine("THE WAYWARD WANDERER - A Hidden Tavern");
+            }
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -383,7 +391,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("♪♫ A WANDERING MINSTREL ♫♪");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "A WANDERING MINSTREL" : "♪♫ A WANDERING MINSTREL ♫♪");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -671,7 +679,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("magenta");
-            terminal.WriteLine("♀ DAMSEL IN DISTRESS ♀");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "DAMSEL IN DISTRESS" : "♀ DAMSEL IN DISTRESS ♀");
             terminal.WriteLine("");
 
             // Randomize the scenario
@@ -987,10 +995,7 @@ namespace UsurperRemake.Systems
         private static async Task UsurperGhostEncounter(TerminalEmulator terminal, Character player, int level)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_white");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║              * GHOSTLY APPARITION *                    ║");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "* GHOSTLY APPARITION *", "bright_white", 55);
             terminal.WriteLine("");
 
             terminal.SetColor("cyan");
@@ -2489,7 +2494,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_green");
-            terminal.WriteLine("⚗ ABANDONED ALCHEMY LAB ⚗");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "ABANDONED ALCHEMY LAB" : "⚗ ABANDONED ALCHEMY LAB ⚗");
             terminal.WriteLine("");
 
             terminal.SetColor("white");
@@ -2882,7 +2887,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_red");
-            terminal.WriteLine("🔥 INFERNAL FORGE 🔥");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "INFERNAL FORGE" : "🔥 INFERNAL FORGE 🔥");
             terminal.WriteLine("");
             terminal.WriteLine("You stumble upon the smoldering remains of a", "white");
             terminal.WriteLine("demonic forge, its hellfire still burning bright.", "white");
@@ -3019,7 +3024,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_red");
-            terminal.WriteLine("🔥 FIRE ELEMENTAL 🔥");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "FIRE ELEMENTAL" : "🔥 FIRE ELEMENTAL 🔥");
             terminal.WriteLine("");
             terminal.WriteLine("A being of pure flame blocks your path.", "white");
             terminal.WriteLine("It offers you a gift of fire magic.");
@@ -3108,7 +3113,7 @@ namespace UsurperRemake.Systems
         {
             terminal.ClearScreen();
             terminal.SetColor("bright_white");
-            terminal.WriteLine("⚡ REALITY TEAR ⚡");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "REALITY TEAR" : "⚡ REALITY TEAR ⚡");
             terminal.WriteLine("");
             terminal.WriteLine("A crack in reality shows another world.", "white");
             terminal.WriteLine("Reaching through might be dangerous...");

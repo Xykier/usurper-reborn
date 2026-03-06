@@ -218,8 +218,9 @@ public class DailySystemManager
         if (terminal == null) return;
         
         terminal.WriteLine("", "white");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
-        
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
+
         var message = currentMode switch
         {
             DailyCycleMode.SessionBased => $"        NEW SESSION BEGINS! (Day {currentDay})",
@@ -232,7 +233,8 @@ public class DailySystemManager
         };
         
         terminal.WriteLine(message, "bright_yellow");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
         terminal.WriteLine("", "white");
         
         // Mode-specific flavor text

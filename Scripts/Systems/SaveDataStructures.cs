@@ -197,7 +197,9 @@ namespace UsurperRemake.Systems
         public long MaxHP { get; set; }
         public long Gold { get; set; }
         public long BankGold { get; set; }
-        
+        public bool BankGuard { get; set; }
+        public long BankWage { get; set; }
+
         // Attributes
         public long Strength { get; set; }
         public long Defence { get; set; }

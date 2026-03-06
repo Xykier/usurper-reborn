@@ -253,10 +253,7 @@ public class StreetEncounterSystem
         EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                         HOSTILE ENCOUNTER!                                   ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "HOSTILE ENCOUNTER!", "bright_red");
         terminal.WriteLine("");
 
         // Find or create an attacker
@@ -320,10 +317,7 @@ public class StreetEncounterSystem
     private async Task ProcessPickpocketEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                           PICKPOCKET!                                        ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "PICKPOCKET!", "yellow");
         terminal.WriteLine("");
 
         // Dexterity check to notice
@@ -406,10 +400,7 @@ public class StreetEncounterSystem
     private async Task ProcessBrawlEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                           TAVERN BRAWL!                                      ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "TAVERN BRAWL!", "bright_yellow");
         terminal.WriteLine("");
 
         string[] brawlReasons = {
@@ -499,10 +490,7 @@ public class StreetEncounterSystem
         EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                           CHALLENGE!                                         ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "CHALLENGE!", "bright_cyan");
         terminal.WriteLine("");
 
         // Find an NPC near player's level
@@ -574,10 +562,7 @@ public class StreetEncounterSystem
         EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                           AMBUSH!                                            ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "AMBUSH!", "bright_red");
         terminal.WriteLine("");
 
         int muggerCount = _random.Next(2, 4);
@@ -695,10 +680,7 @@ public class StreetEncounterSystem
     private async Task ProcessGangEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                        GANG ENCOUNTER!                                       ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "GANG ENCOUNTER!", "bright_magenta");
         terminal.WriteLine("");
 
         bool playerHasTeam = !string.IsNullOrEmpty(player.Team);
@@ -861,10 +843,7 @@ public class StreetEncounterSystem
     private async Task ProcessRomanticEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                        ROMANTIC ENCOUNTER                                    ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "ROMANTIC ENCOUNTER", "bright_magenta");
         terminal.WriteLine("");
 
         string[] admirerNames = player.Sex == CharacterSex.Male ?
@@ -947,10 +926,7 @@ public class StreetEncounterSystem
         EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                          TRAVELING MERCHANT                                  ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "TRAVELING MERCHANT", "bright_yellow");
         terminal.WriteLine("");
 
         bool shadyMerchant = location == GameLocation.DarkAlley;
@@ -1028,10 +1004,7 @@ public class StreetEncounterSystem
     private async Task ProcessBeggarEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("gray");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                               BEGGAR                                         ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "BEGGAR", "gray");
         terminal.WriteLine("");
 
         terminal.SetColor("gray");
@@ -1113,10 +1086,7 @@ public class StreetEncounterSystem
     private async Task ProcessRumorEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("cyan");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                           RUMORS                                             ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "RUMORS", "cyan");
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
@@ -1138,10 +1108,7 @@ public class StreetEncounterSystem
     private async Task ProcessGuardPatrolEncounter(Character player, EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_white");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                        GUARD PATROL                                          ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "GUARD PATROL", "bright_white");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -1290,10 +1257,7 @@ public class StreetEncounterSystem
         EncounterResult result, TerminalEmulator terminal)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                        AMBUSH!                                               ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "AMBUSH!", "bright_red");
         terminal.WriteLine("");
 
         terminal.SetColor("red");
@@ -1921,10 +1885,7 @@ public class StreetEncounterSystem
         var result = new EncounterResult { EncounterOccurred = true, Type = EncounterType.HostileNPC };
 
         terminal.ClearScreen();
-        terminal.SetColor("bright_red");
-        terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine("║                              ATTACK!                                         ║");
-        terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+        UIHelper.WriteBoxHeader(terminal, "ATTACK!", "bright_red");
         terminal.WriteLine("");
 
         terminal.SetColor("red");

@@ -245,9 +245,11 @@ public static partial class MailSystem
         }
         
         terminal.WriteLine("", "white");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_cyan");
-        terminal.WriteLine("             YOUR MAIL                  ", "bright_cyan");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_cyan");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_cyan");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "YOUR MAIL" : "             YOUR MAIL                  ", "bright_cyan");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_cyan");
         terminal.WriteLine("", "white");
         
         for (int i = 0; i < playerMail.Count; i++)
@@ -285,9 +287,11 @@ public static partial class MailSystem
     {
         terminal.ClearScreen();
         terminal.WriteLine("", "white");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
-        terminal.WriteLine("                MAIL                    ", "bright_blue");
-        terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "MAIL" : "                MAIL                    ", "bright_blue");
+        if (!GameConfig.ScreenReaderMode)
+            terminal.WriteLine("═══════════════════════════════════════", "bright_blue");
         terminal.WriteLine("", "white");
         
         terminal.WriteLine($"From: {mail.Sender}", "yellow");

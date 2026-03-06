@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -379,9 +380,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine($"╔══════════════════════════════════════════════════════════════════╗", seal.IconColor);
-            terminal.WriteLine($"║             * * *  S E A L   D I S C O V E R E D  * * *          ║", seal.IconColor);
-            terminal.WriteLine($"╚══════════════════════════════════════════════════════════════════╝", seal.IconColor);
+            UIHelper.WriteBoxHeader(terminal, "* * *  S E A L   D I S C O V E R E D  * * *", seal.IconColor, 66);
             terminal.WriteLine("");
 
             await Task.Delay(800);
@@ -425,7 +424,8 @@ namespace UsurperRemake.Systems
 
             await Task.Delay(500);
 
-            terminal.WriteLine("  ═══════════════════════════════════════", "dark_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ═══════════════════════════════════════", "dark_cyan");
             terminal.WriteLine("");
 
             foreach (var line in seal.LoreText)
@@ -450,7 +450,8 @@ namespace UsurperRemake.Systems
             }
 
             terminal.WriteLine("");
-            terminal.WriteLine("  ═══════════════════════════════════════", "dark_cyan");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  ═══════════════════════════════════════", "dark_cyan");
             terminal.WriteLine("");
 
             await terminal.GetInputAsync("  Press Enter to continue...");
@@ -463,9 +464,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "bright_yellow");
-            terminal.WriteLine("║            A L L   S E V E N   S E A L S   F O U N D              ║", "bright_yellow");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "bright_yellow");
+            UIHelper.WriteBoxHeader(terminal, "A L L   S E V E N   S E A L S   F O U N D", "bright_yellow", 67);
             terminal.WriteLine("");
 
             await Task.Delay(1000);

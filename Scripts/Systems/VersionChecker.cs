@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
+using UsurperRemake.UI;
 
 namespace UsurperRemake.Systems
 {
@@ -327,10 +328,7 @@ namespace UsurperRemake.Systems
             bool isBBSMode = UsurperRemake.BBS.DoorMode.IsInDoorMode;
 
             terminal.WriteLine("");
-            terminal.SetColor("bright_yellow");
-            terminal.WriteLine("╔════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                         NEW VERSION AVAILABLE                              ║");
-            terminal.WriteLine("╚════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "NEW VERSION AVAILABLE", "bright_yellow", 76);
             terminal.SetColor("white");
             terminal.WriteLine("");
             terminal.WriteLine($"  Current version: {CurrentVersion}");

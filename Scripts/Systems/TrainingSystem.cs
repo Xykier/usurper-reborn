@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UsurperRemake.Utils;
 using UsurperRemake.Systems;
+using UsurperRemake.UI;
 
 /// <summary>
 /// Training System - D&D-style proficiency and roll mechanics
@@ -658,7 +659,7 @@ public static class TrainingSystem
         while (true)
         {
             terminal.ClearScreen();
-            terminal.WriteLine("═══ RESET TRAINING ═══", "bright_yellow");
+            UIHelper.WriteSectionHeader(terminal, "RESET TRAINING", "bright_yellow");
             terminal.WriteLine("");
             terminal.WriteLine("The Level Master leans forward, studying you carefully.", "white");
             terminal.WriteLine("");
@@ -720,11 +721,11 @@ public static class TrainingSystem
         }
 
         terminal.ClearScreen();
-        terminal.WriteLine("═══ RESET SINGLE SKILL ═══", "bright_yellow");
+        UIHelper.WriteSectionHeader(terminal, "RESET SINGLE SKILL", "bright_yellow");
         terminal.WriteLine($"Service fee: {goldCost:N0} gold", "yellow");
         terminal.WriteLine("");
         terminal.WriteLine("Num  Skill                    Level         Points Invested", "cyan");
-        terminal.WriteLine("─────────────────────────────────────────────────────────────", "cyan");
+        UIHelper.WriteDivider(terminal, 61, "cyan");
 
         int index = 1;
         foreach (var (skillId, skillName, pointsInvested) in trainedSkills)
@@ -795,7 +796,7 @@ public static class TrainingSystem
             terminal.WriteLine("But the potential remains, waiting to be reshaped.", "white");
             await Task.Delay(2000);
             terminal.WriteLine("");
-            terminal.WriteLine($"═══ SKILL RESET ═══", "bright_yellow");
+            UIHelper.WriteSectionHeader(terminal, "SKILL RESET", "bright_yellow");
             terminal.WriteLine($"{skillName} has been reset to {GetProficiencyName(defaultLevel)}.", "white");
             terminal.WriteLine($"  -{goldCost:N0} gold", "red");
             terminal.WriteLine($"  +{refunded} training points refunded", "bright_green");
@@ -843,7 +844,7 @@ public static class TrainingSystem
         }
 
         terminal.ClearScreen();
-        terminal.WriteLine("═══ RESET ALL TRAINING ═══", "bright_yellow");
+        UIHelper.WriteSectionHeader(terminal, "RESET ALL TRAINING", "bright_yellow");
         terminal.WriteLine("");
         terminal.WriteLine("This will reset ALL skill proficiencies to their defaults.", "white");
         terminal.WriteLine("");
@@ -888,7 +889,7 @@ public static class TrainingSystem
         terminal.WriteLine("\"Easy now. You are a blank slate once more.\"", "bright_cyan");
         await Task.Delay(1500);
         terminal.WriteLine("");
-        terminal.WriteLine($"═══ ALL TRAINING RESET ═══", "bright_yellow");
+        UIHelper.WriteSectionHeader(terminal, "ALL TRAINING RESET", "bright_yellow");
         terminal.WriteLine($"All skill proficiencies have been reset.", "white");
         terminal.WriteLine($"  -{goldCost:N0} gold", "red");
         terminal.WriteLine($"  +{refunded} training points refunded", "bright_green");
@@ -906,7 +907,7 @@ public static class TrainingSystem
         while (true)
         {
             terminal.ClearScreen();
-            terminal.WriteLine("═══ TRAINING CENTER ═══", "bright_yellow");
+            UIHelper.WriteSectionHeader(terminal, "TRAINING CENTER", "bright_yellow");
             terminal.WriteLine($"Available Training Points: {player.TrainingPoints}", "bright_cyan");
             terminal.WriteLine("");
 
@@ -914,7 +915,7 @@ public static class TrainingSystem
             var trainableSkills = GetTrainableSkills(player);
 
             terminal.WriteLine("Num  Skill                    Level        Progress  Cost/Pt", "cyan");
-            terminal.WriteLine("─────────────────────────────────────────────────────────────", "cyan");
+            UIHelper.WriteDivider(terminal, 61, "cyan");
 
             int index = 1;
             foreach (var (skillId, skillName) in trainableSkills)
@@ -1063,7 +1064,7 @@ public static class TrainingSystem
             var newLevel = GetSkillProficiency(player, skillId);
             string color = GetProficiencyColor(newLevel);
             terminal.WriteLine("");
-            terminal.WriteLine($"═══ SKILL IMPROVED! ═══", "bright_yellow");
+            UIHelper.WriteSectionHeader(terminal, "SKILL IMPROVED!", "bright_yellow");
             terminal.WriteLine($"{skillName} is now [{color}]{GetProficiencyName(newLevel)}[/]!", "bright_green");
 
             // Show new bonuses

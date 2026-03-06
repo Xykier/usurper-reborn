@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -319,8 +320,8 @@ namespace UsurperRemake.Systems
                     HealingPower = 40
                 },
 
-                CombatRole = CombatRole.Hybrid,
-                Abilities = new[] { "Lay on Hands", "Divine Smite", "Aura of Protection", "Holy Avenger" },
+                CombatRole = CombatRole.Bard,
+                Abilities = new[] { "Healing Melody", "War March", "Lullaby of Iron", "Battle Hymn" },
 
                 PersonalQuestName = "The Lost Opus",
                 PersonalQuestDescription = "Help Melodia recover a legendary musical score from the dungeon depths.",
@@ -618,6 +619,7 @@ namespace UsurperRemake.Systems
                         CombatRole.Healer => CharacterClass.Cleric,
                         CombatRole.Damage => CharacterClass.Assassin,
                         CombatRole.Hybrid => CharacterClass.Paladin,
+                        CombatRole.Bard => CharacterClass.Bard,
                         _ => CharacterClass.Warrior
                     },
                     // Initialize Base* fields for RecalculateStats
@@ -1245,9 +1247,7 @@ namespace UsurperRemake.Systems
         private async Task DisplayRecruitmentScene(Companion companion, TerminalEmulator terminal)
         {
             terminal.Clear();
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "bright_cyan");
-            terminal.WriteLine("║                  N E W   C O M P A N I O N                       ║", "bright_cyan");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "bright_cyan");
+            UIHelper.WriteBoxHeader(terminal, "N E W   C O M P A N I O N", "bright_cyan", 66);
             terminal.WriteLine("");
 
             terminal.WriteLine($"  {companion.Name}", "bright_white");
@@ -1278,11 +1278,18 @@ namespace UsurperRemake.Systems
             // Slow, solemn header
             terminal.WriteLine("");
             await Task.Delay(500);
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "dark_red");
-            terminal.WriteLine("║                                                                    ║", "dark_red");
-            terminal.WriteLine("║                    F   A   L   L   E   N                          ║", "dark_red");
-            terminal.WriteLine("║                                                                    ║", "dark_red");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "dark_red");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine("FALLEN", "dark_red");
+            }
+            else
+            {
+                terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗", "dark_red");
+                terminal.WriteLine("║                                                                    ║", "dark_red");
+                terminal.WriteLine("║                    F   A   L   L   E   N                          ║", "dark_red");
+                terminal.WriteLine("║                                                                    ║", "dark_red");
+                terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝", "dark_red");
+            }
             terminal.WriteLine("");
 
             await Task.Delay(2000);
@@ -1828,6 +1835,15 @@ namespace UsurperRemake.Systems
                     companion.BaseStats.MagicPower += 2 + random.Next(0, 2);
                     companion.BaseStats.HealingPower += 1 + random.Next(0, 2);
                     break;
+
+                case CombatRole.Bard:
+                    // Bards get Magic Power, Healing, Speed
+                    companion.BaseStats.HP += hpGain;
+                    companion.BaseStats.MagicPower += 3 + random.Next(0, 2);
+                    companion.BaseStats.HealingPower += 2 + random.Next(0, 2);
+                    companion.BaseStats.Speed += 1 + random.Next(0, 2);
+                    companion.BaseStats.Attack += 1;
+                    break;
             }
 
             // Update current HP tracking to new max
@@ -1880,6 +1896,76 @@ namespace UsurperRemake.Systems
 
             // Initialize healing potions based on level
             RefillCompanionPotions(companion);
+
+            // Give starting equipment appropriate to their level and role
+            EquipStartingGear(companion);
+        }
+
+        /// <summary>
+        /// Equip a companion with level-appropriate gear from the shop database
+        /// </summary>
+        private void EquipStartingGear(Companion companion)
+        {
+            int level = companion.Level;
+
+            // Pick a weapon based on combat role
+            var weaponHandedness = companion.CombatRole switch
+            {
+                CombatRole.Tank => WeaponHandedness.OneHanded, // tank uses shield
+                CombatRole.Damage => WeaponHandedness.OneHanded, // dual-wield or dagger
+                _ => WeaponHandedness.OneHanded
+            };
+
+            var weapons = EquipmentDatabase.GetShopWeapons(weaponHandedness);
+            var bestWeapon = weapons
+                .Where(w => w.MinLevel <= level)
+                .OrderByDescending(w => w.MinLevel)
+                .ThenByDescending(w => w.WeaponPower)
+                .FirstOrDefault();
+
+            if (bestWeapon != null)
+            {
+                companion.EquippedItems[EquipmentSlot.MainHand] = bestWeapon.Id;
+            }
+
+            // Tanks get a shield in off-hand
+            if (companion.CombatRole == CombatRole.Tank)
+            {
+                var shields = EquipmentDatabase.GetShopShields();
+                var bestShield = shields
+                    .Where(s => s.MinLevel <= level)
+                    .OrderByDescending(s => s.MinLevel)
+                    .ThenByDescending(s => s.Value)
+                    .FirstOrDefault();
+                if (bestShield != null)
+                {
+                    companion.EquippedItems[EquipmentSlot.OffHand] = bestShield.Id;
+                }
+            }
+
+            // Give body armor
+            var bodyArmor = EquipmentDatabase.GetShopArmor(EquipmentSlot.Body);
+            var bestBody = bodyArmor
+                .Where(a => a.MinLevel <= level)
+                .OrderByDescending(a => a.MinLevel)
+                .ThenByDescending(a => a.ArmorClass)
+                .FirstOrDefault();
+            if (bestBody != null)
+            {
+                companion.EquippedItems[EquipmentSlot.Body] = bestBody.Id;
+            }
+
+            // Give head armor
+            var headArmor = EquipmentDatabase.GetShopArmor(EquipmentSlot.Head);
+            var bestHead = headArmor
+                .Where(a => a.MinLevel <= level)
+                .OrderByDescending(a => a.MinLevel)
+                .ThenByDescending(a => a.ArmorClass)
+                .FirstOrDefault();
+            if (bestHead != null)
+            {
+                companion.EquippedItems[EquipmentSlot.Head] = bestHead.Id;
+            }
         }
 
         /// <summary>
@@ -1888,7 +1974,7 @@ namespace UsurperRemake.Systems
         public void RefillCompanionPotions(Companion companion)
         {
             // Companions get potions based on level - healers get fewer since they use spells
-            int basePotions = companion.CombatRole == CombatRole.Healer ? 2 : 5;
+            int basePotions = (companion.CombatRole == CombatRole.Healer || companion.CombatRole == CombatRole.Bard) ? 2 : 5;
             companion.HealingPotions = Math.Min(basePotions + companion.Level / 2, companion.MaxHealingPotions);
         }
 
@@ -1942,6 +2028,13 @@ namespace UsurperRemake.Systems
                         companion.BaseStats.Attack += 1;
                         companion.BaseStats.MagicPower += 2;
                         companion.BaseStats.HealingPower += 1;
+                        break;
+                    case CombatRole.Bard:
+                        companion.BaseStats.HP += hpGain;
+                        companion.BaseStats.MagicPower += 3;
+                        companion.BaseStats.HealingPower += 2;
+                        companion.BaseStats.Speed += 1;
+                        companion.BaseStats.Attack += 1;
                         break;
                 }
             }
@@ -2035,7 +2128,8 @@ namespace UsurperRemake.Systems
         Tank,
         Damage,
         Healer,
-        Hybrid
+        Hybrid,
+        Bard
     }
 
     public enum DeathType

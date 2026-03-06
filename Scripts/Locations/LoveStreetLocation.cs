@@ -105,16 +105,52 @@ public class LoveStreetLocation : BaseLocation
 
     protected override string GetMudPromptName() => "Love Street";
 
+    private void DisplayLocationSR()
+    {
+        terminal.ClearScreen();
+        terminal.WriteLine("Love Street");
+        terminal.WriteLine("");
+        terminal.WriteLine("The air is thick with perfume and promise. Beautiful creatures beckon from doorways.");
+        terminal.WriteLine("");
+
+        ShowNPCsInLocation();
+
+        terminal.WriteLine("Pleasure Houses:");
+        WriteSRMenuOption("1", "Beauty Nest");
+        WriteSRMenuOption("2", "Hall of Dreams");
+        terminal.WriteLine("");
+
+        terminal.WriteLine("Social:");
+        WriteSRMenuOption("M", "Mingle");
+        WriteSRMenuOption("D", "Take on a Date");
+        WriteSRMenuOption("G", "Gift Shop");
+        WriteSRMenuOption("V", "Gossip");
+        WriteSRMenuOption("L", "Love Potions");
+        terminal.WriteLine("");
+
+        WriteSRMenuOption("R", "Return to Main Street");
+        terminal.WriteLine("");
+
+        terminal.WriteLine($"Gold: {currentPlayer.Gold:N0}");
+        if (_charmActive || _allureActive || _passionActive)
+        {
+            var potions = new List<string>();
+            if (_charmActive) potions.Add("Charm");
+            if (_allureActive) potions.Add("Allure");
+            if (_passionActive) potions.Add("Passion");
+            terminal.WriteLine($"Active Potions: {string.Join(", ", potions)}");
+        }
+        terminal.WriteLine("");
+    }
+
     protected override void DisplayLocation()
     {
+        if (IsScreenReader) { DisplayLocationSR(); return; }
         if (IsBBSSession) { DisplayLocationBBS(); return; }
 
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"<3 LOVE STREET <3".PadLeft((77 + 17) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("<3 LOVE STREET <3", "bright_magenta", 77);
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -126,10 +162,7 @@ public class LoveStreetLocation : BaseLocation
         // Show NPCs present
         ShowNPCsInLocation();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-        terminal.WriteLine($"║{"-= PLEASURE AWAITS =-".PadLeft((77 + 21) / 2).PadRight(77)}║");
-        terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+        WriteBoxHeader("-= PLEASURE AWAITS =-", "bright_cyan", 77);
         terminal.WriteLine("");
 
         // Pleasure Houses
@@ -322,11 +355,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task VisitBeautyNest()
     {
         terminal.ClearScreen();
+        WriteBoxHeader("THE BEAUTY NEST", "bright_red", 77);
         terminal.SetColor("bright_red");
-        terminal.WriteLine("+---------------------------------------------------------------------------+");
-        terminal.WriteLine("|                     THE BEAUTY NEST                                         |");
-        terminal.WriteLine("|              Driven by Clarissa the Half-Elf                                |");
-        terminal.WriteLine("+---------------------------------------------------------------------------+");
+        terminal.WriteLine("  Driven by Clarissa the Half-Elf");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -353,35 +384,42 @@ public class LoveStreetLocation : BaseLocation
         for (int i = 0; i < Courtesans.Count; i++)
         {
             var c = Courtesans[i];
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" {i + 1}) ");
-            terminal.SetColor("bright_magenta");
-            terminal.Write($"{c.Name}");
-            terminal.SetColor("gray");
-            terminal.Write($" ({c.Race}) - ");
-            terminal.SetColor("yellow");
-            terminal.Write($"{c.Price:N0} gold");
-
-            // Disease risk indicator
-            terminal.SetColor("darkgray");
-            terminal.Write(" [Risk: ");
-            if (c.DiseaseChance >= 0.30f)
-                terminal.SetColor("red");
-            else if (c.DiseaseChance >= 0.15f)
-                terminal.SetColor("yellow");
+            if (IsScreenReader)
+            {
+                WriteSRMenuOption($"{i + 1}", $"{c.Name} ({c.Race}), {c.Price:N0}g, Risk: {GetRiskLevel(c.DiseaseChance)}");
+                terminal.WriteLine($"    {c.Description}");
+            }
             else
-                terminal.SetColor("green");
-            terminal.Write(GetRiskLevel(c.DiseaseChance));
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("]");
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.Write($" {i + 1}) ");
+                terminal.SetColor("bright_magenta");
+                terminal.Write($"{c.Name}");
+                terminal.SetColor("gray");
+                terminal.Write($" ({c.Race}) - ");
+                terminal.SetColor("yellow");
+                terminal.Write($"{c.Price:N0} gold");
 
-            terminal.SetColor("white");
-            terminal.WriteLine($"    {c.Description}");
+                // Disease risk indicator
+                terminal.SetColor("darkgray");
+                terminal.Write(" [Risk: ");
+                if (c.DiseaseChance >= 0.30f)
+                    terminal.SetColor("red");
+                else if (c.DiseaseChance >= 0.15f)
+                    terminal.SetColor("yellow");
+                else
+                    terminal.SetColor("green");
+                terminal.Write(GetRiskLevel(c.DiseaseChance));
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("]");
+
+                terminal.SetColor("white");
+                terminal.WriteLine($"    {c.Description}");
+            }
             terminal.WriteLine("");
         }
 
-        terminal.SetColor("gray");
-        terminal.WriteLine(" 0) Return");
+        WriteSRMenuOption("0", "Return");
         terminal.WriteLine("");
 
         var input = await terminal.GetInput("Choose a companion (1-9, 0 to leave): ");
@@ -394,10 +432,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task EngageWithCourtesan(Courtesan courtesan)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine($"\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine($"  {courtesan.Name} the {courtesan.Race}");
-        terminal.WriteLine($"+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader($"{courtesan.Name} the {courtesan.Race}", "bright_magenta", 77);
+        terminal.WriteLine("");
 
         terminal.SetColor("white");
         terminal.WriteLine(courtesan.IntroText);
@@ -442,11 +479,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task VisitHallOfDreams()
     {
         terminal.ClearScreen();
+        WriteBoxHeader("HALL OF DREAMS", "bright_blue", 77);
         terminal.SetColor("bright_blue");
-        terminal.WriteLine("+---------------------------------------------------------------------------+");
-        terminal.WriteLine("|                      HALL OF DREAMS                                         |");
-        terminal.WriteLine("|              Supervised by Giovanni the Gnome                               |");
-        terminal.WriteLine("+---------------------------------------------------------------------------+");
+        terminal.WriteLine("  Supervised by Giovanni the Gnome");
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -473,35 +508,42 @@ public class LoveStreetLocation : BaseLocation
         for (int i = 0; i < Gigolos.Count; i++)
         {
             var g = Gigolos[i];
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" {i + 1}) ");
-            terminal.SetColor("bright_blue");
-            terminal.Write($"{g.Name}");
-            terminal.SetColor("gray");
-            terminal.Write($" ({g.Race}) - ");
-            terminal.SetColor("yellow");
-            terminal.Write($"{g.Price:N0} gold");
-
-            // Disease risk indicator
-            terminal.SetColor("darkgray");
-            terminal.Write(" [Risk: ");
-            if (g.DiseaseChance >= 0.30f)
-                terminal.SetColor("red");
-            else if (g.DiseaseChance >= 0.15f)
-                terminal.SetColor("yellow");
+            if (IsScreenReader)
+            {
+                WriteSRMenuOption($"{i + 1}", $"{g.Name} ({g.Race}), {g.Price:N0}g, Risk: {GetRiskLevel(g.DiseaseChance)}");
+                terminal.WriteLine($"    {g.Description}");
+            }
             else
-                terminal.SetColor("green");
-            terminal.Write(GetRiskLevel(g.DiseaseChance));
-            terminal.SetColor("darkgray");
-            terminal.WriteLine("]");
+            {
+                terminal.SetColor("bright_yellow");
+                terminal.Write($" {i + 1}) ");
+                terminal.SetColor("bright_blue");
+                terminal.Write($"{g.Name}");
+                terminal.SetColor("gray");
+                terminal.Write($" ({g.Race}) - ");
+                terminal.SetColor("yellow");
+                terminal.Write($"{g.Price:N0} gold");
 
-            terminal.SetColor("white");
-            terminal.WriteLine($"    {g.Description}");
+                // Disease risk indicator
+                terminal.SetColor("darkgray");
+                terminal.Write(" [Risk: ");
+                if (g.DiseaseChance >= 0.30f)
+                    terminal.SetColor("red");
+                else if (g.DiseaseChance >= 0.15f)
+                    terminal.SetColor("yellow");
+                else
+                    terminal.SetColor("green");
+                terminal.Write(GetRiskLevel(g.DiseaseChance));
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("]");
+
+                terminal.SetColor("white");
+                terminal.WriteLine($"    {g.Description}");
+            }
             terminal.WriteLine("");
         }
 
-        terminal.SetColor("gray");
-        terminal.WriteLine(" 0) Return");
+        WriteSRMenuOption("0", "Return");
         terminal.WriteLine("");
 
         var input = await terminal.GetInput("Choose a companion (1-9, 0 to leave): ");
@@ -514,10 +556,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task EngageWithGigolo(Gigolo gigolo)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_blue");
-        terminal.WriteLine($"\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine($"  {gigolo.Name} the {gigolo.Race}");
-        terminal.WriteLine($"+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader($"{gigolo.Name} the {gigolo.Race}", "bright_blue", 77);
+        terminal.WriteLine("");
 
         terminal.SetColor("white");
         terminal.WriteLine(gigolo.IntroText);
@@ -562,10 +603,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task ShowIntimateEncounter(string partnerName, string race, long price, float diseaseChance)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                              A Night of Passion");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("A NIGHT OF PASSION", "bright_magenta", 77);
+        terminal.WriteLine("");
 
         // Generate encounter based on price tier
         await GenerateIntimateScene(partnerName, race, price);
@@ -591,9 +631,7 @@ public class LoveStreetLocation : BaseLocation
         };
 
         terminal.WriteLine("");
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("+---------------------------------------------------------------------------+");
-        terminal.WriteLine($" ** Night of Pleasure with {partnerName} **");
+        WriteSectionHeader($"Night of Pleasure with {partnerName}", "bright_yellow");
         terminal.WriteLine("");
         terminal.SetColor("white");
         terminal.WriteLine($" Experience gained: {xpGained:N0}");
@@ -810,10 +848,7 @@ public class LoveStreetLocation : BaseLocation
         if (roll < diseaseChance)
         {
             terminal.WriteLine("");
-            terminal.SetColor("red");
-            terminal.WriteLine("+---------------------------------------------------------------------------+");
-            terminal.WriteLine("                         SOMETHING IS WRONG!");
-            terminal.WriteLine("+---------------------------------------------------------------------------+");
+            WriteBoxHeader("SOMETHING IS WRONG!", "red", 77);
             terminal.WriteLine("");
             terminal.WriteLine("As you leave, you start to feel pain in your nether regions!");
             terminal.WriteLine("By the gods! You've been infected with a venereal disease!");
@@ -881,10 +916,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task Mingle()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                              MINGLE");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("MINGLE", "bright_magenta", 77);
+        terminal.WriteLine("");
 
         // Get NPCs at Love Street first
         var npcsHere = GetLiveNPCsAtLocation();
@@ -939,44 +973,59 @@ public class LoveStreetLocation : BaseLocation
             var romanceType = RomanceTracker.Instance.GetRelationType(npc.ID);
             int relationLevel = RelationshipSystem.GetRelationshipStatus(currentPlayer, npc);
 
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" [{i + 1}] ");
-            terminal.SetColor("white");
-            terminal.Write($"{npc.Name}");
-            terminal.SetColor("gray");
-            terminal.Write($" (Lv{npc.Level} {npc.Race} {npc.Class})");
-
-            // Relationship tag
-            string tag = romanceType switch
+            if (IsScreenReader)
             {
-                RomanceRelationType.Spouse => " [Spouse]",
-                RomanceRelationType.Lover => " [Lover]",
-                RomanceRelationType.FWB => " [FWB]",
-                _ => relationLevel <= 40 ? " [Friend]" : relationLevel <= 70 ? "" : " [Wary]"
-            };
-            if (!string.IsNullOrEmpty(tag))
-            {
-                terminal.SetColor(romanceType == RomanceRelationType.Spouse ? "bright_red" :
-                                  romanceType == RomanceRelationType.Lover ? "bright_magenta" :
-                                  romanceType == RomanceRelationType.FWB ? "cyan" :
-                                  tag == " [Friend]" ? "bright_green" : "darkgray");
-                terminal.Write(tag);
+                string tag = romanceType switch
+                {
+                    RomanceRelationType.Spouse => " (Spouse)",
+                    RomanceRelationType.Lover => " (Lover)",
+                    RomanceRelationType.FWB => " (FWB)",
+                    _ => relationLevel <= 40 ? " (Friend)" : relationLevel <= 70 ? "" : " (Wary)"
+                };
+                var profile = npc.Brain?.Personality;
+                string hint = profile != null ? $", {GetPersonalityHint(profile)}" : "";
+                WriteSRMenuOption($"{i + 1}", $"{npc.Name}, Lv{npc.Level} {npc.Race} {npc.Class}{tag}{hint}");
             }
-
-            // Personality hint
-            var profile = npc.Brain?.Personality;
-            if (profile != null)
+            else
             {
-                terminal.SetColor("darkgray");
-                terminal.Write($" - {GetPersonalityHint(profile)}");
-            }
+                terminal.SetColor("bright_yellow");
+                terminal.Write($" [{i + 1}] ");
+                terminal.SetColor("white");
+                terminal.Write($"{npc.Name}");
+                terminal.SetColor("gray");
+                terminal.Write($" (Lv{npc.Level} {npc.Race} {npc.Class})");
 
-            terminal.WriteLine("");
+                // Relationship tag
+                string tag = romanceType switch
+                {
+                    RomanceRelationType.Spouse => " [Spouse]",
+                    RomanceRelationType.Lover => " [Lover]",
+                    RomanceRelationType.FWB => " [FWB]",
+                    _ => relationLevel <= 40 ? " [Friend]" : relationLevel <= 70 ? "" : " [Wary]"
+                };
+                if (!string.IsNullOrEmpty(tag))
+                {
+                    terminal.SetColor(romanceType == RomanceRelationType.Spouse ? "bright_red" :
+                                      romanceType == RomanceRelationType.Lover ? "bright_magenta" :
+                                      romanceType == RomanceRelationType.FWB ? "cyan" :
+                                      tag == " [Friend]" ? "bright_green" : "darkgray");
+                    terminal.Write(tag);
+                }
+
+                // Personality hint
+                var profile = npc.Brain?.Personality;
+                if (profile != null)
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write($" - {GetPersonalityHint(profile)}");
+                }
+
+                terminal.WriteLine("");
+            }
         }
 
         terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Return");
+        WriteSRMenuOption("0", "Return");
         terminal.WriteLine("");
 
         var input = await terminal.GetInput("Who catches your eye? ");
@@ -995,10 +1044,9 @@ public class LoveStreetLocation : BaseLocation
         while (stayInMenu)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine($"\n+---------------------------------------------------------------------------+");
-            terminal.WriteLine($"  Spending time with {npc.Name}");
-            terminal.WriteLine($"+---------------------------------------------------------------------------+\n");
+            terminal.WriteLine("");
+            WriteBoxHeader($"Spending time with {npc.Name}", "bright_magenta", 77);
+            terminal.WriteLine("");
 
             // Show NPC details
             var romanceType = RomanceTracker.Instance.GetRelationType(npc.ID);
@@ -1026,67 +1074,12 @@ public class LoveStreetLocation : BaseLocation
             bool alreadyFlirted = _flirtedThisVisit.Contains(npc.ID);
 
             terminal.WriteLine("");
-            if (!alreadyFlirted)
-            {
-                terminal.SetColor("darkgray");
-                terminal.Write(" [");
-                terminal.SetColor("bright_magenta");
-                terminal.Write("F");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("white");
-                terminal.WriteLine("Flirt");
-            }
-            else
-            {
-                terminal.SetColor("darkgray");
-                terminal.WriteLine(" [F] Flirt (already tried)");
-            }
-
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("bright_green");
-            terminal.Write("C");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Compliment");
-
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("yellow");
-            terminal.Write("B");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine($"Buy a Drink ({GameConfig.LoveStreetDrinkCost}g)");
-
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("bright_cyan");
-            terminal.Write("D");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Ask on a Date");
-
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("gray");
-            terminal.Write("T");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Talk");
-
-            terminal.SetColor("darkgray");
-            terminal.Write(" [");
-            terminal.SetColor("red");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine("Back");
+            WriteSRMenuOption("F", alreadyFlirted ? "Flirt (already tried)" : "Flirt");
+            WriteSRMenuOption("C", "Compliment");
+            WriteSRMenuOption("B", $"Buy a Drink ({GameConfig.LoveStreetDrinkCost}g)");
+            WriteSRMenuOption("D", "Ask on a Date");
+            WriteSRMenuOption("T", "Talk");
+            WriteSRMenuOption("0", "Back");
 
             terminal.WriteLine("");
 
@@ -1307,10 +1300,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task TakeOnDate()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                           TAKE SOMEONE ON A DATE");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("TAKE SOMEONE ON A DATE", "bright_magenta", 77);
+        terminal.WriteLine("");
 
         // Get potential dates (lovers, spouses, or NPCs with good relations)
         var romance = RomanceTracker.Instance;
@@ -1357,17 +1349,11 @@ public class LoveStreetLocation : BaseLocation
         for (int i = 0; i < potentialDates.Count; i++)
         {
             var (id, name, type) = potentialDates[i];
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" [{i + 1}] ");
-            terminal.SetColor(type == "Spouse" ? "bright_red" : type == "Lover" ? "bright_magenta" : "white");
-            terminal.Write($"{name}");
-            terminal.SetColor("gray");
-            terminal.WriteLine($" ({type})");
+            WriteSRMenuOption($"{i + 1}", $"{name} ({type})");
         }
 
         terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Cancel");
+        WriteSRMenuOption("0", "Cancel");
         terminal.WriteLine("");
 
         var input = await terminal.GetInput("Choose: ");
@@ -1397,22 +1383,20 @@ public class LoveStreetLocation : BaseLocation
     private async Task GoOnDate(NPC partner)
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine($"\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine($"  A Date with {partner.Name}");
-        terminal.WriteLine($"+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader($"A Date with {partner.Name}", "bright_magenta", 77);
+        terminal.WriteLine("");
 
         terminal.SetColor("white");
-        terminal.WriteLine("Where would you like to take them?\n");
-
-        terminal.WriteLine(" [1] Romantic Dinner (500 gold) - Fine dining and conversation");
-        terminal.WriteLine(" [2] Moonlit Walk (free) - Stroll together and hold hands");
-        terminal.WriteLine(" [3] Theater Performance (1000 gold) - Watch a show together");
-        terminal.WriteLine(" [4] Picnic by the Lake (200 gold) - Quiet time in nature");
-        terminal.WriteLine(" [5] Dancing at the Inn (300 gold) - Dance the night away");
+        terminal.WriteLine("Where would you like to take them?");
         terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Cancel");
+
+        WriteSRMenuOption("1", "Romantic Dinner (500g) - Fine dining and conversation");
+        WriteSRMenuOption("2", "Moonlit Walk (free) - Stroll together and hold hands");
+        WriteSRMenuOption("3", "Theater Performance (1000g) - Watch a show together");
+        WriteSRMenuOption("4", "Picnic by the Lake (200g) - Quiet time in nature");
+        WriteSRMenuOption("5", "Dancing at the Inn (300g) - Dance the night away");
+        WriteSRMenuOption("0", "Cancel");
         terminal.WriteLine("");
 
         var input = await terminal.GetInput("Choose your date activity: ");
@@ -1582,10 +1566,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task VisitGiftShop()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                           LOVE STREET GIFT SHOP");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("LOVE STREET GIFT SHOP", "bright_yellow", 77);
+        terminal.WriteLine("");
 
         terminal.SetColor("white");
         terminal.WriteLine("\"Welcome, welcome! Looking for something special for someone special?\"\n");
@@ -1606,23 +1589,13 @@ public class LoveStreetLocation : BaseLocation
         for (int i = 0; i < gifts.Length; i++)
         {
             var (name, cost, boost) = gifts[i];
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" [{i + 1}] ");
-            terminal.SetColor(currentPlayer.Gold >= cost ? "white" : "darkgray");
-            terminal.Write($"{name}");
-            terminal.SetColor("gray");
-            terminal.Write($" ({cost:N0}g)");
-            if (cost >= 25000)
-            {
-                terminal.SetColor("magenta");
-                terminal.Write(" *Luxury*");
-            }
-            terminal.WriteLine("");
+            string luxury = cost >= 25000 ? " (Luxury)" : "";
+            string afford = currentPlayer.Gold < cost ? " (can't afford)" : "";
+            WriteSRMenuOption($"{i + 1}", $"{name}, {cost:N0}g{luxury}{afford}");
         }
 
         terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Leave shop");
+        WriteSRMenuOption("0", "Leave shop");
         terminal.WriteLine("");
 
         terminal.SetColor("yellow");
@@ -1680,17 +1653,11 @@ public class LoveStreetLocation : BaseLocation
                 _ => ""
             };
 
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" [{i + 1}] ");
-            terminal.SetColor("white");
-            terminal.Write($"{npc.Name}");
-            terminal.SetColor("gray");
-            terminal.WriteLine(tag);
+            WriteSRMenuOption($"{i + 1}", $"{npc.Name}{tag}");
         }
 
         terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Cancel");
+        WriteSRMenuOption("0", "Cancel");
         terminal.WriteLine("");
 
         var recipientInput = await terminal.GetInput("Give to: ");
@@ -1768,10 +1735,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task Gossip()
     {
         terminal.ClearScreen();
-        terminal.SetColor("magenta");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                           MADAME WHISPERS' GOSSIP");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("MADAME WHISPERS' GOSSIP", "magenta", 77);
+        terminal.WriteLine("");
 
         terminal.SetColor("gray");
         terminal.WriteLine("An ancient crone beckons you into a shadowy alcove.");
@@ -1779,14 +1745,11 @@ public class LoveStreetLocation : BaseLocation
         terminal.WriteLine("\"Come, come... Madame Whispers knows all the secrets of the heart.\"");
         terminal.WriteLine("");
 
-        terminal.SetColor("white");
-        terminal.WriteLine($" [1] Who's Together ({GameConfig.LoveStreetGossipCostBasic}g) - All the couples");
-        terminal.WriteLine($" [2] Juicy Scandals ({GameConfig.LoveStreetGossipCostScandals}g) - Affairs and intrigue");
-        terminal.WriteLine($" [3] Who's Available ({GameConfig.LoveStreetGossipCostBasic}g) - Singles looking for love");
-        terminal.WriteLine($" [4] Investigate Someone ({GameConfig.LoveStreetGossipCostInvestigate}g) - Deep secrets");
-        terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Leave");
+        WriteSRMenuOption("1", $"Who's Together ({GameConfig.LoveStreetGossipCostBasic}g) - All the couples");
+        WriteSRMenuOption("2", $"Juicy Scandals ({GameConfig.LoveStreetGossipCostScandals}g) - Affairs and intrigue");
+        WriteSRMenuOption("3", $"Who's Available ({GameConfig.LoveStreetGossipCostBasic}g) - Singles looking for love");
+        WriteSRMenuOption("4", $"Investigate Someone ({GameConfig.LoveStreetGossipCostInvestigate}g) - Deep secrets");
+        WriteSRMenuOption("0", "Leave");
         terminal.WriteLine("");
 
         var input = await terminal.GetInput("What secrets do you seek? ");
@@ -2030,12 +1993,7 @@ public class LoveStreetLocation : BaseLocation
 
         for (int i = 0; i < npcs.Count; i++)
         {
-            terminal.SetColor("bright_yellow");
-            terminal.Write($" [{i + 1}] ");
-            terminal.SetColor("white");
-            terminal.Write($"{npcs[i].Name}");
-            terminal.SetColor("gray");
-            terminal.WriteLine($" (Lv{npcs[i].Level} {npcs[i].Race})");
+            WriteSRMenuOption($"{i + 1}", $"{npcs[i].Name}, Lv{npcs[i].Level} {npcs[i].Race}");
         }
 
         terminal.WriteLine("");
@@ -2157,10 +2115,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task LovePotions()
     {
         terminal.ClearScreen();
-        terminal.SetColor("magenta");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                        MADAME ZARA'S LOVE POTIONS");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("MADAME ZARA'S LOVE POTIONS", "magenta", 77);
+        terminal.WriteLine("");
 
         terminal.SetColor("gray");
         terminal.WriteLine("An old witch cackles as you approach her bubbling cauldron.");
@@ -2168,46 +2125,12 @@ public class LoveStreetLocation : BaseLocation
         terminal.WriteLine("\"Looking for a little... magical assistance in matters of the heart?\"");
         terminal.WriteLine("");
 
-        terminal.SetColor("white");
-        terminal.Write($" [1] Philter of Charm ");
-        terminal.SetColor("yellow");
-        terminal.Write($"({GameConfig.LoveStreetCharmPotionCost}g)");
-        terminal.SetColor("gray");
-        terminal.Write($" - +{GameConfig.LoveStreetCharmBonus} CHA for this visit");
-        if (_charmActive) { terminal.SetColor("bright_green"); terminal.Write(" [ACTIVE]"); }
-        terminal.WriteLine("");
-
-        terminal.SetColor("white");
-        terminal.Write($" [2] Elixir of Allure ");
-        terminal.SetColor("yellow");
-        terminal.Write($"({GameConfig.LoveStreetAllurePotionCost}g)");
-        terminal.SetColor("gray");
-        terminal.Write($" - Next flirt auto-succeeds");
-        if (_allureActive) { terminal.SetColor("bright_green"); terminal.Write(" [ACTIVE]"); }
-        terminal.WriteLine("");
-
-        terminal.SetColor("white");
-        terminal.Write($" [3] Draught of Forgetting ");
-        terminal.SetColor("yellow");
-        terminal.Write($"({GameConfig.LoveStreetForgetPotionCost}g)");
-        terminal.SetColor("gray");
-        terminal.WriteLine($" - Reduce partner jealousy by {GameConfig.LoveStreetJealousyReduction}");
-
-        terminal.SetColor("white");
-        terminal.Write($" [4] Passion Potion ");
-        terminal.SetColor("yellow");
-        terminal.Write($"({GameConfig.LoveStreetPassionPotionCost}g)");
-        terminal.SetColor("gray");
-        terminal.Write($" - Next date guarantees intimacy");
-        if (_passionActive) { terminal.SetColor("bright_green"); terminal.Write(" [ACTIVE]"); }
-        terminal.WriteLine("");
-
-        terminal.WriteLine("");
-        terminal.SetColor("white");
-        terminal.WriteLine(" [5] My Romance Stats - View your romantic history");
-        terminal.WriteLine("");
-        terminal.SetColor("gray");
-        terminal.WriteLine(" [0] Leave");
+        WriteSRMenuOption("1", $"Philter of Charm ({GameConfig.LoveStreetCharmPotionCost}g) - +{GameConfig.LoveStreetCharmBonus} CHA for this visit{(_charmActive ? " (ACTIVE)" : "")}");
+        WriteSRMenuOption("2", $"Elixir of Allure ({GameConfig.LoveStreetAllurePotionCost}g) - Next flirt auto-succeeds{(_allureActive ? " (ACTIVE)" : "")}");
+        WriteSRMenuOption("3", $"Draught of Forgetting ({GameConfig.LoveStreetForgetPotionCost}g) - Reduce partner jealousy by {GameConfig.LoveStreetJealousyReduction}");
+        WriteSRMenuOption("4", $"Passion Potion ({GameConfig.LoveStreetPassionPotionCost}g) - Next date guarantees intimacy{(_passionActive ? " (ACTIVE)" : "")}");
+        WriteSRMenuOption("5", "My Romance Stats - View your romantic history");
+        WriteSRMenuOption("0", "Leave");
         terminal.WriteLine("");
 
         terminal.SetColor("yellow");
@@ -2359,10 +2282,9 @@ public class LoveStreetLocation : BaseLocation
     private async Task ShowRomanceStats()
     {
         terminal.ClearScreen();
-        terminal.SetColor("bright_magenta");
-        terminal.WriteLine("\n+---------------------------------------------------------------------------+");
-        terminal.WriteLine("                           YOUR ROMANTIC LIFE");
-        terminal.WriteLine("+---------------------------------------------------------------------------+\n");
+        terminal.WriteLine("");
+        WriteBoxHeader("YOUR ROMANTIC LIFE", "bright_magenta", 77);
+        terminal.WriteLine("");
 
         var romance = RomanceTracker.Instance;
 

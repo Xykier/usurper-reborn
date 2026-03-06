@@ -178,10 +178,7 @@ namespace UsurperRemake.Systems
 
         private void DrawNoBossScreen(TerminalEmulator terminal)
         {
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "WORLD BOSS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "WORLD BOSS", "bright_magenta");
             terminal.WriteLine("");
             terminal.SetColor("gray");
             terminal.WriteLine("  No World Boss is active right now.");
@@ -199,10 +196,7 @@ namespace UsurperRemake.Systems
             string bossTitle = bossDef != null ? $"{bossDef.Name}, {bossDef.Title}" : boss.BossName;
             int phase = bossData?.CurrentPhase ?? 1;
 
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            { const string t = "WORLD BOSS"; int l = (78 - t.Length) / 2, r = 78 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            UIHelper.WriteBoxHeader(terminal, "WORLD BOSS", "bright_magenta");
             terminal.WriteLine("");
 
             // Boss name and phase
@@ -216,12 +210,19 @@ namespace UsurperRemake.Systems
 
             // HP bar
             double hpPercent = boss.MaxHP > 0 ? (double)boss.CurrentHP / boss.MaxHP * 100 : 0;
-            int barFilled = Math.Clamp((int)(hpPercent / 5), 0, 20);
-            string hpBar = new string('█', barFilled) + new string('░', 20 - barFilled);
             string hpColor = hpPercent > 50 ? "bright_green" : hpPercent > 25 ? "bright_yellow" : "bright_red";
 
             terminal.SetColor(hpColor);
-            terminal.WriteLine($"  HP: [{hpBar}] {boss.CurrentHP:N0} / {boss.MaxHP:N0} ({hpPercent:F1}%)");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal.WriteLine($"  HP: {boss.CurrentHP:N0} / {boss.MaxHP:N0} ({hpPercent:F1}%)");
+            }
+            else
+            {
+                int barFilled = Math.Clamp((int)(hpPercent / 5), 0, 20);
+                string hpBar = new string('█', barFilled) + new string('░', 20 - barFilled);
+                terminal.WriteLine($"  HP: [{hpBar}] {boss.CurrentHP:N0} / {boss.MaxHP:N0} ({hpPercent:F1}%)");
+            }
 
             // Time remaining
             var timeLeft = boss.ExpiresAt - DateTime.UtcNow;
@@ -252,7 +253,7 @@ namespace UsurperRemake.Systems
             long totalDamage = leaderboard.Sum(e => e.DamageDealt);
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  ═══ Damage Leaderboard ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Damage Leaderboard" : "  ═══ Damage Leaderboard ═══");
             for (int i = 0; i < leaderboard.Count; i++)
             {
                 var entry = leaderboard[i];
@@ -346,14 +347,22 @@ namespace UsurperRemake.Systems
 
                 // ─── Round header ───
                 double hpPct = currentBoss.MaxHP > 0 ? (double)currentBoss.CurrentHP / currentBoss.MaxHP * 100 : 0;
-                int barFilled = Math.Clamp((int)(hpPct / 5), 0, 20);
-                string hpBar = new string('█', barFilled) + new string('░', 20 - barFilled);
                 string hpColor = hpPct > 50 ? "bright_green" : hpPct > 25 ? "bright_yellow" : "bright_red";
 
                 terminal.SetColor("white");
-                terminal.WriteLine($"  ─── Round {state.Round} ───");
+                if (GameConfig.ScreenReaderMode)
+                    terminal.WriteLine($"  Round {state.Round}");
+                else
+                    terminal.WriteLine($"  ─── Round {state.Round} ───");
                 terminal.SetColor(hpColor);
-                terminal.WriteLine($"  Boss HP: [{hpBar}] {currentBoss.CurrentHP:N0}/{currentBoss.MaxHP:N0} ({hpPct:F1}%)");
+                if (GameConfig.ScreenReaderMode)
+                    terminal.WriteLine($"  Boss HP: {currentBoss.CurrentHP:N0}/{currentBoss.MaxHP:N0} ({hpPct:F1}%)");
+                else
+                {
+                    int barFilled = Math.Clamp((int)(hpPct / 5), 0, 20);
+                    string hpBar = new string('█', barFilled) + new string('░', 20 - barFilled);
+                    terminal.WriteLine($"  Boss HP: [{hpBar}] {currentBoss.CurrentHP:N0}/{currentBoss.MaxHP:N0} ({hpPct:F1}%)");
+                }
                 terminal.SetColor("cyan");
                 terminal.WriteLine($"  Your HP: {player.HP}/{player.MaxHP}  Mana: {player.Mana}/{player.MaxMana}  Phase: {bossData.CurrentPhase}");
 
@@ -508,7 +517,7 @@ namespace UsurperRemake.Systems
             // Session summary
             terminal.WriteLine("");
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine($"  ═══ Combat Session Summary ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Combat Session Summary" : "  ═══ Combat Session Summary ═══");
             terminal.SetColor("white");
             terminal.WriteLine($"  Rounds fought: {state.Round}");
             terminal.WriteLine($"  Damage dealt:  {state.SessionDamage:N0}");
@@ -526,55 +535,71 @@ namespace UsurperRemake.Systems
         private void ShowWorldBossActionMenu(TerminalEmulator terminal, Character player,
             Dictionary<string, int> cooldowns)
         {
-            terminal.SetColor("green");
-            terminal.WriteLine("╔═══════════════════════════════════════╗");
-            terminal.Write("║");
-            terminal.SetColor("bright_white");
-            terminal.Write("           CHOOSE YOUR ACTION          ");
-            terminal.SetColor("green");
-            terminal.WriteLine("║");
-            terminal.WriteLine("╠═══════════════════════════════════════╣");
-
-            // Basic actions
-            terminal.Write("║ ");
-            terminal.SetColor("bright_white"); terminal.Write("[A]");
-            terminal.SetColor("cyan"); terminal.Write("ttack  ");
-            terminal.SetColor("bright_white"); terminal.Write("[C]");
-            terminal.SetColor("cyan"); terminal.Write("ast Spell  ");
-            terminal.SetColor("bright_white"); terminal.Write("[D]");
-            terminal.SetColor("cyan"); terminal.Write("efend     ");
-            terminal.SetColor("green"); terminal.WriteLine("║");
-
-            terminal.Write("║ ");
-            terminal.SetColor("bright_white"); terminal.Write("[I]");
-            terminal.SetColor("cyan"); terminal.Write("tem    ");
-            terminal.SetColor("bright_white"); terminal.Write("[P]");
-            terminal.SetColor("cyan"); terminal.Write("ower Attack ");
-            terminal.SetColor("bright_white"); terminal.Write("[E]");
-            terminal.SetColor("cyan"); terminal.Write("Precise   ");
-            terminal.SetColor("green"); terminal.WriteLine("║");
-
-            // Class abilities
-            var abilities = ClassAbilitySystem.GetAvailableAbilities(player);
-            if (abilities.Count > 0)
+            if (GameConfig.ScreenReaderMode)
             {
-                terminal.Write("║ ");
-                terminal.SetColor("bright_white"); terminal.Write("[L]");
-                terminal.SetColor("cyan"); terminal.Write("Ability ");
-                terminal.SetColor("bright_white"); terminal.Write("[R]");
-                terminal.SetColor("cyan"); terminal.Write("etreat                   ");
-                terminal.SetColor("green"); terminal.WriteLine("║");
+                terminal.SetColor("bright_white");
+                terminal.WriteLine("  CHOOSE YOUR ACTION");
+                terminal.SetColor("cyan");
+                terminal.WriteLine("  [A] Attack  [C] Cast Spell  [D] Defend");
+                terminal.WriteLine("  [I] Item  [P] Power Attack  [E] Precise");
+                var abilities = ClassAbilitySystem.GetAvailableAbilities(player);
+                if (abilities.Count > 0)
+                    terminal.WriteLine("  [L] Ability  [R] Retreat");
+                else
+                    terminal.WriteLine("  [R] Retreat");
             }
             else
             {
-                terminal.Write("║ ");
-                terminal.SetColor("bright_white"); terminal.Write("[R]");
-                terminal.SetColor("cyan"); terminal.Write("etreat                              ");
-                terminal.SetColor("green"); terminal.WriteLine("║");
-            }
+                terminal.SetColor("green");
+                terminal.WriteLine("╔═══════════════════════════════════════╗");
+                terminal.Write("║");
+                terminal.SetColor("bright_white");
+                terminal.Write("           CHOOSE YOUR ACTION          ");
+                terminal.SetColor("green");
+                terminal.WriteLine("║");
+                terminal.WriteLine("╠═══════════════════════════════════════╣");
 
-            terminal.SetColor("green");
-            terminal.WriteLine("╚═══════════════════════════════════════╝");
+                // Basic actions
+                terminal.Write("║ ");
+                terminal.SetColor("bright_white"); terminal.Write("[A]");
+                terminal.SetColor("cyan"); terminal.Write("ttack  ");
+                terminal.SetColor("bright_white"); terminal.Write("[C]");
+                terminal.SetColor("cyan"); terminal.Write("ast Spell  ");
+                terminal.SetColor("bright_white"); terminal.Write("[D]");
+                terminal.SetColor("cyan"); terminal.Write("efend     ");
+                terminal.SetColor("green"); terminal.WriteLine("║");
+
+                terminal.Write("║ ");
+                terminal.SetColor("bright_white"); terminal.Write("[I]");
+                terminal.SetColor("cyan"); terminal.Write("tem    ");
+                terminal.SetColor("bright_white"); terminal.Write("[P]");
+                terminal.SetColor("cyan"); terminal.Write("ower Attack ");
+                terminal.SetColor("bright_white"); terminal.Write("[E]");
+                terminal.SetColor("cyan"); terminal.Write("Precise   ");
+                terminal.SetColor("green"); terminal.WriteLine("║");
+
+                // Class abilities
+                var abilities = ClassAbilitySystem.GetAvailableAbilities(player);
+                if (abilities.Count > 0)
+                {
+                    terminal.Write("║ ");
+                    terminal.SetColor("bright_white"); terminal.Write("[L]");
+                    terminal.SetColor("cyan"); terminal.Write("Ability ");
+                    terminal.SetColor("bright_white"); terminal.Write("[R]");
+                    terminal.SetColor("cyan"); terminal.Write("etreat                   ");
+                    terminal.SetColor("green"); terminal.WriteLine("║");
+                }
+                else
+                {
+                    terminal.Write("║ ");
+                    terminal.SetColor("bright_white"); terminal.Write("[R]");
+                    terminal.SetColor("cyan"); terminal.Write("etreat                              ");
+                    terminal.SetColor("green"); terminal.WriteLine("║");
+                }
+
+                terminal.SetColor("green");
+                terminal.WriteLine("╚═══════════════════════════════════════╝");
+            }
 
             terminal.SetColor("white");
             terminal.Write("  Action: ");
@@ -730,7 +755,7 @@ namespace UsurperRemake.Systems
             }
 
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  ─── Available Spells ───");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Available Spells" : "  ─── Available Spells ───");
             var castableSpells = new List<SpellSystem.SpellInfo>();
             foreach (var spell in availableSpells)
             {
@@ -836,7 +861,7 @@ namespace UsurperRemake.Systems
             }
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  ─── Class Abilities ───");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Class Abilities" : "  ─── Class Abilities ───");
             var usable = new List<(int idx, ClassAbilitySystem.ClassAbility ability)>();
             for (int i = 0; i < abilities.Count; i++)
             {

@@ -33,9 +33,16 @@ namespace UsurperRemake.Locations
             {
                 term.SetColor("bright_red");
                 term.WriteLine("");
-                term.WriteLine("═══════════════════════════════════════");
-                term.WriteLine("          ACCESS DENIED");
-                term.WriteLine("═══════════════════════════════════════");
+                if (player.ScreenReaderMode)
+                {
+                    term.WriteLine("ACCESS DENIED");
+                }
+                else
+                {
+                    term.WriteLine("═══════════════════════════════════════");
+                    term.WriteLine("          ACCESS DENIED");
+                    term.WriteLine("═══════════════════════════════════════");
+                }
                 term.WriteLine("");
                 term.SetColor("red");
                 term.WriteLine(reason);
@@ -215,17 +222,96 @@ namespace UsurperRemake.Locations
             "Distant laughter, low and brief, comes from somewhere unseen.",
         };
 
+        private void DisplayLocationSR()
+        {
+            terminal.ClearScreen();
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("Dark Alley");
+            terminal.WriteLine("");
+
+            terminal.SetColor("gray");
+            terminal.WriteLine("Torches sputter in the moist air. Whispers of illicit trade echo between crooked doorways.");
+            terminal.WriteLine("");
+
+            // Alignment info
+            var alignment = AlignmentSystem.Instance.GetAlignment(currentPlayer);
+            var (alignText, _) = AlignmentSystem.Instance.GetAlignmentDisplay(currentPlayer);
+            var priceModifier = AlignmentSystem.Instance.GetPriceModifier(currentPlayer, isShadyShop: true);
+            if (alignment == AlignmentSystem.AlignmentType.Holy || alignment == AlignmentSystem.AlignmentType.Good)
+            {
+                terminal.SetColor("yellow");
+                terminal.WriteLine($"Prices {(int)((priceModifier - 1.0f) * 100)}% higher for {alignText} alignment.");
+            }
+            else if (alignment == AlignmentSystem.AlignmentType.Dark || alignment == AlignmentSystem.AlignmentType.Evil)
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine($"{(int)((1.0f - priceModifier) * 100)}% discount for {alignText} alignment.");
+            }
+            terminal.WriteLine("");
+
+            ShowNPCsInLocation();
+
+            terminal.SetColor("cyan");
+            terminal.WriteLine("Shady Establishments:");
+            WriteSRMenuOption("D", "Drug Palace");
+            WriteSRMenuOption("S", "Steroid Shop");
+            WriteSRMenuOption("O", "Orbs Health Club");
+            WriteSRMenuOption("G", "Groggo's Magic Services");
+            WriteSRMenuOption("B", "Bob's Beer Hut");
+            WriteSRMenuOption("A", "Alchemist's Heaven");
+            terminal.WriteLine("");
+
+            bool undergroundLocked = !IsUndergroundAccessAllowed();
+            var shadowsStanding = FactionSystem.Instance?.FactionStanding[Faction.TheShadows] ?? 0;
+            terminal.SetColor("dark_red");
+            terminal.Write("Underground Services");
+            if (undergroundLocked)
+            {
+                terminal.SetColor("red");
+                terminal.Write($" (Locked, standing: {shadowsStanding:N0}, need -50+)");
+            }
+            terminal.WriteLine(":");
+            string lockNote = undergroundLocked ? " (locked)" : "";
+            WriteSRMenuOption("P", $"Pickpocket{lockNote}");
+            WriteSRMenuOption("F", $"Fence Stolen Goods{lockNote}");
+            WriteSRMenuOption("C", $"Gambling Den{lockNote}");
+            WriteSRMenuOption("T", $"The Pit, Arena{lockNote}");
+            WriteSRMenuOption("L", $"Loan Shark{lockNote}");
+            WriteSRMenuOption("N", $"Safe House{lockNote}");
+            terminal.WriteLine("");
+
+            terminal.SetColor("cyan");
+            terminal.WriteLine("Other:");
+            if (shadowsStanding < 0)
+                WriteSRMenuOption("W", "Pay Tribute to the Shadows");
+            var factionSystem = FactionSystem.Instance;
+            if (factionSystem.PlayerFaction != Faction.TheShadows)
+                WriteSRMenuOption("J", "Join The Shadows");
+            else
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("  You are a member of The Shadows.");
+            }
+            if (FactionSystem.Instance?.HasBlackMarketAccess() == true)
+                WriteSRMenuOption("M", "Black Market");
+            if (FactionSystem.Instance?.HasInformationNetwork() == true)
+                WriteSRMenuOption("I", "Informant");
+            WriteSRMenuOption("E", "Evil Deeds");
+            WriteSRMenuOption("R", "Return to Main Street");
+            terminal.WriteLine("");
+
+            ShowStatusLine();
+        }
+
         protected override void DisplayLocation()
         {
+            if (IsScreenReader) { DisplayLocationSR(); return; }
             if (IsBBSSession) { DisplayLocationBBS(); return; }
 
             terminal.ClearScreen();
 
             // Header - standardized format
-            terminal.SetColor("bright_cyan");
-            terminal.WriteLine("╔═════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine($"║{"THE DARK ALLEY".PadLeft((77 + 14) / 2).PadRight(77)}║");
-            terminal.WriteLine("╚═════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE DARK ALLEY", "bright_cyan", 77);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -559,10 +645,7 @@ namespace UsurperRemake.Locations
         private async Task VisitDrugPalace()
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                       THE DRUG PALACE                            ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE DRUG PALACE", "bright_magenta", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -608,29 +691,29 @@ namespace UsurperRemake.Locations
             {
                 var d = drugs[i];
                 long price = GetAdjustedPrice(d.basePrice);
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write($"{i + 1}");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor(d.drug >= DrugType.DarkEssence ? "red" : "white");
-                terminal.Write($"{d.name,-18}");
-                terminal.SetColor("gray");
-                terminal.Write($" {d.desc,-35}");
-                terminal.SetColor("yellow");
-                terminal.WriteLine($" {price:N0}g");
+                if (IsScreenReader)
+                {
+                    WriteSRMenuOption($"{i + 1}", $"{d.name} - {d.desc}, {price:N0}g");
+                }
+                else
+                {
+                    terminal.SetColor("darkgray");
+                    terminal.Write("[");
+                    terminal.SetColor("bright_yellow");
+                    terminal.Write($"{i + 1}");
+                    terminal.SetColor("darkgray");
+                    terminal.Write("] ");
+                    terminal.SetColor(d.drug >= DrugType.DarkEssence ? "red" : "white");
+                    terminal.Write($"{d.name,-18}");
+                    terminal.SetColor("gray");
+                    terminal.Write($" {d.desc,-35}");
+                    terminal.SetColor("yellow");
+                    terminal.WriteLine($" {price:N0}g");
+                }
             }
 
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Leave");
+            WriteSRMenuOption("0", "Leave");
             terminal.WriteLine("");
 
             var choice = await terminal.GetInput("Your choice: ");
@@ -972,10 +1055,7 @@ namespace UsurperRemake.Locations
             var factionSystem = FactionSystem.Instance;
 
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                              THE SHADOWS                                     ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE SHADOWS", "bright_magenta");
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -1031,7 +1111,7 @@ namespace UsurperRemake.Locations
 
             // Show faction benefits
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("═══ Benefits of The Shadows ═══");
+            WriteSectionHeader("Benefits of The Shadows", "bright_yellow");
             terminal.SetColor("white");
             terminal.WriteLine("• 20% better prices when selling items (fence bonus)");
             terminal.WriteLine("• Access to exclusive black market goods");
@@ -1045,7 +1125,7 @@ namespace UsurperRemake.Locations
             if (!canJoin)
             {
                 terminal.SetColor("red");
-                terminal.WriteLine("═══ Requirements Not Met ═══");
+                WriteSectionHeader("Requirements Not Met", "red");
                 terminal.SetColor("yellow");
                 terminal.WriteLine(reason);
                 terminal.WriteLine("");
@@ -1065,7 +1145,7 @@ namespace UsurperRemake.Locations
 
             // Can join - offer the choice
             terminal.SetColor("bright_green");
-            terminal.WriteLine("═══ Requirements Met ═══");
+            WriteSectionHeader("Requirements Met", "bright_green");
             terminal.SetColor("gray");
             terminal.WriteLine("The faceless figure nods - somehow you can tell, even without seeing.");
             terminal.WriteLine("");
@@ -1107,10 +1187,7 @@ namespace UsurperRemake.Locations
         private async Task PerformShadowsInitiation(FactionSystem factionSystem)
         {
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║                         THE INITIATION                                       ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE INITIATION", "bright_magenta");
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -1151,10 +1228,7 @@ namespace UsurperRemake.Locations
             // Actually join the faction
             factionSystem.JoinFaction(Faction.TheShadows, currentPlayer);
 
-            terminal.SetColor("bright_green");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════════════════╗");
-            terminal.WriteLine("║              YOU HAVE JOINED THE SHADOWS                                     ║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("YOU HAVE JOINED THE SHADOWS", "bright_green");
             terminal.WriteLine("");
 
             terminal.SetColor("bright_magenta");
@@ -1249,10 +1323,7 @@ namespace UsurperRemake.Locations
             }
 
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE BLACK MARKET"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE BLACK MARKET", "bright_magenta", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -1267,38 +1338,10 @@ namespace UsurperRemake.Locations
             long poisonVialPrice = (long)((300 + level * 20) * (1.0f - rankDiscount));
             long smokeBombPrice = (long)((500 + level * 30) * (1.0f - rankDiscount));
 
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine($"Forged Papers     {forgedPapersPrice,8:N0}g  — Reduce Darkness by 100");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor(currentPlayer.PoisonVials >= GameConfig.MaxPoisonVials ? "gray" : "white");
-            terminal.WriteLine($"Poison Vials (x3) {poisonVialPrice,8:N0}g  — Coat blade in combat [B]");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("3");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor(currentPlayer.SmokeBombs >= 3 ? "gray" : "white");
-            terminal.WriteLine($"Smoke Bomb        {smokeBombPrice,8:N0}g  — Guaranteed escape (max 3)");
-            terminal.SetColor("darkgray");
-            terminal.Write("  [");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("] ");
-            terminal.SetColor("white");
-            terminal.WriteLine($"Leave");
+            WriteSRMenuOption("1", $"Forged Papers, {forgedPapersPrice:N0}g - Reduce Darkness by 100");
+            WriteSRMenuOption("2", $"Poison Vials (x3), {poisonVialPrice:N0}g - Coat blade in combat");
+            WriteSRMenuOption("3", $"Smoke Bomb, {smokeBombPrice:N0}g - Guaranteed escape (max 3)");
+            WriteSRMenuOption("0", "Leave");
             terminal.WriteLine("");
 
             if (rankDiscount > 0)
@@ -1396,10 +1439,7 @@ namespace UsurperRemake.Locations
             }
 
             terminal.ClearScreen();
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE INFORMANT"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE INFORMANT", "bright_magenta", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -1437,7 +1477,8 @@ namespace UsurperRemake.Locations
 
             // Top 5 wealthiest NPCs
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("\n  ═══ Wealthiest Marks ═══");
+            terminal.WriteLine("");
+            WriteSectionHeader("Wealthiest Marks", "bright_yellow");
             var wealthiest = activeNPCs
                 .Where(n => !n.IsDead && n.Gold > 0)
                 .OrderByDescending(n => n.Gold)
@@ -1460,7 +1501,8 @@ namespace UsurperRemake.Locations
 
             // Wanted NPCs (high Darkness)
             terminal.SetColor("bright_red");
-            terminal.WriteLine("\n  ═══ Wanted (Darkness > 200) ═══");
+            terminal.WriteLine("");
+            WriteSectionHeader("Wanted (Darkness > 200)", "bright_red");
             var wanted = activeNPCs
                 .Where(n => !n.IsDead && n.Darkness > 200)
                 .OrderByDescending(n => n.Darkness)
@@ -1486,7 +1528,8 @@ namespace UsurperRemake.Locations
             if (activeQuests?.Count > 0)
             {
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("\n  ═══ Your Active Targets ═══");
+                terminal.WriteLine("");
+                WriteSectionHeader("Your Active Targets", "bright_cyan");
                 foreach (var quest in activeQuests.Take(5))
                 {
                     terminal.SetColor("cyan");
@@ -1509,10 +1552,7 @@ namespace UsurperRemake.Locations
         private async Task VisitGamblingDen()
         {
             terminal.ClearScreen();
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE GAMBLING DEN"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE GAMBLING DEN", "dark_red", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -1535,38 +1575,10 @@ namespace UsurperRemake.Locations
             terminal.WriteLine($"Gold on hand: {currentPlayer.Gold:N0}");
             terminal.WriteLine("");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Loaded Dice       - Guess over/under 7. Win = 1.8x bet");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Three Card Monte  - Pick the right card. Win = 2.5x bet");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("3");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Skull & Bones     - Choose your risk. 2x/3x/5x payout");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Leave");
+            WriteSRMenuOption("1", "Loaded Dice - Guess over/under 7. Win = 1.8x bet");
+            WriteSRMenuOption("2", "Three Card Monte - Pick the right card. Win = 2.5x bet");
+            WriteSRMenuOption("3", "Skull & Bones - Choose your risk. 2x/3x/5x payout");
+            WriteSRMenuOption("0", "Leave");
             terminal.WriteLine("");
 
             var choice = await terminal.GetInput("Your game: ");
@@ -1666,22 +1678,8 @@ namespace UsurperRemake.Locations
             terminal.WriteLine("");
             terminal.WriteLine("The half-orc rattles two dice in a leather cup.");
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.Write(" Over 7    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Under 7");
+            WriteSRMenuOption("1", "Over 7");
+            WriteSRMenuOption("2", "Under 7");
             var guess = await terminal.GetInput("> ");
             bool guessOver = guess != "2"; // Default to over
 
@@ -1741,30 +1739,9 @@ namespace UsurperRemake.Locations
             terminal.WriteLine("");
             await Task.Delay(1000);
 
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.Write(" Left card    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.Write(" Middle card    ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("3");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Right card");
+            WriteSRMenuOption("1", "Left card");
+            WriteSRMenuOption("2", "Middle card");
+            WriteSRMenuOption("3", "Right card");
             var pick = await terminal.GetInput("> ");
 
             await Task.Delay(1500);
@@ -1807,30 +1784,9 @@ namespace UsurperRemake.Locations
             terminal.WriteLine("");
             terminal.WriteLine("A grinning skull sits on the table. Choose your risk.");
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Safe bet   - 2x payout (45% win)");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Risky bet  - 3x payout (30% win)");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("3");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" All or nothing - 5x payout (15% win)");
+            WriteSRMenuOption("1", "Safe bet - 2x payout (45% win)");
+            WriteSRMenuOption("2", "Risky bet - 3x payout (30% win)");
+            WriteSRMenuOption("3", "All or nothing - 5x payout (15% win)");
             var riskChoice = await terminal.GetInput("> ");
 
             float winChance;
@@ -1880,10 +1836,7 @@ namespace UsurperRemake.Locations
         private async Task VisitPickpocket()
         {
             terminal.ClearScreen();
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "PICKPOCKETING"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("PICKPOCKETING", "dark_red", 66);
             terminal.WriteLine("");
 
             if (currentPlayer.Thiefs <= 0)
@@ -1925,28 +1878,10 @@ namespace UsurperRemake.Locations
             {
                 var npc = allNPCs[i];
                 string goldHint = npc.Gold > 1000 ? "heavy purse" : npc.Gold > 200 ? "decent coin" : "light pockets";
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_yellow");
-                terminal.Write($"{i + 1}");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("yellow");
-                terminal.Write($"{npc.Name2,-20}");
-                terminal.SetColor("gray");
-                terminal.Write($" Lvl {npc.Level,-4}");
-                terminal.SetColor(npc.Gold > 1000 ? "bright_green" : npc.Gold > 200 ? "yellow" : "gray");
-                terminal.WriteLine($" ({goldHint})");
+                WriteSRMenuOption($"{i + 1}", $"{npc.Name2}, Lvl {npc.Level}, {goldHint}");
             }
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Changed my mind");
+            WriteSRMenuOption("0", "Changed my mind");
             terminal.WriteLine("");
 
             var choice = await terminal.GetInput("Target: ");
@@ -2046,10 +1981,7 @@ namespace UsurperRemake.Locations
         private async Task VisitThePit()
         {
             terminal.ClearScreen();
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE PIT"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE PIT", "dark_red", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -2073,30 +2005,9 @@ namespace UsurperRemake.Locations
             terminal.WriteLine("All pit fights are bare-knuckle — no armor allowed!");
             terminal.WriteLine("");
 
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Fight a monster  (generated at your level, 2x gold)");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Fight an NPC     (winner takes 20% of loser's gold)");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("cyan");
-            terminal.WriteLine(" Leave the pit");
+            WriteSRMenuOption("1", "Fight a monster (generated at your level, 2x gold)");
+            WriteSRMenuOption("2", "Fight an NPC (winner takes 20% of loser's gold)");
+            WriteSRMenuOption("0", "Leave the pit");
             terminal.WriteLine("");
 
             var choice = await terminal.GetInput("Your choice: ");
@@ -2211,28 +2122,10 @@ namespace UsurperRemake.Locations
             for (int i = 0; i < candidates.Count; i++)
             {
                 var npc = candidates[i];
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_yellow");
-                terminal.Write($"{i + 1}");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor("yellow");
-                terminal.Write($"{npc.Name2,-20}");
-                terminal.SetColor("gray");
-                terminal.Write($" Lvl {npc.Level,-4}");
-                terminal.SetColor("cyan");
-                terminal.WriteLine($" Gold: {npc.Gold:N0}");
+                WriteSRMenuOption($"{i + 1}", $"{npc.Name2}, Lvl {npc.Level}, Gold: {npc.Gold:N0}");
             }
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Back out");
+            WriteSRMenuOption("0", "Back out");
             terminal.WriteLine("");
 
             var pick = await terminal.GetInput("Challenge: ");
@@ -2328,38 +2221,10 @@ namespace UsurperRemake.Locations
 
             terminal.SetColor("yellow");
             terminal.WriteLine("Place a side bet on the fight?");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("1");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.Write(" 1.5x (safe)  ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("2");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.Write(" 2x (risky)  ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("3");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.Write(" 3x (reckless)  ");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" No bet");
+            WriteSRMenuOption("1", "1.5x (safe)");
+            WriteSRMenuOption("2", "2x (risky)");
+            WriteSRMenuOption("3", "3x (reckless)");
+            WriteSRMenuOption("0", "No bet");
             var betChoice = await terminal.GetInput("> ");
 
             if (betChoice != "1" && betChoice != "2" && betChoice != "3") return (0, 1.0f);
@@ -2387,10 +2252,7 @@ namespace UsurperRemake.Locations
         private async Task VisitLoanShark()
         {
             terminal.ClearScreen();
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE LOAN SHARK"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE LOAN SHARK", "dark_red", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -2403,7 +2265,7 @@ namespace UsurperRemake.Locations
                 // Active loan — show balance and repayment options
                 long totalOwed = currentPlayer.LoanAmount + currentPlayer.LoanInterestAccrued;
                 terminal.SetColor("yellow");
-                terminal.WriteLine("═══ Outstanding Loan ═══");
+                WriteSectionHeader("Outstanding Loan", "yellow");
                 terminal.SetColor("white");
                 terminal.WriteLine($"  Principal:  {currentPlayer.LoanAmount:N0} gold");
                 terminal.SetColor("red");
@@ -2423,30 +2285,9 @@ namespace UsurperRemake.Locations
                 terminal.WriteLine($"Gold on hand: {currentPlayer.Gold:N0}");
                 terminal.WriteLine("");
 
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("1");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("cyan");
-                terminal.WriteLine($" Repay in full ({totalOwed:N0} gold)");
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("2");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("cyan");
-                terminal.WriteLine(" Make partial payment");
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("0");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("cyan");
-                terminal.WriteLine(" Leave");
+                WriteSRMenuOption("1", $"Repay in full ({totalOwed:N0} gold)");
+                WriteSRMenuOption("2", "Make partial payment");
+                WriteSRMenuOption("0", "Leave");
                 terminal.WriteLine("");
 
                 var choice = await terminal.GetInput("Your choice: ");
@@ -2537,22 +2378,8 @@ namespace UsurperRemake.Locations
                 terminal.WriteLine("\"Miss the deadline... and my boys will collect in other ways.\"");
                 terminal.WriteLine("");
 
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("1");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("cyan");
-                terminal.WriteLine(" Take out a loan");
-                terminal.SetColor("darkgray");
-                terminal.Write("[");
-                terminal.SetColor("bright_yellow");
-                terminal.Write("0");
-                terminal.SetColor("darkgray");
-                terminal.Write("]");
-                terminal.SetColor("cyan");
-                terminal.WriteLine(" Leave");
+                WriteSRMenuOption("1", "Take out a loan");
+                WriteSRMenuOption("0", "Leave");
                 terminal.WriteLine("");
 
                 var choice = await terminal.GetInput("Your choice: ");
@@ -2593,10 +2420,7 @@ namespace UsurperRemake.Locations
         private async Task VisitFence()
         {
             terminal.ClearScreen();
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "FENCE STOLEN GOODS"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("FENCE STOLEN GOODS", "dark_red", 66);
             terminal.WriteLine("");
 
             terminal.SetColor("gray");
@@ -2643,32 +2467,11 @@ namespace UsurperRemake.Locations
             for (int i = 0; i < itemsForSale.Count; i++)
             {
                 var (_, name, value, cursed) = itemsForSale[i];
-                terminal.SetColor("darkgray");
-                terminal.Write("  [");
-                terminal.SetColor("bright_yellow");
-                terminal.Write($"{i + 1}");
-                terminal.SetColor("darkgray");
-                terminal.Write("] ");
-                terminal.SetColor(cursed ? "red" : "white");
-                terminal.Write($"{name,-30}");
-                terminal.SetColor("yellow");
-                terminal.Write($" {value:N0}g");
-                if (cursed)
-                {
-                    terminal.SetColor("red");
-                    terminal.Write("  [CURSED]");
-                }
-                terminal.WriteLine("");
+                string cursedTag = cursed ? " (CURSED)" : "";
+                WriteSRMenuOption($"{i + 1}", $"{name}, {value:N0}g{cursedTag}");
             }
             terminal.WriteLine("");
-            terminal.SetColor("darkgray");
-            terminal.Write("[");
-            terminal.SetColor("bright_yellow");
-            terminal.Write("0");
-            terminal.SetColor("darkgray");
-            terminal.Write("]");
-            terminal.SetColor("yellow");
-            terminal.WriteLine(" Leave");
+            WriteSRMenuOption("0", "Leave");
             terminal.WriteLine("");
 
             var choice = await terminal.GetInput("Sell which item? ");
@@ -2705,10 +2508,7 @@ namespace UsurperRemake.Locations
         private async Task VisitSafeHouse()
         {
             terminal.ClearScreen();
-            terminal.SetColor("dark_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE SAFE HOUSE"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE SAFE HOUSE", "dark_red", 66);
             terminal.WriteLine("");
 
             if (currentPlayer.Darkness < 50)
@@ -2805,10 +2605,7 @@ namespace UsurperRemake.Locations
             var standing = factionSystem?.FactionStanding[Faction.TheShadows] ?? 0;
 
             terminal.ClearScreen();
-            terminal.SetColor("dark_magenta");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "PAY TRIBUTE"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; terminal.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("PAY TRIBUTE", "dark_magenta", 66);
             terminal.WriteLine("");
 
             if (standing >= 0)
@@ -3121,11 +2918,8 @@ namespace UsurperRemake.Locations
         /// </summary>
         private async Task HandleEnforcerEncounter(Character player, TerminalEmulator term)
         {
-            term.SetColor("bright_red");
             term.WriteLine("");
-            term.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            { const string t = "THE ENFORCER HAS FOUND YOU"; int l = (66 - t.Length) / 2, r = 66 - t.Length - l; term.WriteLine($"║{new string(' ', l)}{t}{new string(' ', r)}║"); }
-            term.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("THE ENFORCER HAS FOUND YOU", "bright_red", 66);
             term.WriteLine("");
             term.SetColor("red");
             term.WriteLine("A massive figure blocks your path. Scarred knuckles crack.");
@@ -3315,11 +3109,7 @@ namespace UsurperRemake.Locations
             terminal.ClearScreen();
 
             // Header
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-            terminal.SetColor("bright_red");
-            terminal.WriteLine($"║{"EVIL DEEDS".PadLeft((66 + 10) / 2).PadRight(66)}║");
-            terminal.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+            WriteBoxHeader("EVIL DEEDS", "bright_red", 66);
             terminal.WriteLine("");
 
             // Stats
@@ -3363,25 +3153,47 @@ namespace UsurperRemake.Locations
                     _ => ("", "white", "")
                 };
 
-                terminal.SetColor(tierColor);
-                terminal.Write($"  ── {tierName} ──");
-                if (tierReq.Length > 0) { terminal.SetColor("darkgray"); terminal.Write(tierReq); }
-                terminal.WriteLine("");
+                if (IsScreenReader)
+                {
+                    terminal.SetColor(tierColor);
+                    terminal.Write($"  {tierName}");
+                    if (tierReq.Length > 0) { terminal.SetColor("darkgray"); terminal.Write(tierReq); }
+                    terminal.WriteLine(":");
+                }
+                else
+                {
+                    terminal.SetColor(tierColor);
+                    terminal.Write($"  ── {tierName} ──");
+                    if (tierReq.Length > 0) { terminal.SetColor("darkgray"); terminal.Write(tierReq); }
+                    terminal.WriteLine("");
+                }
 
                 foreach (var deed in tierDeeds)
                 {
                     indexMap[num] = deed;
-                    terminal.SetColor("darkgray");
-                    terminal.Write($"  [{num,2}] ");
-                    terminal.SetColor("white");
-                    terminal.Write(deed.Name.PadRight(28));
-                    terminal.SetColor("red");
-                    terminal.Write($"+{deed.DarknessGain} Dark ");
-                    if (deed.XPReward > 0) { terminal.SetColor("cyan"); terminal.Write($"+{deed.XPReward}XP "); }
-                    if (deed.GoldRewardBase > 0) { terminal.SetColor("bright_yellow"); terminal.Write($"+gold "); }
-                    if (deed.GoldCost > 0) { terminal.SetColor("yellow"); terminal.Write($"-{deed.GoldCost}g "); }
-                    if (deed.FailChance > 0) { terminal.SetColor("darkgray"); terminal.Write($"{(int)(deed.FailChance * 100)}%risk"); }
-                    terminal.WriteLine("");
+                    if (IsScreenReader)
+                    {
+                        var parts = new List<string> { deed.Name, $"+{deed.DarknessGain} Dark" };
+                        if (deed.XPReward > 0) parts.Add($"+{deed.XPReward}XP");
+                        if (deed.GoldRewardBase > 0) parts.Add("+gold");
+                        if (deed.GoldCost > 0) parts.Add($"-{deed.GoldCost}g");
+                        if (deed.FailChance > 0) parts.Add($"{(int)(deed.FailChance * 100)}% risk");
+                        WriteSRMenuOption($"{num}", string.Join(", ", parts));
+                    }
+                    else
+                    {
+                        terminal.SetColor("darkgray");
+                        terminal.Write($"  [{num,2}] ");
+                        terminal.SetColor("white");
+                        terminal.Write(deed.Name.PadRight(28));
+                        terminal.SetColor("red");
+                        terminal.Write($"+{deed.DarknessGain} Dark ");
+                        if (deed.XPReward > 0) { terminal.SetColor("cyan"); terminal.Write($"+{deed.XPReward}XP "); }
+                        if (deed.GoldRewardBase > 0) { terminal.SetColor("bright_yellow"); terminal.Write($"+gold "); }
+                        if (deed.GoldCost > 0) { terminal.SetColor("yellow"); terminal.Write($"-{deed.GoldCost}g "); }
+                        if (deed.FailChance > 0) { terminal.SetColor("darkgray"); terminal.Write($"{(int)(deed.FailChance * 100)}%risk"); }
+                        terminal.WriteLine("");
+                    }
                     num++;
                 }
                 terminal.WriteLine("");
@@ -3401,7 +3213,10 @@ namespace UsurperRemake.Locations
 
             // Show atmospheric description
             terminal.SetColor("bright_red");
-            terminal.WriteLine($"── {deed.Name} ──");
+            if (IsScreenReader)
+                terminal.WriteLine(deed.Name);
+            else
+                terminal.WriteLine($"── {deed.Name} ──");
             terminal.WriteLine("");
             terminal.SetColor("gray");
             terminal.WriteLine(deed.Description);

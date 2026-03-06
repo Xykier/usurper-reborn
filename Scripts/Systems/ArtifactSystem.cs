@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using UsurperRemake.UI;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -305,9 +306,7 @@ namespace UsurperRemake.Systems
         {
             terminal.Clear();
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", artifact.IconColor);
-            terminal.WriteLine("║              A R T I F A C T   A C Q U I R E D                    ║", artifact.IconColor);
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", artifact.IconColor);
+            UIHelper.WriteBoxHeader(terminal, "A R T I F A C T   A C Q U I R E D", artifact.IconColor, 67);
             terminal.WriteLine("");
 
             await Task.Delay(500);
@@ -434,9 +433,7 @@ namespace UsurperRemake.Systems
             await Task.Delay(2000);
 
             terminal.WriteLine("");
-            terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════╗", "white");
-            terminal.WriteLine("║           T H E   V O I D   K E Y   A P P E A R S                 ║", "white");
-            terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════╝", "white");
+            UIHelper.WriteBoxHeader(terminal, "T H E   V O I D   K E Y   A P P E A R S", "white", 67);
             terminal.WriteLine("");
 
             await Task.Delay(1000);

@@ -669,9 +669,11 @@ namespace UsurperRemake.Systems
         public void DisplayWorldStatus(TerminalEmulator terminal)
         {
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("═══════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════");
             terminal.WriteLine("           WORLD EVENTS");
-            terminal.WriteLine("═══════════════════════════════════════");
+            if (!GameConfig.ScreenReaderMode)
+                terminal.WriteLine("═══════════════════════════════════════");
             terminal.WriteLine("");
 
             if (_activeEvents.Count == 0)
@@ -997,7 +999,8 @@ namespace UsurperRemake.Systems
                 string? message = GenerateOneDistantNews();
                 if (message != null)
                 {
-                    news.Newsy($"☆ {message}");
+                    string starPrefix = GameConfig.ScreenReaderMode ? "" : "☆ ";
+                    news.Newsy($"{starPrefix}{message}");
                 }
             }
         }

@@ -28,9 +28,7 @@ public class CharacterCreationLocation : BaseLocation
         // Welcome message
         terminal.Clear();
         terminal.WriteLine("");
-        terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════════════════╗", "bright_cyan");
-        terminal.WriteLine("║                    W E L C O M E   T O   U S U R P E R                       ║", "bright_cyan");
-        terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════════════════╝", "bright_cyan");
+        WriteBoxHeader("W E L C O M E   T O   U S U R P E R", "bright_cyan", 79);
         terminal.WriteLine("");
         terminal.WriteLine("You are about to enter the medieval world of Usurper, a realm of", "white");
         terminal.WriteLine("magic, combat, politics, and intrigue. First, you must create", "white");
@@ -182,9 +180,7 @@ public class CharacterCreationLocation : BaseLocation
     {
         terminal.Clear();
         terminal.WriteLine("");
-        terminal.WriteLine("╔═══════════════════════════════════════════════════════════════════════════════╗", "bright_green");
-        terminal.WriteLine("║                     W E L C O M E   T O   T H E   R E A L M !                 ║", "bright_green");
-        terminal.WriteLine("╚═══════════════════════════════════════════════════════════════════════════════╝", "bright_green");
+        WriteBoxHeader("W E L C O M E   T O   T H E   R E A L M !", "bright_green", 79);
         terminal.WriteLine("");
         terminal.WriteLine($"Greetings, {player.Name2}!", "bright_yellow");
         terminal.WriteLine("");
@@ -197,7 +193,10 @@ public class CharacterCreationLocation : BaseLocation
         terminal.WriteLine("Explore the realm, gain experience, acquire wealth,", "cyan");
         terminal.WriteLine("and perhaps one day claim the throne!", "cyan");
         terminal.WriteLine("");
-        terminal.WriteLine("═══ HELPFUL HINTS ═══", "yellow");
+        if (IsScreenReader)
+            terminal.WriteLine("HELPFUL HINTS", "yellow");
+        else
+            terminal.WriteLine("═══ HELPFUL HINTS ═══", "yellow");
         terminal.WriteLine("- Visit the Inn to rest and recover", "white");
         terminal.WriteLine("- Check the Weapon and Armor shops for equipment", "white");
         terminal.WriteLine("- Enter the Dungeons to gain experience and gold", "white");

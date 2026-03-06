@@ -9,8 +9,8 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.49.10";
-    public const string VersionName = "Swords and Lutes";
+    public const string Version = "0.50.0";
+    public const string VersionName = "Open Doors";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
     // From Pascal global_maxXX constants

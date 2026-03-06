@@ -1019,7 +1019,9 @@ public class HomeLocation : BaseLocation
 
             options.Add(type);
             terminal.SetColor(HerbData.GetColor(type));
-            terminal.Write($"  [{idx}] {HerbData.GetName(type)} x{count}");
+            terminal.Write(GameConfig.ScreenReaderMode
+                ? $"  {idx}. {HerbData.GetName(type)} x{count}"
+                : $"  [{idx}] {HerbData.GetName(type)} x{count}");
             terminal.SetColor("gray");
             terminal.WriteLine($" — {HerbData.GetDescription(type)}");
             idx++;
@@ -1027,7 +1029,7 @@ public class HomeLocation : BaseLocation
 
         terminal.WriteLine("");
         terminal.SetColor("cyan");
-        terminal.WriteLine("  [Q] Cancel");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? "  Q. Cancel" : "  [Q] Cancel");
         terminal.WriteLine("");
         terminal.Write("Choice: ", "white");
 

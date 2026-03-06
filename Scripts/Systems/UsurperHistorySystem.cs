@@ -34,10 +34,17 @@ public class UsurperHistorySystem
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("USURPER HISTORY - A Journey Through Time", "bright_cyan");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_yellow");
@@ -82,10 +89,17 @@ public class UsurperHistorySystem
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("USURPER HISTORY - A Journey Through Time", "bright_cyan");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_green");
@@ -137,10 +151,17 @@ public class UsurperHistorySystem
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("USURPER HISTORY - A Journey Through Time", "bright_cyan");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_red");
@@ -190,10 +211,17 @@ public class UsurperHistorySystem
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("USURPER HISTORY - A Journey Through Time", "bright_cyan");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_magenta");
@@ -205,33 +233,59 @@ public class UsurperHistorySystem
         terminal.WriteLine("");
 
         // Jakob Dangarden
-        terminal.SetColor("bright_yellow");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.WriteLine("  |                       JAKOB DANGARDEN                                 |");
-        terminal.WriteLine("  |                    Creator of Usurper (1993)                          |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.SetColor("gray");
-        terminal.WriteLine("  |  Jakob created the original masterpiece in Turbo Pascal. His vision   |");
-        terminal.WriteLine("  |  of a complex, politically-driven RPG door game set Usurper apart     |");
-        terminal.WriteLine("  |  from everything else in the BBS era. In 2004, he made the historic   |");
-        terminal.WriteLine("  |  decision to release Usurper as open source under the GPL license,    |");
-        terminal.WriteLine("  |  ensuring the game could live on forever.                             |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("  JAKOB DANGARDEN - Creator of Usurper (1993)", "bright_yellow");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  Jakob created the original masterpiece in Turbo Pascal. His vision");
+            terminal.WriteLine("  of a complex, politically-driven RPG door game set Usurper apart");
+            terminal.WriteLine("  from everything else in the BBS era. In 2004, he made the historic");
+            terminal.WriteLine("  decision to release Usurper as open source under the GPL license,");
+            terminal.WriteLine("  ensuring the game could live on forever.");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.WriteLine("  |                       JAKOB DANGARDEN                                 |");
+            terminal.WriteLine("  |                    Creator of Usurper (1993)                          |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  |  Jakob created the original masterpiece in Turbo Pascal. His vision   |");
+            terminal.WriteLine("  |  of a complex, politically-driven RPG door game set Usurper apart     |");
+            terminal.WriteLine("  |  from everything else in the BBS era. In 2004, he made the historic   |");
+            terminal.WriteLine("  |  decision to release Usurper as open source under the GPL license,    |");
+            terminal.WriteLine("  |  ensuring the game could live on forever.                             |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        }
         terminal.WriteLine("");
 
         // Rick Parrish
-        terminal.SetColor("bright_green");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.WriteLine("  |                        RICK PARRISH                                   |");
-        terminal.WriteLine("  |                  Preserver of the Source Code                         |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.SetColor("gray");
-        terminal.WriteLine("  |  Rick of R&M Software took on the monumental task of porting the      |");
-        terminal.WriteLine("  |  original Pascal source code to modern systems. He created 32-bit     |");
-        terminal.WriteLine("  |  and 64-bit versions using Free Pascal/Lazarus, ensuring the game     |");
-        terminal.WriteLine("  |  could run on Windows, Linux, and beyond. His GameSrv BBS server      |");
-        terminal.WriteLine("  |  software keeps the entire door game era alive today.                 |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("  RICK PARRISH - Preserver of the Source Code", "bright_green");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  Rick of R&M Software took on the monumental task of porting the");
+            terminal.WriteLine("  original Pascal source code to modern systems. He created 32-bit");
+            terminal.WriteLine("  and 64-bit versions using Free Pascal/Lazarus, ensuring the game");
+            terminal.WriteLine("  could run on Windows, Linux, and beyond. His GameSrv BBS server");
+            terminal.WriteLine("  software keeps the entire door game era alive today.");
+        }
+        else
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.WriteLine("  |                        RICK PARRISH                                   |");
+            terminal.WriteLine("  |                  Preserver of the Source Code                         |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  |  Rick of R&M Software took on the monumental task of porting the      |");
+            terminal.WriteLine("  |  original Pascal source code to modern systems. He created 32-bit     |");
+            terminal.WriteLine("  |  and 64-bit versions using Free Pascal/Lazarus, ensuring the game     |");
+            terminal.WriteLine("  |  could run on Windows, Linux, and beyond. His GameSrv BBS server      |");
+            terminal.WriteLine("  |  software keeps the entire door game era alive today.                 |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("yellow");
@@ -241,10 +295,17 @@ public class UsurperHistorySystem
         // Continue with Dan Zingaro
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("USURPER HISTORY - A Journey Through Time", "bright_cyan");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_magenta");
@@ -252,18 +313,31 @@ public class UsurperHistorySystem
         terminal.WriteLine("");
 
         // Daniel Zingaro
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.WriteLine("  |                       DANIEL ZINGARO                                  |");
-        terminal.WriteLine("  |                    The Bug Slayer Supreme                             |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.SetColor("gray");
-        terminal.WriteLine("  |  Dan Zingaro provided 'tremendous help' (in Rick's words) with        |");
-        terminal.WriteLine("  |  massive bug fixing efforts on the Pascal source code. His patient    |");
-        terminal.WriteLine("  |  work tracking down edge cases and fixing issues in decades-old       |");
-        terminal.WriteLine("  |  code helped make version 0.20e the most stable release ever.         |");
-        terminal.WriteLine("  |  Without his dedication, many subtle bugs would have remained.        |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("  DANIEL ZINGARO - The Bug Slayer Supreme", "bright_cyan");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  Dan Zingaro provided 'tremendous help' (in Rick's words) with");
+            terminal.WriteLine("  massive bug fixing efforts on the Pascal source code. His patient");
+            terminal.WriteLine("  work tracking down edge cases and fixing issues in decades-old");
+            terminal.WriteLine("  code helped make version 0.20e the most stable release ever.");
+            terminal.WriteLine("  Without his dedication, many subtle bugs would have remained.");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.WriteLine("  |                       DANIEL ZINGARO                                  |");
+            terminal.WriteLine("  |                    The Bug Slayer Supreme                             |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  |  Dan Zingaro provided 'tremendous help' (in Rick's words) with        |");
+            terminal.WriteLine("  |  massive bug fixing efforts on the Pascal source code. His patient    |");
+            terminal.WriteLine("  |  work tracking down edge cases and fixing issues in decades-old       |");
+            terminal.WriteLine("  |  code helped make version 0.20e the most stable release ever.         |");
+            terminal.WriteLine("  |  Without his dedication, many subtle bugs would have remained.        |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
@@ -288,10 +362,17 @@ public class UsurperHistorySystem
     {
         terminal.ClearScreen();
 
-        terminal.SetColor("bright_cyan");
-        terminal.WriteLine("+=============================================================================+");
-        terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
-        terminal.WriteLine("+=============================================================================+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("USURPER HISTORY - A Journey Through Time", "bright_cyan");
+        }
+        else
+        {
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("+=============================================================================+");
+            terminal.WriteLine("|                    USURPER HISTORY - A Journey Through Time                 |");
+            terminal.WriteLine("+=============================================================================+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("bright_white");
@@ -299,11 +380,18 @@ public class UsurperHistorySystem
         terminal.WriteLine("                           (2024 - Present)");
         terminal.WriteLine("");
 
-        terminal.SetColor("bright_green");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
-        terminal.WriteLine("  |                        JASON KNIGHT                                   |");
-        terminal.WriteLine("  |                   Creator of Usurper Reborn                           |");
-        terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        if (GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("  JASON KNIGHT - Creator of Usurper Reborn", "bright_green");
+        }
+        else
+        {
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+            terminal.WriteLine("  |                        JASON KNIGHT                                   |");
+            terminal.WriteLine("  |                   Creator of Usurper Reborn                           |");
+            terminal.WriteLine("  +-----------------------------------------------------------------------+");
+        }
         terminal.WriteLine("");
 
         terminal.SetColor("white");
