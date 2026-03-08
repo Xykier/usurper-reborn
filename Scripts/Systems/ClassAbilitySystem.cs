@@ -860,7 +860,7 @@ public static class ClassAbilitySystem
             StaminaCost = 10,
             Cooldown = 1,
             Type = AbilityType.Attack,
-            BaseDamage = 22,  // Low cost spammable - scales with STR+DEX
+            BaseDamage = 30,  // Low cost spammable - scales with CHA+DEX for Bard
             SpecialEffect = "distract",
             AvailableToClasses = new[] { CharacterClass.Jester, CharacterClass.Bard }
         },
@@ -868,14 +868,15 @@ public static class ClassAbilitySystem
         {
             Id = "inspiring_tune",
             Name = "Inspiring Tune",
-            Description = "Play an inspiring melody that boosts stats.",
+            Description = "Play an inspiring melody that boosts the entire party.",
             LevelRequired = 10,
-            StaminaCost = 30,
+            StaminaCost = 25,
             Cooldown = 4,
             Type = AbilityType.Buff,
-            AttackBonus = 20,  // Buff - scales with CHA
-            DefenseBonus = 20,  // Defense - scales with CON
-            Duration = 4,
+            AttackBonus = 25,
+            DefenseBonus = 20,
+            Duration = 5,
+            SpecialEffect = "party_song",
             RequiredWeaponTypes = new[] { WeaponType.Instrument },
             AvailableToClasses = new[] { CharacterClass.Bard }
         },
@@ -883,12 +884,13 @@ public static class ClassAbilitySystem
         {
             Id = "song_of_rest",
             Name = "Song of Rest",
-            Description = "A soothing melody that heals wounds.",
+            Description = "A soothing melody that heals the entire party.",
             LevelRequired = 18,
-            StaminaCost = 35,
-            Cooldown = 5,
+            StaminaCost = 30,
+            Cooldown = 4,
             Type = AbilityType.Heal,
-            BaseHealing = 45,  // Healing - scales with CON+WIS
+            BaseHealing = 55,
+            SpecialEffect = "party_song",
             RequiredWeaponTypes = new[] { WeaponType.Instrument },
             AvailableToClasses = new[] { CharacterClass.Bard }
         },
@@ -917,6 +919,32 @@ public static class ClassAbilitySystem
             SpecialEffect = "escape",
             AvailableToClasses = new[] { CharacterClass.Jester }
         },
+        ["jugglers_trick"] = new ClassAbility
+        {
+            Id = "jugglers_trick",
+            Name = "Juggler's Trick",
+            Description = "Hurl a volley of blades, balls, and surprises at your foe.",
+            LevelRequired = 10,
+            StaminaCost = 12,
+            Cooldown = 0,
+            Type = AbilityType.Attack,
+            BaseDamage = 40,  // Early reliable damage - scales with CHA+DEX
+            AvailableToClasses = new[] { CharacterClass.Jester }
+        },
+        ["pratfall"] = new ClassAbility
+        {
+            Id = "pratfall",
+            Name = "Pratfall",
+            Description = "A clumsy stumble that's actually a devastating leg sweep.",
+            LevelRequired = 18,
+            StaminaCost = 18,
+            Cooldown = 2,
+            Type = AbilityType.Attack,
+            BaseDamage = 50,  // Moderate damage + stun - scales with CHA+DEX
+            SpecialEffect = "stun",
+            Duration = 1,
+            AvailableToClasses = new[] { CharacterClass.Jester }
+        },
         ["deadly_joke"] = new ClassAbility
         {
             Id = "deadly_joke",
@@ -926,7 +954,7 @@ public static class ClassAbilitySystem
             StaminaCost = 45,
             Cooldown = 3,
             Type = AbilityType.Attack,
-            BaseDamage = 65,  // Mid-tier damage + confusion - scales with STR+DEX
+            BaseDamage = 65,  // Mid-tier damage + confusion - scales with CHA+DEX
             SpecialEffect = "confusion",
             AvailableToClasses = new[] { CharacterClass.Jester }
         },
@@ -934,15 +962,16 @@ public static class ClassAbilitySystem
         {
             Id = "veloura_serenade",
             Name = "Veloura's Serenade",
-            Description = "Channel the lost Goddess of Love through song.",
+            Description = "Channel the Goddess of Love. Heals and empowers the entire party.",
             LevelRequired = 58,
-            StaminaCost = 55,
-            Cooldown = 6,
+            StaminaCost = 50,
+            Cooldown = 5,
             Type = AbilityType.Buff,
-            BaseHealing = 75,  // Healing - scales with CON+WIS
-            AttackBonus = 30,  // Buff - scales with CHA
-            DefenseBonus = 30,  // Defense - scales with CON
-            Duration = 4,
+            BaseHealing = 90,
+            AttackBonus = 35,
+            DefenseBonus = 35,
+            Duration = 5,
+            SpecialEffect = "party_song",
             RequiredWeaponTypes = new[] { WeaponType.Instrument },
             AvailableToClasses = new[] { CharacterClass.Bard }
         },
@@ -952,10 +981,10 @@ public static class ClassAbilitySystem
             Name = "Grand Finale",
             Description = "The ultimate performance that devastates all foes.",
             LevelRequired = 72,
-            StaminaCost = 70,
-            Cooldown = 6,
+            StaminaCost = 60,
+            Cooldown = 5,
             Type = AbilityType.Attack,
-            BaseDamage = 110,  // High level AoE - scales with STR+DEX
+            BaseDamage = 140,  // High level AoE - scales with CHA+DEX for Bard
             SpecialEffect = "aoe",
             AvailableToClasses = new[] { CharacterClass.Bard, CharacterClass.Jester }
         },
@@ -963,13 +992,13 @@ public static class ClassAbilitySystem
         {
             Id = "carnival_of_chaos",
             Name = "Carnival of Chaos",
-            Description = "Unleash a whirlwind of tricks, pranks, and mayhem on all enemies.",
+            Description = "Unleash a whirlwind of tricks, pranks, and mayhem on all enemies. Confuses survivors.",
             LevelRequired = 82,
-            StaminaCost = 75,
+            StaminaCost = 70,
             Cooldown = 5,
             Type = AbilityType.Attack,
-            BaseDamage = 140,  // High level AoE - scales with STR+DEX
-            SpecialEffect = "aoe",
+            BaseDamage = 200,  // Strong AoE + confusion - scales with CHA+DEX
+            SpecialEffect = "aoe_confusion",
             AvailableToClasses = new[] { CharacterClass.Jester }
         },
         ["last_laugh"] = new ClassAbility
@@ -981,7 +1010,7 @@ public static class ClassAbilitySystem
             StaminaCost = 90,
             Cooldown = 7,
             Type = AbilityType.Attack,
-            BaseDamage = 230,  // Capstone single-target - scales with STR+DEX
+            BaseDamage = 230,  // Capstone single-target - scales with CHA+DEX
             SpecialEffect = "confusion",
             AvailableToClasses = new[] { CharacterClass.Jester }
         },
@@ -989,15 +1018,16 @@ public static class ClassAbilitySystem
         {
             Id = "legend_incarnate",
             Name = "Legend Incarnate",
-            Description = "Become the legend you've always sung about.",
+            Description = "Become the legend. Massively empowers the entire party.",
             LevelRequired = 85,
-            StaminaCost = 80,
-            Cooldown = 7,
+            StaminaCost = 70,
+            Cooldown = 6,
             Type = AbilityType.Buff,
-            AttackBonus = 55,  // Capstone buff - scales with CHA
-            DefenseBonus = 55,  // Defense - scales with CON
-            Duration = 5,
-            SpecialEffect = "legend",
+            AttackBonus = 65,
+            DefenseBonus = 60,
+            BaseHealing = 60,
+            Duration = 6,
+            SpecialEffect = "party_legend",
             RequiredWeaponTypes = new[] { WeaponType.Instrument },
             AvailableToClasses = new[] { CharacterClass.Bard }
         },
@@ -1016,7 +1046,7 @@ public static class ClassAbilitySystem
             StaminaCost = 20,
             Cooldown = 2,
             Type = AbilityType.Attack,
-            BaseDamage = 35,  // Starter attack - scales with STR+DEX
+            BaseDamage = 40,  // Starter attack - scales with INT+DEX
             SpecialEffect = "fire",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
@@ -1024,12 +1054,12 @@ public static class ClassAbilitySystem
         {
             Id = "healing_elixir",
             Name = "Healing Elixir",
-            Description = "Drink a prepared healing potion.",
+            Description = "Drink a prepared healing potion. Enhanced by Potion Mastery.",
             LevelRequired = 8,
             StaminaCost = 20,
             Cooldown = 3,
             Type = AbilityType.Heal,
-            BaseHealing = 40,  // Healing - scales with CON+WIS
+            BaseHealing = 50,  // Healing - scales with CON+WIS, +50% from Potion Mastery
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
         ["smoke_bomb"] = new ClassAbility
@@ -1038,11 +1068,11 @@ public static class ClassAbilitySystem
             Name = "Smoke Bomb",
             Description = "Create smoke to confuse enemies.",
             LevelRequired = 16,
-            StaminaCost = 30,
+            StaminaCost = 25,
             Cooldown = 4,
             Type = AbilityType.Utility,
-            DefenseBonus = 40,
-            Duration = 2,
+            DefenseBonus = 45,
+            Duration = 3,
             SpecialEffect = "smoke",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
@@ -1050,12 +1080,12 @@ public static class ClassAbilitySystem
         {
             Id = "acid_splash",
             Name = "Acid Splash",
-            Description = "Throw acid that melts through armor.",
+            Description = "Throw acid that melts through armor. Ignores defense.",
             LevelRequired = 24,
-            StaminaCost = 35,
+            StaminaCost = 30,
             Cooldown = 3,
             Type = AbilityType.Attack,
-            BaseDamage = 50,  // Armor piercing - scales with STR+DEX
+            BaseDamage = 60,  // Armor piercing - scales with INT+DEX
             SpecialEffect = "armor_pierce",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
@@ -1065,12 +1095,12 @@ public static class ClassAbilitySystem
             Name = "Mutagen",
             Description = "Drink a mutagen that enhances physical abilities.",
             LevelRequired = 36,
-            StaminaCost = 50,
-            Cooldown = 6,
+            StaminaCost = 40,
+            Cooldown = 5,
             Type = AbilityType.Buff,
-            AttackBonus = 30,  // Buff - scales with CHA
-            DefenseBonus = 22,  // Defense - scales with CON
-            Duration = 5,
+            AttackBonus = 35,
+            DefenseBonus = 25,
+            Duration = 6,
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
         ["frost_bomb"] = new ClassAbility
@@ -1079,10 +1109,10 @@ public static class ClassAbilitySystem
             Name = "Frost Bomb",
             Description = "A bomb that freezes enemies solid.",
             LevelRequired = 48,
-            StaminaCost = 45,
+            StaminaCost = 40,
             Cooldown = 4,
             Type = AbilityType.Attack,
-            BaseDamage = 65,  // Damage + freeze effect - scales with STR+DEX
+            BaseDamage = 80,  // Damage + freeze effect - scales with INT+DEX
             SpecialEffect = "freeze",
             Duration = 2,
             AvailableToClasses = new[] { CharacterClass.Alchemist }
@@ -1091,24 +1121,24 @@ public static class ClassAbilitySystem
         {
             Id = "greater_elixir",
             Name = "Greater Elixir",
-            Description = "A masterwork healing potion.",
+            Description = "A masterwork healing potion. Enhanced by Potion Mastery.",
             LevelRequired = 60,
-            StaminaCost = 45,
-            Cooldown = 5,
+            StaminaCost = 40,
+            Cooldown = 4,
             Type = AbilityType.Heal,
-            BaseHealing = 100,  // Strong heal - scales with CON+WIS
+            BaseHealing = 120,  // Strong heal - scales with CON+WIS, +50% from Potion Mastery
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
         ["philosophers_bomb"] = new ClassAbility
         {
             Id = "philosophers_bomb",
             Name = "Philosopher's Bomb",
-            Description = "An alchemical masterpiece that devastates all.",
+            Description = "An alchemical masterpiece that devastates all enemies.",
             LevelRequired = 74,
-            StaminaCost = 70,
+            StaminaCost = 60,
             Cooldown = 5,
             Type = AbilityType.Attack,
-            BaseDamage = 120,  // High level AoE - scales with STR+DEX
+            BaseDamage = 150,  // High level AoE - scales with INT+DEX
             SpecialEffect = "aoe",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
@@ -1116,15 +1146,15 @@ public static class ClassAbilitySystem
         {
             Id = "transmutation",
             Name = "Transmutation",
-            Description = "The ultimate alchemical transformation.",
+            Description = "The ultimate alchemical transformation. Purges ailments.",
             LevelRequired = 88,
-            StaminaCost = 85,
-            Cooldown = 7,
+            StaminaCost = 75,
+            Cooldown = 6,
             Type = AbilityType.Buff,
-            AttackBonus = 60,  // Buff - scales with CHA
-            DefenseBonus = 50,  // Defense - scales with CON
-            BaseHealing = 90,  // Healing - scales with CON+WIS
-            Duration = 5,
+            AttackBonus = 70,
+            DefenseBonus = 55,
+            BaseHealing = 110,  // Healing - scales with CON+WIS, +50% from Potion Mastery
+            Duration = 6,
             SpecialEffect = "transmute",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
@@ -1957,10 +1987,27 @@ public static class ClassAbilitySystem
         double statScale = 1.0;
         if (ability.Type == AbilityType.Attack)
         {
-            // Strength contributes 3% per point above 10 (20 STR = 1.30x, 30 STR = 1.60x)
-            statScale += Math.Max(0, (user.Strength - 10) * 0.03);
-            // Dexterity adds a smaller bonus for accuracy/precision
-            statScale += Math.Max(0, (user.Dexterity - 10) * 0.01);
+            if (user.Class == CharacterClass.Alchemist)
+            {
+                // Alchemist bombs scale with Intelligence (science, not brawn)
+                statScale += Math.Max(0, (user.Intelligence - 10) * 0.03);
+                // Dexterity adds accuracy bonus for throwing
+                statScale += Math.Max(0, (user.Dexterity - 10) * 0.015);
+            }
+            else if (user.Class == CharacterClass.Bard || user.Class == CharacterClass.Jester)
+            {
+                // Bard/Jester attacks scale with Charisma (performance-based combat)
+                statScale += Math.Max(0, (user.Charisma - 10) * 0.03);
+                // Dexterity adds finesse bonus
+                statScale += Math.Max(0, (user.Dexterity - 10) * 0.015);
+            }
+            else
+            {
+                // Strength contributes 3% per point above 10 (20 STR = 1.30x, 30 STR = 1.60x)
+                statScale += Math.Max(0, (user.Strength - 10) * 0.03);
+                // Dexterity adds a smaller bonus for accuracy/precision
+                statScale += Math.Max(0, (user.Dexterity - 10) * 0.01);
+            }
         }
         else if (ability.Type == AbilityType.Heal)
         {
@@ -2002,7 +2049,10 @@ public static class ClassAbilitySystem
 
         if (ability.BaseHealing > 0)
         {
-            result.Healing = (int)(ability.BaseHealing * totalScale * (0.9 + random.NextDouble() * 0.2));
+            double healingMultiplier = 1.0;
+            if (user.Class == CharacterClass.Alchemist)
+                healingMultiplier += GameConfig.AlchemistPotionMasteryBonus; // Potion Mastery: +50% healing
+            result.Healing = (int)(ability.BaseHealing * totalScale * healingMultiplier * (0.9 + random.NextDouble() * 0.2));
         }
 
         if (ability.AttackBonus > 0)
@@ -2059,13 +2109,6 @@ public static class ClassAbilitySystem
     /// </summary>
     public static async Task ShowAbilityLearningMenu(Character player, TerminalEmulator terminal)
     {
-        if (IsSpellcaster(player.Class))
-        {
-            // Spellcasters go to spell learning instead
-            await SpellLearningSystem.ShowSpellLearningMenu(player, terminal);
-            return;
-        }
-
         // Ensure LearnedAbilities is up to date
         GetAvailableAbilities(player);
 

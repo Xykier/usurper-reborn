@@ -2,7 +2,7 @@
 
 ## A Persistent Online Text RPG with a Living World
 
-**ALPHA v0.50.4** | **FREE AND OPEN SOURCE** | **GPL v2**
+**ALPHA v0.50.5** | **FREE AND OPEN SOURCE** | **GPL v2**
 
 60+ autonomous NPCs wake up, go to work, visit taverns, fall in love, get married, have children, age, and eventually die of old age — all while you're offline. Log back in, read the news feed, and discover that the blacksmith married the barmaid, the king was assassinated, or a new generation just came of age. The world doesn't wait for you.
 
@@ -261,6 +261,9 @@ For detailed BBS setup instructions, see [DOCS/BBS_DOOR_SETUP.md](DOCS/BBS_DOOR_
 - Additional companion personal quest storylines
 - Expanded faction recruitment ceremonies
 
+### v0.50.5 - Class Reworks & Equipment Stat Overhaul
+Alchemist (INT-scaling bombs, Potion Mastery +50% healing), Bard (songs buff entire party), Jester (CHA-scaling attacks, Trickster's Luck passive, 2 new early abilities), and Magician (Arcane Mastery +15% spell damage, spell cap removed, spellcasters can equip universal abilities) class reworks. Protection spell scaling fix: all 20 protection bonuses now scale with level and INT (Prismatic Shield ~200 AC at level 50 instead of 57). Equipment stat overhaul: Constitution/Intelligence replace raw HP/Mana. 267-template name-stat audit. NPC teammate level-up persistence fix. Dashboard race name fix.
+
 ### v0.50.4 - Mana Potions, Gold Audit & World Boss Fix
 Teammates can share mana potions in combat via [H] Aid Ally. Companions and NPC spellcasters auto-use mana potions at low MP. Comprehensive gold audit logging across all gold sources for exploit detection. World boss double-reward race condition fixed.
 
@@ -332,7 +335,7 @@ Join our Discord server for discussions, feedback, and updates:
 
 *"You are not a wave fighting the ocean. You ARE the ocean, dreaming of being a wave."*
 
-## Known Issues (Alpha v0.49.3)
+## Known Issues (Alpha v0.50.5)
 - Save files from earlier alpha versions may not be fully compatible
 - BBS FOSSIL mode not supported (use `--stdio` flag for FOSSIL-based BBSes)
 - Steam features only work when game is launched through Steam client
@@ -341,4 +344,4 @@ Join our Discord server for discussions, feedback, and updates:
 
 ---
 
-**Status**: ALPHA v0.50.4 — The world is running. [Watch it live.](https://usurper-reborn.net)
+**Status**: ALPHA v0.50.5 — The world is running. [Watch it live.](https://usurper-reborn.net)

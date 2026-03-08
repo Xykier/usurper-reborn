@@ -293,7 +293,7 @@ public static class ShopItemGenerator
             case WeaponType.Greatsword:
                 equip.StrengthBonus = 1 + (int)(s * 10);             // 1-11
                 if (level >= 30) equip.CriticalDamageBonus = (int)(s * 30); // 0-30%
-                if (level >= 60) equip.MaxHPBonus = (int)(s * 40);   // 0-40
+                if (level >= 60) equip.ConstitutionBonus = (int)(s * 8);   // 0-8
                 break;
 
             case WeaponType.Axe:
@@ -312,7 +312,7 @@ public static class ShopItemGenerator
             case WeaponType.Staff:
                 equip.IntelligenceBonus = 1 + (int)(s * 10);         // 1-11
                 equip.WisdomBonus = (int)(s * 6);                    // 0-6
-                if (level >= 20) equip.MaxManaBonus = 5 + (int)(s * 35); // 5-40
+                if (level >= 20) equip.IntelligenceBonus += (int)(s * 7); // 0-7 additional
                 break;
 
             case WeaponType.Rapier:
@@ -330,7 +330,7 @@ public static class ShopItemGenerator
             case WeaponType.Polearm:
                 equip.StrengthBonus = 1 + (int)(s * 8);              // 1-9
                 equip.DefenceBonus = (int)(s * 5);                   // 0-5
-                if (level >= 40) equip.MaxHPBonus = (int)(s * 25);   // 0-25
+                if (level >= 40) equip.ConstitutionBonus = (int)(s * 5);   // 0-5
                 break;
 
             case WeaponType.Bow:
@@ -342,8 +342,8 @@ public static class ShopItemGenerator
             case WeaponType.Instrument:
                 equip.CharismaBonus = 2 + (int)(s * 12);             // 2-14
                 equip.WisdomBonus = 1 + (int)(s * 8);                // 1-9
-                if (level >= 30) equip.MaxManaBonus = (int)(s * 30);  // 0-30
-                if (level >= 60) equip.MaxHPBonus = (int)(s * 25);    // 0-25
+                if (level >= 30) equip.IntelligenceBonus = (int)(s * 6);  // 0-6
+                if (level >= 60) equip.ConstitutionBonus = (int)(s * 5);  // 0-5
                 break;
 
             default:
@@ -373,14 +373,12 @@ public static class ShopItemGenerator
                 break;
 
             case WeaponType.TowerShield:
-                equip.ConstitutionBonus = (int)(s * 5);              // 0-5
-                equip.MaxHPBonus = (int)(s * 20);                    // 0-20
+                equip.ConstitutionBonus = (int)(s * 5) + (int)(s * 4); // 0-9
                 if (level >= 40) equip.MagicResistance = (int)(s * 10); // 0-10%
                 break;
 
             default: // Standard shield
-                equip.ConstitutionBonus = (int)(s * 3);              // 0-3
-                if (level >= 30) equip.MaxHPBonus = (int)(s * 10);   // 0-10
+                equip.ConstitutionBonus = (int)(s * 3) + (int)(s * 2); // 0-5
                 break;
         }
     }
@@ -407,21 +405,18 @@ public static class ShopItemGenerator
         switch (type)
         {
             case ArmorType.Plate:
-                equip.ConstitutionBonus = Math.Max(1, (int)(s * 6 * slotScale));
-                equip.MaxHPBonus = (int)(s * 35 * slotScale);
+                equip.ConstitutionBonus = Math.Max(1, (int)(s * 6 * slotScale)) + (int)(s * 7 * slotScale);
                 if (level >= 30) equip.StrengthBonus = (int)(s * 4 * slotScale);
                 break;
 
             case ArmorType.Scale:
-                equip.ConstitutionBonus = Math.Max(1, (int)(s * 5 * slotScale));
-                equip.MaxHPBonus = (int)(s * 25 * slotScale);
+                equip.ConstitutionBonus = Math.Max(1, (int)(s * 5 * slotScale)) + (int)(s * 5 * slotScale);
                 if (level >= 30) equip.DefenceBonus = (int)(s * 5 * slotScale);
                 break;
 
             case ArmorType.Chain:
                 equip.DefenceBonus = Math.Max(1, (int)(s * 5 * slotScale));
-                equip.ConstitutionBonus = (int)(s * 4 * slotScale);
-                if (level >= 25) equip.MaxHPBonus = (int)(s * 15 * slotScale);
+                equip.ConstitutionBonus = (int)(s * 4 * slotScale) + (int)(s * 3 * slotScale);
                 break;
 
             case ArmorType.Leather:
@@ -431,18 +426,16 @@ public static class ShopItemGenerator
                 break;
 
             case ArmorType.Cloth:
-                equip.IntelligenceBonus = Math.Max(1, (int)(s * 5 * slotScale));
+                equip.IntelligenceBonus = Math.Max(1, (int)(s * 5 * slotScale)) + (int)(s * 5 * slotScale);
                 equip.WisdomBonus = (int)(s * 4 * slotScale);
-                equip.MaxManaBonus = (int)(s * 25 * slotScale);
                 break;
 
             case ArmorType.Magic:
             case ArmorType.Artifact:
-                equip.IntelligenceBonus = Math.Max(1, (int)(s * 4 * slotScale));
+                equip.IntelligenceBonus = Math.Max(1, (int)(s * 4 * slotScale)) + (int)(s * 4 * slotScale);
                 equip.WisdomBonus = (int)(s * 4 * slotScale);
-                equip.MaxManaBonus = (int)(s * 20 * slotScale);
                 if (level >= 30) equip.MagicResistance = (int)(s * 10 * slotScale);
-                if (level >= 50) equip.MaxHPBonus = (int)(s * 20 * slotScale);
+                if (level >= 50) equip.ConstitutionBonus = (int)(s * 4 * slotScale);
                 break;
         }
     }
@@ -463,24 +456,21 @@ public static class ShopItemGenerator
         else if (name.Contains("Protection") || name.Contains("Warding") || name.Contains("Valor"))
         {
             equip.DefenceBonus = 1 + (int)(s * 6);
-            equip.MaxHPBonus = (int)(s * 15);
+            equip.ConstitutionBonus = (int)(s * 3);
         }
         else if (name.Contains("Wisdom") || name.Contains("Mage") || name.Contains("Archmage"))
         {
             equip.WisdomBonus = 1 + (int)(s * 6);
-            equip.IntelligenceBonus = (int)(s * 4);
-            equip.MaxManaBonus = (int)(s * 15);
+            equip.IntelligenceBonus = (int)(s * 4) + (int)(s * 3);
         }
         else if (name.Contains("Power") || name.Contains("Heroes") || name.Contains("Dragon"))
         {
             equip.StrengthBonus = (int)(s * 5);
-            equip.ConstitutionBonus = (int)(s * 4);
-            equip.MaxHPBonus = (int)(s * 20);
+            equip.ConstitutionBonus = (int)(s * 4) + (int)(s * 4);
         }
         else if (name.Contains("Vitality") || name.Contains("Health"))
         {
-            equip.ConstitutionBonus = 1 + (int)(s * 6);
-            equip.MaxHPBonus = 5 + (int)(s * 30);
+            equip.ConstitutionBonus = 1 + (int)(s * 6) + (int)(s * 6);
         }
         else if (name.Contains("Luck") || name.Contains("Signet"))
         {
@@ -494,9 +484,8 @@ public static class ShopItemGenerator
         }
         else if (name.Contains("Gods") || name.Contains("Planes"))
         {
-            equip.IntelligenceBonus = (int)(s * 5);
+            equip.IntelligenceBonus = (int)(s * 5) + (int)(s * 5);
             equip.WisdomBonus = (int)(s * 5);
-            equip.MaxManaBonus = (int)(s * 25);
             equip.MagicResistance = (int)(s * 8);
         }
         else

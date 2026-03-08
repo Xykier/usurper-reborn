@@ -391,14 +391,7 @@ public class LevelMasterLocation : BaseLocation
     {
         terminal.SetColor(currentMaster.Color);
 
-        if (ClassAbilitySystem.IsSpellcaster(currentPlayer.Class))
-        {
-            // Pure caster — spell menu only
-            terminal.WriteLine($"\"{currentPlayer.DisplayName}, let me teach you the arcane arts...\"");
-            await Task.Delay(800);
-            await SpellLearningSystem.ShowSpellLearningMenu(currentPlayer, terminal);
-        }
-        else if (SpellSystem.HasSpells(currentPlayer))
+        if (ClassAbilitySystem.IsSpellcaster(currentPlayer.Class) || SpellSystem.HasSpells(currentPlayer))
         {
             // Prestige hybrid — both abilities and spells
             terminal.WriteLine($"\"{currentPlayer.DisplayName}, your power spans both martial and arcane arts...\"");
@@ -712,6 +705,7 @@ public class LevelMasterLocation : BaseLocation
                 player.BaseDexterity += 2;
                 player.BaseMaxHP += 5;
                 player.BaseConstitution += 2;
+                player.BaseStamina += 2;
                 break;
 
             // Warrior classes - focus on Strength, Constitution, HP
@@ -771,6 +765,7 @@ public class LevelMasterLocation : BaseLocation
                 player.BaseAgility += 2;
                 player.BaseIntelligence += 2;
                 player.BaseMaxHP += 5;
+                player.BaseStamina += 2;
                 break;
 
             // NG+ Prestige Classes — strictly stronger, both spells AND abilities

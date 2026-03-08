@@ -1134,7 +1134,7 @@ public static class LootGenerator
         /// Applies stat bonuses based on template name keywords, giving armor pieces
         /// thematic identity beyond their base defense value.
         /// </summary>
-        private static void ApplyThematicBonuses(Item item, string templateName, int finalPower)
+        internal static void ApplyThematicBonuses(Item item, string templateName, int finalPower)
         {
             var name = templateName.ToLowerInvariant();
 
@@ -1143,56 +1143,73 @@ public static class LootGenerator
             int hpBonus = finalPower;
             int manaBonus = Math.Max(1, finalPower * 3 / 4);
 
-            // Caster/Focus themed → Intelligence (spell damage) + Mana
-            if (name.Contains("focus") || name.Contains("wizard") || name.Contains("archmage") ||
-                name.Contains("arcane") || name.Contains("enchanted") || name.Contains("mystic") ||
-                name.Contains("mage"))
-            {
-                item.Mana += manaBonus;
-                // Store INT as a LootEffect so it transfers to Equipment.IntelligenceBonus
-                item.LootEffects.Add(((int)SpecialEffect.Intelligence, primaryStat));
-            }
-            // Holy/Divine themed → Wisdom + HP
-            else if (name.Contains("holy") || name.Contains("sacred") || name.Contains("blessed") ||
+            // Holy/Divine themed → Wisdom + Constitution (checked before caster to prevent "Priest's Robes" matching "robe")
+            if (name.Contains("holy") || name.Contains("sacred") || name.Contains("blessed") ||
                      name.Contains("divine") || name.Contains("faith") || name.Contains("priest") ||
-                     name.Contains("diadem") || name.Contains("paladin"))
+                     name.Contains("diadem") || name.Contains("paladin") || name.Contains("celestial"))
             {
                 item.Wisdom += primaryStat;
-                item.HP += hpBonus;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 5));
+            }
+            // Caster/Focus themed → Intelligence
+            else if (name.Contains("focus") || name.Contains("wizard") || name.Contains("archmage") ||
+                name.Contains("arcane") || name.Contains("enchanted") || name.Contains("mystic") ||
+                name.Contains("mage") || name.Contains("silk") || name.Contains("cloth") ||
+                name.Contains("robe") || name.Contains("vestment") || name.Contains("sorcery"))
+            {
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, primaryStat + manaBonus / 3));
             }
             // Shadow/Stealth themed → Dexterity + Agility
-            else if (name.Contains("shadow") || name.Contains("thief") || name.Contains("night") ||
-                     name.Contains("stalker") || name.Contains("death") || name.Contains("phantom"))
+            else if (name.Contains("shadow") || name.Contains("thief") || name.Contains("night ") ||
+                     name.Contains("stalker") || name.Contains("death") || name.Contains("phantom") ||
+                     name.Contains("assassin") || name.Contains("rogue"))
             {
                 item.Dexterity += primaryStat;
                 item.Agility += secondaryStat;
             }
-            // Warrior/Battle themed → Strength + HP
-            else if (name.Contains("war ") || name.Contains("battle") || name.Contains("titan") ||
-                     name.Contains("berserker") || name.Contains("barbarian") || name.Contains("spiked"))
+            // Warrior/Battle themed → Strength + Constitution
+            else if (name.Contains("war") || name.Contains("battle") || name.Contains("titan") ||
+                     name.Contains("berserker") || name.Contains("barbarian") || name.Contains("spiked") ||
+                     name.Contains("knight") || name.Contains("gladiator") || name.Contains("champion") ||
+                     name.Contains("fighter") || name.Contains("fortress") || name.Contains("aegis"))
             {
                 item.Strength += primaryStat;
-                item.HP += hpBonus;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 5));
             }
-            // Dragon themed → Strength + Defence + HP
+            // Dragon themed → Strength + Defence + Constitution
             else if (name.Contains("dragon"))
             {
                 item.Strength += secondaryStat;
                 item.Defence += secondaryStat;
-                item.HP += hpBonus / 2;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 10));
             }
             // Ranger/Scout/Elven themed → Dexterity + Agility
             else if (name.Contains("ranger") || name.Contains("scout") || name.Contains("elven") ||
-                     name.Contains("forest"))
+                     name.Contains("forest") || name.Contains("traveler") || name.Contains("leather"))
             {
                 item.Dexterity += primaryStat;
                 item.Agility += secondaryStat;
             }
-            // Premium material themed → HP + Defence
+            // Vitality/Endurance themed → Constitution
+            else if (name.Contains("vitality") || name.Contains("endurance") || name.Contains("resilience") ||
+                     name.Contains("fortitude") || name.Contains("vigor") || name.Contains("stalwart") ||
+                     name.Contains("robust"))
+            {
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, primaryStat + hpBonus / 5));
+            }
+            // Premium material themed → Constitution + Defence
             else if (name.Contains("mithril") || name.Contains("adamantine"))
             {
-                item.HP += hpBonus;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 5));
                 item.Defence += secondaryStat;
+            }
+            // Metal armor themed → Defence + Constitution (generic but functional)
+            else if (name.Contains("iron") || name.Contains("steel") || name.Contains("chain") ||
+                     name.Contains("plate") || name.Contains("banded") || name.Contains("splint") ||
+                     name.Contains("studded") || name.Contains("reinforced"))
+            {
+                item.Defence += secondaryStat;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 10));
             }
         }
 
@@ -1238,62 +1255,62 @@ public static class LootGenerator
             if (lowerName.Contains("wisdom") || lowerName.Contains("insight"))
             {
                 item.Wisdom += finalPower / 2;
-                item.Mana += finalPower;
-                item.HP += finalPower;
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower / 3));
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
             }
             else if (lowerName.Contains("strength") || lowerName.Contains("power") || lowerName.Contains("heroes"))
             {
                 item.Strength += finalPower / 2;
-                item.HP += finalPower * 2;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower * 2 / 5));
             }
             else if (lowerName.Contains("protection") || lowerName.Contains("ward") || lowerName.Contains("shield"))
             {
                 item.Defence += finalPower / 3;
-                item.HP += finalPower * 2;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower * 2 / 5));
             }
             else if (lowerName.Contains("vitality") || lowerName.Contains("life") || lowerName.Contains("health"))
             {
-                item.HP += finalPower * 3;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower * 3 / 5));
             }
             else if (lowerName.Contains("might") || lowerName.Contains("valor"))
             {
                 item.Strength += finalPower / 3;
                 item.Dexterity += finalPower / 4;
-                item.HP += finalPower;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
             }
             else if (lowerName.Contains("luck") || lowerName.Contains("fortune"))
             {
                 item.Dexterity += finalPower / 3;
                 item.Charisma += finalPower / 3;
-                item.HP += finalPower;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
             }
             else if (lowerName.Contains("fireball") || lowerName.Contains("planes") || lowerName.Contains("gods"))
             {
-                item.Mana += finalPower * 2;
-                item.HP += finalPower;
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower * 2 / 3));
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
             }
             else if (lowerName.Contains("mage") || lowerName.Contains("archmage") || lowerName.Contains("sorcery") || lowerName.Contains("sigil"))
             {
-                item.Mana += finalPower * 2;
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower * 2 / 3));
                 item.Wisdom += finalPower / 4;
             }
             else if (lowerName.Contains("dragon"))
             {
                 item.Strength += finalPower / 4;
                 item.Defence += finalPower / 4;
-                item.HP += finalPower * 2;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower * 2 / 5));
             }
             else if (accessoryType == ObjType.Fingers) // Ring — generic fallback
             {
                 item.Strength += finalPower / 4;
                 item.Dexterity += finalPower / 4;
-                item.HP += finalPower * 2;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower * 2 / 5));
             }
             else if (accessoryType == ObjType.Neck) // Necklace — generic fallback
             {
                 item.Wisdom += finalPower / 3;
-                item.Mana += finalPower * 2;
-                item.HP += finalPower;
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower * 2 / 3));
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
             }
 
             ApplyEffectsToItem(item, effects, isWeapon: false);
@@ -1302,7 +1319,6 @@ public static class LootGenerator
             {
                 // Cursed accessories have higher stats but penalties
                 item.Strength = (int)(item.Strength * 1.3f);
-                item.HP = (int)(item.HP * 1.3f);
                 item.Value = (long)(item.Value * 0.5f);
                 ApplyCursePenalties(item);
             }
@@ -1408,10 +1424,10 @@ public static class LootGenerator
                         item.Dexterity += value;
                         break;
                     case SpecialEffect.Constitution:
-                        item.HP += value * 5; // Constitution gives HP
+                        // Constitution bonus applied via LootEffects → Equipment.ConstitutionBonus
                         break;
                     case SpecialEffect.Intelligence:
-                        item.Mana += value * 3; // Intelligence gives mana
+                        // Intelligence bonus applied via LootEffects → Equipment.IntelligenceBonus
                         break;
                     case SpecialEffect.Wisdom:
                         item.Wisdom += value;
@@ -1419,14 +1435,16 @@ public static class LootGenerator
                     case SpecialEffect.AllStats:
                         item.Strength += value;
                         item.Dexterity += value;
+                        item.Agility += value;
                         item.Wisdom += value;
                         item.Charisma += value;
+                        // CON and INT applied via LootEffects → Equipment.ConstitutionBonus/IntelligenceBonus
                         break;
                     case SpecialEffect.MaxHP:
-                        item.HP += value;
+                        // HP bonus applied via LootEffects → Equipment.ConstitutionBonus
                         break;
                     case SpecialEffect.MaxMana:
-                        item.Mana += value;
+                        // Mana bonus applied via LootEffects → Equipment.IntelligenceBonus
                         break;
 
                     // Elemental damages add to attack (weapons) or provide description (armor)
@@ -1439,14 +1457,12 @@ public static class LootGenerator
                         if (isWeapon)
                         {
                             item.Attack += value / 2; // Elemental adds to base attack
-                            item.MagicProperties.Mana += value / 5; // Some mana bonus
                         }
                         break;
 
-                    // Life/mana steal
+                    // Life/mana steal — effects applied via LootEffects at conversion time
                     case SpecialEffect.LifeSteal:
                     case SpecialEffect.ManaSteal:
-                        item.HP += value; // Represented as HP bonus for now
                         break;
 
                     // Critical bonuses add to attack effectiveness
@@ -1478,11 +1494,11 @@ public static class LootGenerator
                         break;
 
                     case SpecialEffect.Regeneration:
-                        item.HP += value * 2;
+                        // Regen effect applied via LootEffects at conversion time
                         break;
 
                     case SpecialEffect.ManaRegen:
-                        item.Mana += value * 2;
+                        // Mana regen effect applied via LootEffects at conversion time
                         break;
 
                     case SpecialEffect.DamageReduction:
@@ -1514,7 +1530,7 @@ public static class LootGenerator
             item.Strength -= penalty / 2;
             item.Dexterity -= penalty / 3;
             item.Wisdom -= penalty / 3;
-            item.HP -= penalty * 2;
+            item.LootEffects.Add(((int)SpecialEffect.Constitution, -(penalty / 2)));
 
             // Add curse description
             if (item.Description.Count > 1)

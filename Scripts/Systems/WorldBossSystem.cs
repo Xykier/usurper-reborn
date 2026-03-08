@@ -1033,7 +1033,11 @@ namespace UsurperRemake.Systems
             if (HasSpecialEffect(player, LootGenerator.SpecialEffect.TitanResolve))
                 playerDef += (long)(player.MaxHP * 0.05);
 
+            // Defense can reduce damage but never below 20% of boss strength
+            // World bosses are meant to be dangerous — pure defense stacking shouldn't trivialize them
             long raw = Math.Max(1, bossStr - playerDef / 2);
+            long minDamage = Math.Max(1, bossStr / 5);
+            raw = Math.Max(raw, minDamage);
             double variance = 0.7 + rng.NextDouble() * 0.6;
 
             return Math.Max(1, (long)(raw * variance));
@@ -1207,7 +1211,7 @@ namespace UsurperRemake.Systems
                                 bool hasEpic = lootItem.LootEffects.Any(e => e.EffectType == (int)LootGenerator.SpecialEffect.TitanResolve);
                                 string rarityColor = hasLegendary ? "bright_yellow" : hasEpic ? "bright_magenta" : "bright_cyan";
                                 killingTerminal.SetColor(rarityColor);
-                                killingTerminal.WriteLine($"  Loot: {lootItem.Name}");
+                                killingTerminal.WriteLine($"  Loot: {LootGenerator.GetUnidentifiedName(lootItem)}");
                             }
                         }
 
@@ -1261,7 +1265,7 @@ namespace UsurperRemake.Systems
                             {
                                 onlinePlayer.Inventory.Add(lootItem);
                                 session.EnqueueMessage(
-                                    $"\n  *** World Boss Rewards ({tierName}): +{xpReward:N0} XP, +{goldReward:N0} gold, {lootItem.Name} ***");
+                                    $"\n  *** World Boss Rewards ({tierName}): +{xpReward:N0} XP, +{goldReward:N0} gold, {LootGenerator.GetUnidentifiedName(lootItem)} ***");
                             }
                             else
                             {

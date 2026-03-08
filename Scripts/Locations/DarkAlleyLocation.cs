@@ -1654,12 +1654,14 @@ namespace UsurperRemake.Locations
                 currentPlayer.Gold += winnings;
                 terminal.SetColor("bright_green");
                 terminal.WriteLine($"You pocket {winnings:N0} gold!");
+                DebugLogger.Instance.LogInfo("GOLD", $"GAMBLING WIN: {currentPlayer.DisplayName} bet {bet:N0}g, won {winnings:N0}g (gold now {currentPlayer.Gold:N0})");
                 currentPlayer.Statistics?.RecordGamblingWin(winnings - bet);
             }
             else
             {
                 terminal.SetColor("red");
                 terminal.WriteLine($"You lost {bet:N0} gold. The house always wins... eventually.");
+                DebugLogger.Instance.LogInfo("GOLD", $"GAMBLING LOSS: {currentPlayer.DisplayName} lost {bet:N0}g bet (gold now {currentPlayer.Gold:N0})");
                 currentPlayer.Statistics?.RecordGamblingLoss(bet);
             }
 
@@ -2073,6 +2075,7 @@ namespace UsurperRemake.Locations
                         terminal.WriteLine($"Spectator bet pays out: +{betWinnings:N0} gold!");
                     }
 
+                    LogPitFightBetResult(spectatorBet, betMultiplier, true);
                     currentPlayer.Statistics?.RecordPitFight(true, result.GoldGained);
 
                     if ((currentPlayer.Statistics?.TotalPitFightsWon ?? 0) >= 10)
@@ -2092,6 +2095,7 @@ namespace UsurperRemake.Locations
                         terminal.WriteLine($"Lost your spectator bet of {spectatorBet:N0} gold.");
                     }
 
+                    LogPitFightBetResult(spectatorBet, betMultiplier, false);
                     currentPlayer.Statistics?.RecordPitFight(false);
                 }
             }
@@ -2183,6 +2187,8 @@ namespace UsurperRemake.Locations
                         terminal.WriteLine($"Spectator bet pays out: +{betWinnings:N0} gold!");
                     }
 
+                    DebugLogger.Instance.LogInfo("GOLD", $"PIT NPC WIN: {currentPlayer.DisplayName} took {goldTaken:N0}g from {opponent.Name2} (gold now {currentPlayer.Gold:N0})");
+                    LogPitFightBetResult(spectatorBet, betMultiplier, true);
                     currentPlayer.Statistics?.RecordPitFight(true, goldTaken);
 
                     if ((currentPlayer.Statistics?.TotalPitFightsWon ?? 0) >= 10)
@@ -2206,6 +2212,8 @@ namespace UsurperRemake.Locations
                         terminal.WriteLine($"Lost your spectator bet of {spectatorBet:N0} gold.");
                     }
 
+                    DebugLogger.Instance.LogInfo("GOLD", $"PIT NPC LOSS: {currentPlayer.DisplayName} lost {goldLost:N0}g to {opponent.Name2} (gold now {currentPlayer.Gold:N0})");
+                    LogPitFightBetResult(spectatorBet, betMultiplier, false);
                     currentPlayer.Statistics?.RecordPitFight(false);
                 }
             }
@@ -2226,6 +2234,7 @@ namespace UsurperRemake.Locations
             if (currentPlayer.Gold <= 0) return (0, 1.0f);
 
             // Cap max bet based on level to prevent gold farming exploit
+            // At level 29: max 14,500. At level 100: max 50,000.
             long maxBet = Math.Min(currentPlayer.Gold, (long)currentPlayer.Level * 500);
 
             terminal.SetColor("yellow");
@@ -2252,6 +2261,20 @@ namespace UsurperRemake.Locations
             }
 
             return (betAmount, multiplier);
+        }
+
+        private void LogPitFightBetResult(long betAmount, float multiplier, bool won)
+        {
+            if (betAmount <= 0) return;
+            if (won)
+            {
+                long winnings = (long)(betAmount * multiplier);
+                DebugLogger.Instance.LogInfo("GOLD", $"PIT BET WIN: {currentPlayer.DisplayName} bet {betAmount:N0}g at {multiplier}x, won {winnings:N0}g (gold now {currentPlayer.Gold:N0})");
+            }
+            else
+            {
+                DebugLogger.Instance.LogInfo("GOLD", $"PIT BET LOSS: {currentPlayer.DisplayName} lost {betAmount:N0}g bet (gold now {currentPlayer.Gold:N0})");
+            }
         }
 
         /// <summary>

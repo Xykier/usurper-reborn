@@ -463,6 +463,8 @@ public class MusicShopLocation : BaseLocation
             var bonuses = new List<string>();
             if (item.CharismaBonus > 0) bonuses.Add($"CHA+{item.CharismaBonus}");
             if (item.WisdomBonus > 0) bonuses.Add($"WIS+{item.WisdomBonus}");
+            if (item.IntelligenceBonus > 0) bonuses.Add($"INT+{item.IntelligenceBonus}");
+            if (item.ConstitutionBonus > 0) bonuses.Add($"CON+{item.ConstitutionBonus}");
             if (item.MaxManaBonus > 0) bonuses.Add($"Mana+{item.MaxManaBonus}");
             if (item.MaxHPBonus > 0) bonuses.Add($"HP+{item.MaxHPBonus}");
             terminal.SetColor(canBuy ? "bright_green" : "darkgray");

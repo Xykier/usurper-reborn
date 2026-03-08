@@ -18,6 +18,9 @@
         <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
         <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     </PropertyGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Tests" />
+    </ItemGroup>
 
     <!-- Trimming for Release builds - removes unused framework code -->
     <!-- Uses partial trim mode because System.Text.Json relies on reflection -->

@@ -121,27 +121,27 @@ public static class SpellSystem
             [7] = new SpellInfo(7, "Haste", "Accelerate time around yourself. Extra attacks per round. Duration: whole fight.", 25, 7, "Quicksilvarie", false, "Buff"),
 
             // --- MID TIER (Levels 26-50) - Journeyman Sorcery ---
-            [8] = new SpellInfo(8, "Power Hat", "Regenerate health and bolster defenses. Effect: 40-60 hp + 10 protection. Duration: whole fight.", 30, 8, "Excadammarie", false, "Heal"),
-            [9] = new SpellInfo(9, "Fireball", "A sphere of flame engulfs your enemy. Damage: 50-65. Duration: 1 turn.", 35, 9, "Exammmarie", false, "Attack"),
+            [8] = new SpellInfo(8, "Power Hat", "Regenerate health and bolster defenses. Effect: 50-75 hp + protection. Duration: whole fight.", 30, 8, "Excadammarie", false, "Heal"),
+            [9] = new SpellInfo(9, "Fireball", "A sphere of flame engulfs your enemy. Damage: 55-75. Duration: 1 turn.", 35, 9, "Exammmarie", false, "Attack"),
             [10] = new SpellInfo(10, "Fear", "Project terror into your enemy's mind. Effect: reduced effectiveness. Duration: varies.", 40, 10, "Examasumarie", false, "Debuff"),
-            [11] = new SpellInfo(11, "Lightning Bolt", "A crackling bolt of electricity. Damage: 55-70. Duration: 1 turn.", 45, 11, "Exmasesaexmarie", false, "Attack"),
-            [12] = new SpellInfo(12, "Mirror Image", "Create illusory duplicates of yourself. Protection: +30. Duration: whole fight.", 50, 12, "Mirrorimarie", false, "Buff"),
-            [13] = new SpellInfo(13, "Ice Storm", "Razor shards of ice assault all enemies. Damage: 45-60 to all. Duration: 1 turn.", 55, 13, "Icestormarie", true, "Attack"),
-            [14] = new SpellInfo(14, "Prismatic Shield", "A cage of light protects you. Protection: +40. Duration: whole fight.", 60, 14, "Exmasummasumarie", false, "Buff"),
+            [11] = new SpellInfo(11, "Lightning Bolt", "A crackling bolt of electricity. Damage: 60-80. Duration: 1 turn.", 45, 11, "Exmasesaexmarie", false, "Attack"),
+            [12] = new SpellInfo(12, "Mirror Image", "Create illusory duplicates of yourself. Protection: +35. Duration: whole fight.", 50, 12, "Mirrorimarie", false, "Buff"),
+            [13] = new SpellInfo(13, "Ice Storm", "Razor shards of ice assault all enemies. Damage: 50-70 to all. Duration: 1 turn.", 55, 13, "Icestormarie", true, "Attack"),
+            [14] = new SpellInfo(14, "Prismatic Shield", "A cage of light protects you. Protection: +45. Duration: whole fight.", 60, 14, "Exmasummasumarie", false, "Buff"),
 
             // --- HIGH TIER (Levels 51-75) - Master Wizardry ---
-            [15] = new SpellInfo(15, "Chain Lightning", "Lightning arcs between multiple foes. Damage: 70-90 to all. Duration: 1 turn.", 75, 15, "Chainlightarie", true, "Attack"),
-            [16] = new SpellInfo(16, "Disintegrate", "Unravel the target's physical form. Damage: 100-130. Duration: 1 turn.", 85, 16, "Disintegrarie", false, "Attack"),
-            [17] = new SpellInfo(17, "Pillar of Fire", "A column of flame that penetrates all armor. Damage: 110-140. Duration: 1 turn.", 95, 17, "Exdammasumarie", false, "Attack"),
+            [15] = new SpellInfo(15, "Chain Lightning", "Lightning arcs between multiple foes. Damage: 80-105 to all. Duration: 1 turn.", 75, 15, "Chainlightarie", true, "Attack"),
+            [16] = new SpellInfo(16, "Disintegrate", "Unravel the target's physical form. Damage: 110-150. Duration: 1 turn.", 85, 16, "Disintegrarie", false, "Attack"),
+            [17] = new SpellInfo(17, "Pillar of Fire", "A column of flame that penetrates all armor. Damage: 120-160. Duration: 1 turn.", 95, 17, "Exdammasumarie", false, "Attack"),
             [18] = new SpellInfo(18, "Time Stop", "Briefly halt time itself. Extra turn + protection. Duration: 1 round.", 110, 18, "Timestoparie", false, "Buff"),
-            [19] = new SpellInfo(19, "Meteor Swarm", "Call down flaming rocks from the sky. Damage: 120-150 to all. Duration: 1 turn.", 125, 19, "Meteorarie", true, "Attack"),
-            [20] = new SpellInfo(20, "Arcane Immunity", "Become immune to lesser magics. Protection: +60. Duration: whole fight.", 140, 20, "Immunemagarie", false, "Buff"),
+            [19] = new SpellInfo(19, "Meteor Swarm", "Call down flaming rocks from the sky. Damage: 130-180 to all. Duration: 1 turn.", 125, 19, "Meteorarie", true, "Attack"),
+            [20] = new SpellInfo(20, "Arcane Immunity", "Become immune to lesser magics. Protection: +65. Duration: whole fight.", 140, 20, "Immunemagarie", false, "Buff"),
 
             // --- LEGENDARY TIER (Levels 76-100) - Archmage Powers ---
             [21] = new SpellInfo(21, "Power Word: Stun", "A single word paralyzes your enemy. Effect: cannot act 3 rounds. Duration: 3 rounds.", 160, 21, "Stunverbum", false, "Debuff"),
-            [22] = new SpellInfo(22, "Manwe's Creation", "Channel the Creator's power to reshape reality. Damage: 180-220. Duration: 1 turn.", 180, 22, "Manwecreatie", false, "Attack"),
+            [22] = new SpellInfo(22, "Manwe's Creation", "Channel the Creator's power to reshape reality. Damage: 200-280. Duration: 1 turn.", 180, 22, "Manwecreatie", false, "Attack"),
             [23] = new SpellInfo(23, "Summon Demon", "Call a demon from the abyss. Attack: +100. Duration: whole fight.", 200, 23, "Excadexsumarie", false, "Summon"),
-            [24] = new SpellInfo(24, "Power Word: Kill", "The ultimate death magic. Damage: 250-320. Duration: 1 turn.", 230, 24, "Mattravidduzzievh", false, "Attack"),
+            [24] = new SpellInfo(24, "Power Word: Kill", "The ultimate death magic. Damage: 280-380. Duration: 1 turn.", 230, 24, "Mattravidduzzievh", false, "Attack"),
             [25] = new SpellInfo(25, "Wish", "Bend reality to your will. All stats doubled. Duration: whole fight.", 300, 25, "Ultimawisharie", false, "Buff")
         },
 
@@ -637,8 +637,13 @@ public static class SpellSystem
             statBonus += (caster.Wisdom - 10) * 0.01; // +1% per Wisdom above 10
         }
 
-        // Cap total stat bonus to prevent exponential damage at endgame
-        statBonus = Math.Min(statBonus, 5.0);
+        // Magician Arcane Mastery: +15% spell damage (unique class passive)
+        if (caster.Class == CharacterClass.Magician)
+        {
+            statBonus *= GameConfig.MagicianArcaneSpellBonus;
+        }
+
+        // StatEffectsSystem already applies soft cap at 8.0x with diminishing returns above INT 85
 
         // Add some variance (±10%)
         double variance = 0.9 + (random.NextDouble() * 0.2);
@@ -662,6 +667,39 @@ public static class SpellSystem
         double scaledEffect = baseEffect * levelMultiplier * statBonus * variance * proficiencyMult * drugSpellMult * herbSpellMult;
 
         return Math.Max(1, (int)scaledEffect);
+    }
+
+    /// <summary>
+    /// Scale protection/AC bonuses from spells with level and INT.
+    /// More conservative than damage scaling but enough to stay relevant.
+    /// Level 1: 1.0x, Level 50: 2.0x, Level 100: 3.0x (level component)
+    /// INT adds up to 2.5x multiplier with soft cap above INT 60.
+    /// </summary>
+    private static int ScaleProtectionEffect(int baseProtection, Character caster, float proficiencyMult = 1.0f)
+    {
+        // Level scaling: 2% per level (damage is 3%, healing is 2.5%)
+        double levelMultiplier = 1.0 + (caster.Level * 0.02);
+
+        // INT scaling for protection: 1.5% per point above 10, soft cap above INT 60
+        // Max ~2.5x (much less than damage's 8.0x)
+        double intBonus = 1.0;
+        long effectiveInt = caster.Intelligence;
+        if (effectiveInt > 10)
+        {
+            if (effectiveInt <= 60)
+            {
+                intBonus = 1.0 + (effectiveInt - 10) * 0.015;
+            }
+            else
+            {
+                // Full scaling to 60, then diminishing (0.005 per point above)
+                intBonus = 1.0 + (50 * 0.015) + (effectiveInt - 60) * 0.005;
+            }
+            intBonus = Math.Min(intBonus, 2.5);
+        }
+
+        double scaled = baseProtection * levelMultiplier * intBonus * proficiencyMult;
+        return Math.Max(1, (int)scaled);
     }
 
     /// <summary>
@@ -706,8 +744,7 @@ public static class SpellSystem
                 break;
 
             case 2: // Divine Shield - Protection +8
-                int baseProtection2 = (int)((8 + (caster.Level / 12)) * profMult);
-                result.ProtectionBonus = baseProtection2;
+                result.ProtectionBonus = ScaleProtectionEffect(8 + (caster.Level / 12), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" {caster.Name2} feels protected! (+{result.ProtectionBonus} defense)";
                 break;
@@ -738,8 +775,7 @@ public static class SpellSystem
                 break;
 
             case 7: // Sanctuary - Protection +18
-                int baseProtection7 = (int)((18 + (caster.Level / 7)) * profMult);
-                result.ProtectionBonus = baseProtection7;
+                result.ProtectionBonus = ScaleProtectionEffect(18 + (caster.Level / 7), caster, profMult);
                 result.Duration = 3;
                 result.Message += $" A holy sanctuary protects {caster.Name2}! (+{result.ProtectionBonus} defense)";
                 break;
@@ -761,8 +797,7 @@ public static class SpellSystem
                 break;
 
             case 10: // Armor of Faith - Protection +28
-                int baseProtection10 = (int)((28 + (caster.Level / 5)) * profMult);
-                result.ProtectionBonus = baseProtection10;
+                result.ProtectionBonus = ScaleProtectionEffect(28 + (caster.Level / 5), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" Divine armor surrounds {caster.Name2}! (+{result.ProtectionBonus} defense)";
                 break;
@@ -787,16 +822,14 @@ public static class SpellSystem
                 break;
 
             case 14: // Prayer of Fortitude - +25 all defenses
-                int baseProtection14 = (int)((25 + (caster.Level / 5)) * profMult);
-                result.ProtectionBonus = baseProtection14;
+                result.ProtectionBonus = ScaleProtectionEffect(25 + (caster.Level / 5), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" Body and spirit are strengthened! (+{result.ProtectionBonus} defense)";
                 break;
 
             // --- HIGH TIER (Levels 51-75) ---
             case 15: // Invisibility - Protection +45
-                int baseProtection15 = (int)((45 + (caster.Level / 4)) * profMult);
-                result.ProtectionBonus = baseProtection15;
+                result.ProtectionBonus = ScaleProtectionEffect(45 + (caster.Level / 4), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "invisible";
                 result.Message += $" {caster.Name2} becomes invisible! (+{result.ProtectionBonus} defense)";
@@ -830,8 +863,7 @@ public static class SpellSystem
                 break;
 
             case 20: // Divine Intervention - Protection +85
-                int baseProtection20 = (int)((85 + (caster.Level / 2)) * profMult);
-                result.ProtectionBonus = baseProtection20;
+                result.ProtectionBonus = ScaleProtectionEffect(85 + (caster.Level / 2), caster, profMult);
                 result.Duration = 5;
                 result.SpecialEffect = "divination";
                 result.Message += $" The gods themselves protect {caster.Name2}! (+{result.ProtectionBonus} defense)";
@@ -855,10 +887,10 @@ public static class SpellSystem
             case 23: // Divine Avatar - All stats +55
                 int baseBonus23 = (int)((55 + (caster.Level)) * profMult);
                 result.AttackBonus = baseBonus23;
-                result.ProtectionBonus = baseBonus23;
+                result.ProtectionBonus = ScaleProtectionEffect(55 + caster.Level, caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "avatar";
-                result.Message += $" {caster.Name2} becomes a divine avatar! (+{baseBonus23} to all)";
+                result.Message += $" {caster.Name2} becomes a divine avatar! (+{result.AttackBonus} atk, +{result.ProtectionBonus} def)";
                 break;
 
             case 24: // Judgment - Base: 220-320 damage
@@ -896,8 +928,7 @@ public static class SpellSystem
                 break;
 
             case 2: // Arcane Shield - Protection +10
-                int baseProtection2 = (int)((10 + (caster.Level / 10)) * profMult);
-                result.ProtectionBonus = baseProtection2;
+                result.ProtectionBonus = ScaleProtectionEffect(10 + (caster.Level / 10), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" A shimmering shield surrounds {caster.Name2}! (+{result.ProtectionBonus} defense)";
                 break;
@@ -946,8 +977,7 @@ public static class SpellSystem
             case 8: // Power Hat - Base: 50-75 hp + protection
                 int baseHeal8 = 50 + random.Next(26);
                 result.Healing = ScaleHealingEffect(baseHeal8, caster, random, profMult);
-                int baseProtection8 = (int)((12 + (caster.Level / 8)) * profMult);
-                result.ProtectionBonus = baseProtection8;
+                result.ProtectionBonus = ScaleProtectionEffect(12 + (caster.Level / 8), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" {caster.Name2} regains {result.Healing} hp! (+{result.ProtectionBonus} defense)";
                 break;
@@ -976,8 +1006,7 @@ public static class SpellSystem
                 break;
 
             case 12: // Mirror Image - Protection +35
-                int baseProtection12 = (int)((35 + (caster.Level / 4)) * profMult);
-                result.ProtectionBonus = baseProtection12;
+                result.ProtectionBonus = ScaleProtectionEffect(35 + (caster.Level / 4), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "mirror";
                 result.Message += $" Illusory duplicates confuse enemies! (+{result.ProtectionBonus} defense)";
@@ -992,8 +1021,7 @@ public static class SpellSystem
                 break;
 
             case 14: // Prismatic Shield - Protection +45
-                int baseProtection14 = (int)((45 + (caster.Level / 4)) * profMult);
-                result.ProtectionBonus = baseProtection14;
+                result.ProtectionBonus = ScaleProtectionEffect(45 + (caster.Level / 4), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" A prismatic cage protects {caster.Name2}! (+{result.ProtectionBonus} defense)";
                 break;
@@ -1024,10 +1052,10 @@ public static class SpellSystem
             case 18: // Time Stop - Extra turn
                 int baseBonus18 = (int)((35 + (caster.Level / 3)) * profMult);
                 result.AttackBonus = baseBonus18;
-                result.ProtectionBonus = baseBonus18;
+                result.ProtectionBonus = ScaleProtectionEffect(35 + (caster.Level / 3), caster, profMult);
                 result.Duration = 1;
                 result.SpecialEffect = "timestop";
-                result.Message += $" Time itself halts! (+{baseBonus18} to attack and defense)";
+                result.Message += $" Time itself halts! (+{result.AttackBonus} atk, +{result.ProtectionBonus} def)";
                 break;
 
             case 19: // Meteor Swarm - Base: 130-180 damage to all
@@ -1039,8 +1067,7 @@ public static class SpellSystem
                 break;
 
             case 20: // Arcane Immunity - Protection +65
-                int baseProtection20 = (int)((65 + (caster.Level / 2)) * profMult);
-                result.ProtectionBonus = baseProtection20;
+                result.ProtectionBonus = ScaleProtectionEffect(65 + (caster.Level / 2), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "immunity";
                 result.Message += $" {caster.Name2} becomes immune to lesser magic! (+{result.ProtectionBonus} defense)";
@@ -1078,10 +1105,10 @@ public static class SpellSystem
             case 25: // Wish - All stats doubled
                 int baseBonus25 = (int)((100 + (caster.Level)) * profMult);
                 result.AttackBonus = baseBonus25;
-                result.ProtectionBonus = baseBonus25;
+                result.ProtectionBonus = ScaleProtectionEffect(100 + caster.Level, caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "wish";
-                result.Message += $" Reality bends to {caster.Name2}'s will! (+{baseBonus25} to all)";
+                result.Message += $" Reality bends to {caster.Name2}'s will! (+{result.AttackBonus} atk, +{result.ProtectionBonus} def)";
                 break;
         }
     }
@@ -1096,8 +1123,7 @@ public static class SpellSystem
         {
             // --- EARLY TIER (Levels 1-25) - First Awakening ---
             case 1: // Fog of War - Protection +7
-                int baseProtection1 = (int)((7 + (caster.Level / 12)) * profMult);
-                result.ProtectionBonus = baseProtection1;
+                result.ProtectionBonus = ScaleProtectionEffect(7 + (caster.Level / 12), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "fog";
                 result.Message += $" Mist obscures the battlefield! (+{result.ProtectionBonus} defense)";
@@ -1129,8 +1155,7 @@ public static class SpellSystem
                 break;
 
             case 5: // Duplicate - Protection +14
-                int baseProtection5 = (int)((14 + (caster.Level / 8)) * profMult);
-                result.ProtectionBonus = baseProtection5;
+                result.ProtectionBonus = ScaleProtectionEffect(14 + (caster.Level / 8), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "duplicate";
                 result.Message += $" An illusory duplicate confuses enemies! (+{result.ProtectionBonus} defense)";
@@ -1190,8 +1215,7 @@ public static class SpellSystem
                 break;
 
             case 13: // Shadow Cloak - Protection +38
-                int baseProtection13 = (int)((38 + (caster.Level / 5)) * profMult);
-                result.ProtectionBonus = baseProtection13;
+                result.ProtectionBonus = ScaleProtectionEffect(38 + (caster.Level / 5), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "shadow";
                 result.Message += $" Living shadow cloaks {caster.Name2}! (+{result.ProtectionBonus} defense)";
@@ -1215,8 +1239,7 @@ public static class SpellSystem
                 break;
 
             case 16: // Mind Blank - Protection +55, immune to mind
-                int baseProtection16 = (int)((55 + (caster.Level / 3)) * profMult);
-                result.ProtectionBonus = baseProtection16;
+                result.ProtectionBonus = ScaleProtectionEffect(55 + (caster.Level / 3), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "mindblank";
                 result.Message += $" {caster.Name2}'s mind becomes impervious! (+{result.ProtectionBonus} defense)";
@@ -1245,8 +1268,7 @@ public static class SpellSystem
                 break;
 
             case 20: // Noctura's Veil - Protection +75
-                int baseProtection20 = (int)((75 + (caster.Level / 2)) * profMult);
-                result.ProtectionBonus = baseProtection20;
+                result.ProtectionBonus = ScaleProtectionEffect(75 + (caster.Level / 2), caster, profMult);
                 result.Duration = 999;
                 result.SpecialEffect = "shadow";
                 result.Message += $" The Shadow Goddess protects {caster.Name2}! (+{result.ProtectionBonus} defense)";
@@ -1277,8 +1299,7 @@ public static class SpellSystem
             case 24: // Veloura's Embrace - Heal 280 + Protection +85
                 int baseHeal24 = 240 + random.Next(81);
                 result.Healing = ScaleHealingEffect(baseHeal24, caster, random, profMult);
-                int baseProtection24 = (int)((85 + (caster.Level / 2)) * profMult);
-                result.ProtectionBonus = baseProtection24;
+                result.ProtectionBonus = ScaleProtectionEffect(85 + (caster.Level / 2), caster, profMult);
                 result.Duration = 999;
                 result.Message += $" Veloura's love heals {result.Healing}! (+{result.ProtectionBonus} defense)";
                 break;

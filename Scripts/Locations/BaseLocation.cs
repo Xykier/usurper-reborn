@@ -4701,11 +4701,29 @@ public abstract class BaseLocation
         bool hasAnyBuff = currentPlayer.WellRestedCombats > 0 || currentPlayer.HasGodSlayerBuff
             || currentPlayer.HasDarkPactBuff || currentPlayer.HasSettlementBuff
             || currentPlayer.HasActiveSongBuff || currentPlayer.HasActiveHerbBuff
-            || currentPlayer.LoversBlissCombats > 0 || currentPlayer.DivineBlessingCombats > 0;
+            || currentPlayer.LoversBlissCombats > 0 || currentPlayer.DivineBlessingCombats > 0
+            || currentPlayer.Class == CharacterClass.Alchemist
+            || currentPlayer.Class == CharacterClass.Magician
+            || currentPlayer.Class == CharacterClass.Jester;
         if (hasAnyBuff)
         {
             terminal.SetColor("bright_cyan");
             terminal.WriteLine("Active Buffs:");
+            if (currentPlayer.Class == CharacterClass.Alchemist)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"  - Potion Mastery: +{(int)(GameConfig.AlchemistPotionMasteryBonus * 100)}% healing (potions, herbs, elixirs)");
+            }
+            if (currentPlayer.Class == CharacterClass.Magician)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"  - Arcane Mastery: +{(int)((GameConfig.MagicianArcaneSpellBonus - 1.0f) * 100)}% spell damage");
+            }
+            if (currentPlayer.Class == CharacterClass.Jester)
+            {
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine($"  - Trickster's Luck: {GameConfig.JesterTrickstersLuckChance}% chance per attack for bonus damage, dodge, or stamina");
+            }
             if (currentPlayer.HasGodSlayerBuff)
             {
                 terminal.SetColor("bright_yellow");
@@ -5402,6 +5420,7 @@ public abstract class BaseLocation
         if (item.StrengthBonus != 0) stats.Add($"Str:{item.StrengthBonus:+#;-#;0}");
         if (item.DexterityBonus != 0) stats.Add($"Dex:{item.DexterityBonus:+#;-#;0}");
         if (item.ConstitutionBonus != 0) stats.Add($"Con:{item.ConstitutionBonus:+#;-#;0}");
+        if (item.IntelligenceBonus != 0) stats.Add($"Int:{item.IntelligenceBonus:+#;-#;0}");
         if (item.MaxHPBonus != 0) stats.Add($"HP:{item.MaxHPBonus:+#;-#;0}");
         if (item.MaxManaBonus != 0) stats.Add($"MP:{item.MaxManaBonus:+#;-#;0}");
 
@@ -7746,6 +7765,26 @@ public abstract class BaseLocation
             MinLevel = invItem.MinLevel,
             Rarity = EquipmentRarity.Common
         };
+
+        // Transfer CON/INT from LootEffects
+        if (invItem.LootEffects != null)
+        {
+            foreach (var (effectType, value) in invItem.LootEffects)
+            {
+                var effect = (LootGenerator.SpecialEffect)effectType;
+                switch (effect)
+                {
+                    case LootGenerator.SpecialEffect.Constitution: equipment.ConstitutionBonus += value; break;
+                    case LootGenerator.SpecialEffect.Intelligence: equipment.IntelligenceBonus += value; break;
+                    case LootGenerator.SpecialEffect.AllStats:
+                        equipment.ConstitutionBonus += value;
+                        equipment.IntelligenceBonus += value;
+                        equipment.CharismaBonus += value;
+                        break;
+                }
+            }
+        }
+
         EquipmentDatabase.RegisterDynamic(equipment);
         return equipment;
     }

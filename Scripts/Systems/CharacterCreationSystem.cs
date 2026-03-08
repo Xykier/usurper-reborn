@@ -1611,12 +1611,12 @@ public class CharacterCreationSystem
         CharacterClass.Paladin => "Holy warriors of virtue. Strong in combat and spirit.",
         CharacterClass.Ranger => "Woodsmen and trackers. Balanced fighters with survival skills.",
         CharacterClass.Assassin => "Deadly killers, masters of stealth and critical strikes.",
-        CharacterClass.Bard => "Musicians and storytellers. Social skills and light combat.",
-        CharacterClass.Jester => "Entertainers and tricksters. Very agile and unpredictable.",
-        CharacterClass.Magician => "Powerful spellcasters with devastating magic but frail bodies.",
+        CharacterClass.Bard => "Party support through song. CHA scales damage. Songs buff the whole party.",
+        CharacterClass.Jester => "Chaotic trickster. CHA scales damage. Trickster's Luck: random combat procs.",
+        CharacterClass.Magician => "Arcane master. Arcane Mastery: +15% spell damage. Best offensive caster.",
         CharacterClass.Sage => "Scholars and wise magic users. The deepest mana reserves.",
         CharacterClass.Cleric => "Healers and holy magic users. Devoted to faith and wisdom.",
-        CharacterClass.Alchemist => "Potion makers and researchers. Wisdom and charisma.",
+        CharacterClass.Alchemist => "Bomb-throwing scientists. INT scales damage. Potion Mastery: +50% healing.",
         _ => "An adventurer of unknown calling."
     };
 
@@ -1628,8 +1628,8 @@ public class CharacterCreationSystem
         CharacterClass.Ranger => "Good STA, DEX. Jack of all trades.",
         CharacterClass.Assassin => "Best DEX. High STR and AGI for ambushes.",
         CharacterClass.Bard => "Good CHA, DEX. Balanced across all stats.",
-        CharacterClass.Jester => "Best AGI and DEX. Unpredictable in combat.",
-        CharacterClass.Magician => "Best INT and CHA. Powerful offensive magic.",
+        CharacterClass.Jester => "Best AGI and CHA. Trickster's Luck: bonus dmg, dodge, or stamina.",
+        CharacterClass.Magician => "Best INT. Arcane Mastery +15% spell damage.",
         CharacterClass.Sage => "Best WIS and INT. Deepest mana pool (50).",
         CharacterClass.Cleric => "Good WIS and CHA. Healing magic and mana.",
         CharacterClass.Alchemist => "Best WIS and INT. High CHA for trading.",
@@ -1645,9 +1645,9 @@ public class CharacterCreationSystem
         CharacterClass.Magician => 15,
         CharacterClass.Cleric => 12,
         CharacterClass.Sage => 18,
-        CharacterClass.Alchemist => 10,
-        CharacterClass.Paladin => 5,
-        CharacterClass.Bard => 5,
+        CharacterClass.Alchemist => 0,
+        CharacterClass.Paladin => 0,
+        CharacterClass.Bard => 0,
         _ => 0
     };
 

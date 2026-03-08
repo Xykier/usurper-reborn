@@ -1061,34 +1061,48 @@ public class HomeLocation : BaseLocation
         switch (type)
         {
             case HerbType.HealingHerb:
-                long healAmount = (long)(player.MaxHP * GameConfig.HerbHealPercent);
+                float herbHealPct = GameConfig.HerbHealPercent;
+                if (player.Class == CharacterClass.Alchemist)
+                    herbHealPct *= (1.0f + GameConfig.AlchemistPotionMasteryBonus);
+                long healAmount = (long)(player.MaxHP * herbHealPct);
                 healAmount = Math.Min(healAmount, player.MaxHP - player.HP);
                 player.HP += healAmount;
                 terminal.WriteLine($"You crush a {herbName} and drink the extract. Restored {healAmount} HP! ({player.HP}/{player.MaxHP})");
+                if (player.Class == CharacterClass.Alchemist)
+                    terminal.WriteLine("Potion Mastery enhances the effect!", "bright_cyan");
                 break;
 
             case HerbType.IronbarkRoot:
                 player.HerbBuffType = (int)HerbType.IronbarkRoot;
-                player.HerbBuffCombats = GameConfig.HerbBuffDuration;
+                player.HerbBuffCombats = player.Class == CharacterClass.Alchemist
+                    ? (int)(GameConfig.HerbBuffDuration * 1.5) : GameConfig.HerbBuffDuration;
                 player.HerbBuffValue = GameConfig.HerbDefenseBonus;
                 player.HerbExtraAttacks = 0;
-                terminal.WriteLine($"You chew a tough {herbName}. Your skin hardens! (+{(int)(GameConfig.HerbDefenseBonus * 100)}% defense for {GameConfig.HerbBuffDuration} combats)");
+                terminal.WriteLine($"You chew a tough {herbName}. Your skin hardens! (+{(int)(GameConfig.HerbDefenseBonus * 100)}% defense for {player.HerbBuffCombats} combats)");
+                if (player.Class == CharacterClass.Alchemist)
+                    terminal.WriteLine("Potion Mastery extends the duration!", "bright_cyan");
                 break;
 
             case HerbType.FirebloomPetal:
                 player.HerbBuffType = (int)HerbType.FirebloomPetal;
-                player.HerbBuffCombats = GameConfig.HerbBuffDuration;
+                player.HerbBuffCombats = player.Class == CharacterClass.Alchemist
+                    ? (int)(GameConfig.HerbBuffDuration * 1.5) : GameConfig.HerbBuffDuration;
                 player.HerbBuffValue = GameConfig.HerbDamageBonus;
                 player.HerbExtraAttacks = 0;
-                terminal.WriteLine($"You inhale the fiery scent of a {herbName}. Your strikes burn with power! (+{(int)(GameConfig.HerbDamageBonus * 100)}% damage for {GameConfig.HerbBuffDuration} combats)");
+                terminal.WriteLine($"You inhale the fiery scent of a {herbName}. Your strikes burn with power! (+{(int)(GameConfig.HerbDamageBonus * 100)}% damage for {player.HerbBuffCombats} combats)");
+                if (player.Class == CharacterClass.Alchemist)
+                    terminal.WriteLine("Potion Mastery extends the duration!", "bright_cyan");
                 break;
 
             case HerbType.Swiftthistle:
                 player.HerbBuffType = (int)HerbType.Swiftthistle;
-                player.HerbBuffCombats = GameConfig.HerbSwiftDuration;
+                player.HerbBuffCombats = player.Class == CharacterClass.Alchemist
+                    ? (int)(GameConfig.HerbSwiftDuration * 1.5) : GameConfig.HerbSwiftDuration;
                 player.HerbBuffValue = 0;
                 player.HerbExtraAttacks = GameConfig.HerbExtraAttackCount;
-                terminal.WriteLine($"The {herbName} sends energy coursing through your limbs! (+{GameConfig.HerbExtraAttackCount} extra attack for {GameConfig.HerbSwiftDuration} combats)");
+                terminal.WriteLine($"The {herbName} sends energy coursing through your limbs! (+{GameConfig.HerbExtraAttackCount} extra attack for {player.HerbBuffCombats} combats)");
+                if (player.Class == CharacterClass.Alchemist)
+                    terminal.WriteLine("Potion Mastery extends the duration!", "bright_cyan");
                 break;
 
             case HerbType.StarbloomEssence:
@@ -1096,10 +1110,13 @@ public class HomeLocation : BaseLocation
                 manaRestore = Math.Min(manaRestore, player.MaxMana - player.Mana);
                 player.Mana += manaRestore;
                 player.HerbBuffType = (int)HerbType.StarbloomEssence;
-                player.HerbBuffCombats = GameConfig.HerbBuffDuration;
+                player.HerbBuffCombats = player.Class == CharacterClass.Alchemist
+                    ? (int)(GameConfig.HerbBuffDuration * 1.5) : GameConfig.HerbBuffDuration;
                 player.HerbBuffValue = GameConfig.HerbSpellBonus;
                 player.HerbExtraAttacks = 0;
-                terminal.WriteLine($"Starbloom essence floods your mind with arcane clarity! Restored {manaRestore} mana. (+{(int)(GameConfig.HerbSpellBonus * 100)}% spell damage for {GameConfig.HerbBuffDuration} combats)");
+                terminal.WriteLine($"Starbloom essence floods your mind with arcane clarity! Restored {manaRestore} mana. (+{(int)(GameConfig.HerbSpellBonus * 100)}% spell damage for {player.HerbBuffCombats} combats)");
+                if (player.Class == CharacterClass.Alchemist)
+                    terminal.WriteLine("Potion Mastery extends the duration!", "bright_cyan");
                 break;
         }
 

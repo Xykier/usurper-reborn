@@ -487,6 +487,7 @@ public class ArmorShopLocation : BaseLocation
         if (item.IntelligenceBonus != 0) bonuses.Add($"Int+{item.IntelligenceBonus}");
         if (item.WisdomBonus != 0) bonuses.Add($"Wis+{item.WisdomBonus}");
         if (item.ConstitutionBonus != 0) bonuses.Add($"Con+{item.ConstitutionBonus}");
+        if (item.IntelligenceBonus != 0) bonuses.Add($"Int+{item.IntelligenceBonus}");
         if (item.DefenceBonus != 0) bonuses.Add($"Def+{item.DefenceBonus}");
         if (item.AgilityBonus != 0) bonuses.Add($"Agi+{item.AgilityBonus}");
         if (item.MaxHPBonus != 0) bonuses.Add($"HP+{item.MaxHPBonus}");

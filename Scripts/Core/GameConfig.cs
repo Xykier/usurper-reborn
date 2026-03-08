@@ -9,7 +9,7 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.50.4";
+    public const string Version = "0.50.5";
     public const string VersionName = "Open Doors";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
@@ -723,6 +723,14 @@ public static partial class GameConfig
     public const float HerbManaRestorePercent = 0.30f;        // Starbloom: restores 30% max mana
     public const float HerbSpellBonus = 0.20f;                // Starbloom: +20% spell damage
     public static readonly int[] HerbMaxCarry = { 0, 10, 5, 5, 3, 3 }; // Max carry per herb type (indexed by HerbType)
+    // Alchemist Potion Mastery
+    public const float AlchemistPotionMasteryBonus = 0.50f;  // Alchemist: +50% healing from potions and herbs
+    // Magician Arcane Mastery
+    public const float MagicianArcaneSpellBonus = 1.15f;     // Magician: +15% spell damage (Arcane Mastery passive)
+    // Jester Trickster's Luck
+    public const int JesterTrickstersLuckChance = 20;        // Jester: 20% chance per attack to proc random bonus
+    public const float JesterLuckBonusDamage = 0.50f;        // +50% bonus damage on lucky proc
+    public const int JesterLuckStaminaRefund = 15;           // Stamina refunded on lucky proc
     // Song buffs (Music Shop performances)
     public const int SongBuffDuration = 5;                    // Song buffs last 5 combats
     public const float SongWarMarchBonus = 0.15f;             // War March: +15% attack damage

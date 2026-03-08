@@ -998,9 +998,9 @@ public class TeamCornerLocation : BaseLocation
             return;
         }
 
-        // Count current team size
+        // Count current team size (include dead members — they still occupy a slot until dismissed or permadead)
         var allNPCs = NPCSpawnSystem.Instance.ActiveNPCs;
-        var currentTeamSize = allNPCs.Count(n => n.Team == currentPlayer.Team && n.IsAlive) + 1; // +1 for player
+        var currentTeamSize = allNPCs.Count(n => n.Team == currentPlayer.Team && !n.IsDead) + 1; // +1 for player
 
         if (currentTeamSize >= MaxTeamSize)
         {

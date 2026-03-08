@@ -2488,11 +2488,19 @@ public partial class CombatEngine
         }
 
         // === HIT! Calculate damage ===
-        // Base damage = Strength + Strength bonus + (Level * 2) + WeapPow
-        long attackPower = attacker.Strength;
-
-        // Add Strength-based damage bonus from StatEffectsSystem
-        attackPower += StatEffectsSystem.GetStrengthDamageBonus(attacker.Strength);
+        // Base damage = primary stat + stat bonus + Level + WeapPow
+        // Bard/Jester use CHA (performance-based combat), others use STR
+        long attackPower;
+        if (attacker.Class == CharacterClass.Bard || attacker.Class == CharacterClass.Jester)
+        {
+            attackPower = attacker.Charisma;
+            attackPower += attacker.Charisma / 4; // CHA bonus mirrors STR bonus formula
+        }
+        else
+        {
+            attackPower = attacker.Strength;
+            attackPower += StatEffectsSystem.GetStrengthDamageBonus(attacker.Strength);
+        }
 
         // Level-based scaling (v0.41.4: reduced from Level*2 to Level to slow damage growth)
         attackPower += attacker.Level;
@@ -2696,6 +2704,32 @@ public partial class CombatEngine
             attackPower += boons.FlatAttack;
         }
 
+        // Jester Trickster's Luck: random beneficial proc on basic attacks
+        if (attacker.Class == CharacterClass.Jester && random.Next(100) < GameConfig.JesterTrickstersLuckChance)
+        {
+            int luckRoll = random.Next(3);
+            if (luckRoll == 0)
+            {
+                // Bonus damage
+                long bonusDmg = (long)(attackPower * GameConfig.JesterLuckBonusDamage);
+                attackPower += bonusDmg;
+                terminal.WriteLine("  Trickster's Luck! Your attack lands with unexpected force!", "bright_magenta");
+            }
+            else if (luckRoll == 1)
+            {
+                // Dodge next attack
+                attacker.DodgeNextAttack = true;
+                terminal.WriteLine("  Trickster's Luck! You dance aside, ready to dodge!", "bright_magenta");
+            }
+            else
+            {
+                // Stamina refund
+                attacker.CurrentCombatStamina = Math.Min(attacker.MaxCombatStamina,
+                    attacker.CurrentCombatStamina + GameConfig.JesterLuckStaminaRefund);
+                terminal.WriteLine($"  Trickster's Luck! The thrill restores {GameConfig.JesterLuckStaminaRefund} stamina!", "bright_magenta");
+            }
+        }
+
         // Show critical hit message
         if (attackRoll.IsCriticalSuccess)
         {
@@ -2815,11 +2849,15 @@ public partial class CombatEngine
             // Quick heal uses one potion
             player.Healing--;
             long healAmount = 30 + player.Level * 5 + random.Next(10, 30);
+            if (player.Class == CharacterClass.Alchemist)
+                healAmount = (long)(healAmount * (1.0 + GameConfig.AlchemistPotionMasteryBonus));
             healAmount = DifficultySystem.ApplyHealingMultiplier(healAmount);
             healAmount = Math.Min(healAmount, player.MaxHP - player.HP);
             player.HP += healAmount;
             player.Statistics?.RecordPotionUsed(healAmount);
             terminal.WriteLine($"You quickly quaff a healing potion for {healAmount} HP!", "green");
+            if (player.Class == CharacterClass.Alchemist)
+                terminal.WriteLine("Potion Mastery enhances the effect!", "bright_cyan");
             result.CombatLog.Add($"Player heals for {healAmount} HP");
         }
         else
@@ -2850,6 +2888,8 @@ public partial class CombatEngine
             {
                 player.Healing--;
                 long healAmount = 30 + player.Level * 5 + random.Next(10, 30);
+                if (player.Class == CharacterClass.Alchemist)
+                    healAmount = (long)(healAmount * (1.0 + GameConfig.AlchemistPotionMasteryBonus));
                 healAmount = DifficultySystem.ApplyHealingMultiplier(healAmount);
                 healAmount = Math.Min(healAmount, player.MaxHP - player.HP);
                 player.HP += healAmount;
@@ -2858,6 +2898,8 @@ public partial class CombatEngine
 
             player.Statistics?.RecordPotionUsed(totalHeal);
             terminal.WriteLine($"You use {potionsToUse} potion(s) and heal {totalHeal} HP!", "bright_green");
+            if (player.Class == CharacterClass.Alchemist)
+                terminal.WriteLine("Potion Mastery enhances the effect!", "bright_cyan");
             result.CombatLog.Add($"Player heals for {totalHeal} HP using {potionsToUse} potions");
         }
 
@@ -5338,6 +5380,68 @@ public partial class CombatEngine
 
     /// <summary>
     /// Apply all post-hit enchantment effects after any damage source (attack or ability).
+    /// Apply Bard song effects to all party members (teammates and companions).
+    /// Called when a Bard uses a song ability with "party_song" or "party_legend" effect.
+    /// </summary>
+    private void ApplyBardSongToParty(Character bard, ClassAbilityResult abilityResult, CombatResult result)
+    {
+        var teammates = result.Teammates?.Where(t => t.IsAlive).ToList();
+        if (teammates == null || teammates.Count == 0) return;
+
+        terminal.SetColor("bright_magenta");
+        terminal.WriteLine("Your song resonates through the party!");
+
+        foreach (var teammate in teammates)
+        {
+            // Apply healing to teammate
+            if (abilityResult.Healing > 0)
+            {
+                // Teammates get 75% of the Bard's healing
+                long teamHeal = (long)(abilityResult.Healing * 0.75);
+                teamHeal = Math.Min(teamHeal, teammate.MaxHP - teammate.HP);
+                if (teamHeal > 0)
+                {
+                    teammate.HP += teamHeal;
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine($"  {teammate.DisplayName} recovers {teamHeal} HP!");
+                }
+            }
+
+            // Apply attack buff to teammate
+            if (abilityResult.AttackBonus > 0)
+            {
+                // Teammates get 60% of the Bard's attack buff
+                int teamAtkBonus = (int)(abilityResult.AttackBonus * 0.6);
+                teammate.TempAttackBonus = teamAtkBonus;
+                teammate.TempAttackBonusDuration = abilityResult.Duration;
+            }
+
+            // Apply defense buff to teammate
+            if (abilityResult.DefenseBonus > 0)
+            {
+                // Teammates get 60% of the Bard's defense buff
+                int teamDefBonus = (int)(abilityResult.DefenseBonus * 0.6);
+                teammate.TempDefenseBonus = teamDefBonus;
+                teammate.TempDefenseBonusDuration = abilityResult.Duration;
+            }
+        }
+
+        // Summary message
+        if (abilityResult.AttackBonus > 0 || abilityResult.DefenseBonus > 0)
+        {
+            int teamAtk = (int)(abilityResult.AttackBonus * 0.6);
+            int teamDef = (int)(abilityResult.DefenseBonus * 0.6);
+            terminal.SetColor("cyan");
+            if (teamAtk > 0 && teamDef > 0)
+                terminal.WriteLine($"  Party gains +{teamAtk} attack, +{teamDef} defense for {abilityResult.Duration} rounds!");
+            else if (teamAtk > 0)
+                terminal.WriteLine($"  Party gains +{teamAtk} attack for {abilityResult.Duration} rounds!");
+            else if (teamDef > 0)
+                terminal.WriteLine($"  Party gains +{teamDef} defense for {abilityResult.Duration} rounds!");
+        }
+    }
+
+    /// <summary>
     /// Consolidates lifesteal, elemental procs, sunforged healing, and poison coating.
     /// </summary>
     private void ApplyPostHitEnchantments(Character attacker, Monster target, long damage, CombatResult result)
@@ -5881,9 +5985,13 @@ public partial class CombatEngine
             if (lootItem.Strength != 0) bonuses.Add($"Str {lootItem.Strength:+#;-#;0}");
             if (lootItem.Dexterity != 0) bonuses.Add($"Dex {lootItem.Dexterity:+#;-#;0}");
             if (lootItem.Wisdom != 0) bonuses.Add($"Wis {lootItem.Wisdom:+#;-#;0}");
+            if (lootItem.Defence != 0) bonuses.Add($"Def {lootItem.Defence:+#;-#;0}");
+            int conFromEffects = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Constitution).Sum(e => e.Item2) ?? 0;
+            int intFromEffects = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Intelligence).Sum(e => e.Item2) ?? 0;
+            if (conFromEffects != 0) bonuses.Add($"Con {conFromEffects:+#;-#;0}");
+            if (intFromEffects != 0) bonuses.Add($"Int {intFromEffects:+#;-#;0}");
             if (lootItem.HP != 0) bonuses.Add($"HP {lootItem.HP:+#;-#;0}");
             if (lootItem.Mana != 0) bonuses.Add($"Mana {lootItem.Mana:+#;-#;0}");
-            if (lootItem.Defence != 0) bonuses.Add($"Def {lootItem.Defence:+#;-#;0}");
 
             if (bonuses.Count > 0)
             {
@@ -6297,8 +6405,6 @@ public partial class CombatEngine
                 if (lootItem.Strength != 0) equipment = equipment.WithStrength(lootItem.Strength);
                 if (lootItem.Dexterity != 0) equipment = equipment.WithDexterity(lootItem.Dexterity);
                 if (lootItem.Wisdom != 0) equipment = equipment.WithWisdom(lootItem.Wisdom);
-                if (lootItem.HP != 0) equipment = equipment.WithMaxHP(lootItem.HP);
-                if (lootItem.Mana != 0) equipment = equipment.WithMaxMana(lootItem.Mana);
                 if (lootItem.Defence != 0) equipment = equipment.WithDefence(lootItem.Defence);
                 if (lootItem.IsCursed) equipment.IsCursed = true;
 
@@ -6627,8 +6733,6 @@ public partial class CombatEngine
                 if (lootItem.Strength != 0) equipment = equipment.WithStrength(lootItem.Strength);
                 if (lootItem.Dexterity != 0) equipment = equipment.WithDexterity(lootItem.Dexterity);
                 if (lootItem.Wisdom != 0) equipment = equipment.WithWisdom(lootItem.Wisdom);
-                if (lootItem.HP != 0) equipment = equipment.WithMaxHP(lootItem.HP);
-                if (lootItem.Mana != 0) equipment = equipment.WithMaxMana(lootItem.Mana);
                 if (lootItem.Defence != 0) equipment = equipment.WithDefence(lootItem.Defence);
                 if (lootItem.IsCursed) equipment.IsCursed = true;
 
@@ -6994,8 +7098,10 @@ public partial class CombatEngine
                     currentEquip.DefenceBonus + currentEquip.AgilityBonus + currentEquip.ConstitutionBonus +
                     currentEquip.IntelligenceBonus + currentEquip.CharismaBonus;
             }
+            int newConTotal = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Constitution).Sum(e => e.Item2) ?? 0;
+            int newIntTotal = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Intelligence).Sum(e => e.Item2) ?? 0;
             int newStatTotal = lootItem.Strength + lootItem.Dexterity + lootItem.Wisdom +
-                lootItem.HP + lootItem.Mana + lootItem.Defence;
+                lootItem.Defence + newConTotal + newIntTotal;
             return newStatTotal - currentStatTotal;
         }
         else
@@ -7080,8 +7186,6 @@ public partial class CombatEngine
         if (lootItem.Strength != 0) equipment = equipment.WithStrength(lootItem.Strength);
         if (lootItem.Dexterity != 0) equipment = equipment.WithDexterity(lootItem.Dexterity);
         if (lootItem.Wisdom != 0) equipment = equipment.WithWisdom(lootItem.Wisdom);
-        if (lootItem.HP != 0) equipment = equipment.WithMaxHP(lootItem.HP);
-        if (lootItem.Mana != 0) equipment = equipment.WithMaxMana(lootItem.Mana);
         if (lootItem.Defence != 0) equipment = equipment.WithDefence(lootItem.Defence);
         if (lootItem.IsCursed) equipment.IsCursed = true;
 
@@ -7219,8 +7323,10 @@ public partial class CombatEngine
                     currentEquip.WisdomBonus + currentEquip.MaxHPBonus + currentEquip.MaxManaBonus +
                     currentEquip.DefenceBonus + currentEquip.AgilityBonus + currentEquip.ConstitutionBonus +
                     currentEquip.IntelligenceBonus + currentEquip.CharismaBonus;
+                int newConTotal2 = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Constitution).Sum(e => e.Item2) ?? 0;
+                int newIntTotal2 = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Intelligence).Sum(e => e.Item2) ?? 0;
                 int newStatTotal = lootItem.Strength + lootItem.Dexterity + lootItem.Wisdom +
-                    lootItem.HP + lootItem.Mana + lootItem.Defence;
+                    lootItem.Defence + newConTotal2 + newIntTotal2;
                 int diff = newStatTotal - currentStatTotal;
 
                 terminal.SetColor("white");
@@ -7280,6 +7386,8 @@ public partial class CombatEngine
             if (currentEquip.StrengthBonus != 0) currentBonuses.Add($"Str {currentEquip.StrengthBonus:+#;-#;0}");
             if (currentEquip.DexterityBonus != 0) currentBonuses.Add($"Dex {currentEquip.DexterityBonus:+#;-#;0}");
             if (currentEquip.WisdomBonus != 0) currentBonuses.Add($"Wis {currentEquip.WisdomBonus:+#;-#;0}");
+            if (currentEquip.ConstitutionBonus != 0) currentBonuses.Add($"Con {currentEquip.ConstitutionBonus:+#;-#;0}");
+            if (currentEquip.IntelligenceBonus != 0) currentBonuses.Add($"Int {currentEquip.IntelligenceBonus:+#;-#;0}");
             if (currentEquip.MaxHPBonus != 0) currentBonuses.Add($"HP {currentEquip.MaxHPBonus:+#;-#;0}");
             if (currentEquip.MaxManaBonus != 0) currentBonuses.Add($"Mana {currentEquip.MaxManaBonus:+#;-#;0}");
             if (currentEquip.DefenceBonus != 0) currentBonuses.Add($"Def {currentEquip.DefenceBonus:+#;-#;0}");
@@ -7288,9 +7396,13 @@ public partial class CombatEngine
             if (lootItem.Strength != 0) newBonuses.Add($"Str {lootItem.Strength:+#;-#;0}");
             if (lootItem.Dexterity != 0) newBonuses.Add($"Dex {lootItem.Dexterity:+#;-#;0}");
             if (lootItem.Wisdom != 0) newBonuses.Add($"Wis {lootItem.Wisdom:+#;-#;0}");
+            if (lootItem.Defence != 0) newBonuses.Add($"Def {lootItem.Defence:+#;-#;0}");
+            int lootConBonus = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Constitution).Sum(e => e.Item2) ?? 0;
+            int lootIntBonus = lootItem.LootEffects?.Where(e => e.Item1 == (int)LootGenerator.SpecialEffect.Intelligence).Sum(e => e.Item2) ?? 0;
+            if (lootConBonus != 0) newBonuses.Add($"Con {lootConBonus:+#;-#;0}");
+            if (lootIntBonus != 0) newBonuses.Add($"Int {lootIntBonus:+#;-#;0}");
             if (lootItem.HP != 0) newBonuses.Add($"HP {lootItem.HP:+#;-#;0}");
             if (lootItem.Mana != 0) newBonuses.Add($"Mana {lootItem.Mana:+#;-#;0}");
-            if (lootItem.Defence != 0) newBonuses.Add($"Def {lootItem.Defence:+#;-#;0}");
 
             if (currentBonuses.Count > 0 || newBonuses.Count > 0)
             {
@@ -8617,8 +8729,18 @@ public partial class CombatEngine
                         await Task.Delay(GetCombatDelay(500));
 
                         // Calculate player attack damage (unified with single-combat formula)
-                        long attackPower = player.Strength;
-                        attackPower += StatEffectsSystem.GetStrengthDamageBonus(player.Strength); // STR/4
+                        // Bard/Jester use CHA (performance-based combat), others use STR
+                        long attackPower;
+                        if (player.Class == CharacterClass.Bard || player.Class == CharacterClass.Jester)
+                        {
+                            attackPower = player.Charisma;
+                            attackPower += player.Charisma / 4;
+                        }
+                        else
+                        {
+                            attackPower = player.Strength;
+                            attackPower += StatEffectsSystem.GetStrengthDamageBonus(player.Strength); // STR/4
+                        }
                         attackPower += player.Level;
 
                         // Status modifiers
@@ -8733,6 +8855,32 @@ public partial class CombatEngine
                             float holyMult = IsManweBattle && ArtifactSystem.Instance.HasVoidKey() ? 3.0f : 2.0f;
                             attackPower = (long)(attackPower * holyMult);
                             terminal.WriteLine("The Sunforged Blade blazes with holy fire!", "bright_yellow");
+                        }
+
+                        // Jester Trickster's Luck: random beneficial proc on basic attacks
+                        if (player.Class == CharacterClass.Jester && random.Next(100) < GameConfig.JesterTrickstersLuckChance)
+                        {
+                            int luckRoll = random.Next(3);
+                            if (luckRoll == 0)
+                            {
+                                // Bonus damage
+                                long bonusDmg = (long)(attackPower * GameConfig.JesterLuckBonusDamage);
+                                attackPower += bonusDmg;
+                                terminal.WriteLine("  Trickster's Luck! Your attack lands with unexpected force!", "bright_magenta");
+                            }
+                            else if (luckRoll == 1)
+                            {
+                                // Dodge next attack
+                                player.DodgeNextAttack = true;
+                                terminal.WriteLine("  Trickster's Luck! You dance aside, ready to dodge!", "bright_magenta");
+                            }
+                            else
+                            {
+                                // Stamina refund
+                                player.CurrentCombatStamina = Math.Min(player.MaxCombatStamina,
+                                    player.CurrentCombatStamina + GameConfig.JesterLuckStaminaRefund);
+                                terminal.WriteLine($"  Trickster's Luck! The thrill restores {GameConfig.JesterLuckStaminaRefund} stamina!", "bright_magenta");
+                            }
                         }
 
                         long damage = Math.Max(1, attackPower);
@@ -9313,12 +9461,23 @@ public partial class CombatEngine
                 terminal.SetColor("bright_yellow");
                 terminal.WriteLine("Critical strike from the shadows!");
             }
-            else if (abilityResult.SpecialEffect == "aoe")
+            else if (abilityResult.SpecialEffect == "aoe" || abilityResult.SpecialEffect == "aoe_confusion")
             {
                 // AoE abilities hit all monsters
                 terminal.SetColor("bright_red");
                 terminal.WriteLine("The attack strikes all enemies!");
                 await ApplyAoEDamage(monsters, actualDamage, result, ability.Name);
+                // AoE confusion: confuse surviving monsters
+                if (abilityResult.SpecialEffect == "aoe_confusion")
+                {
+                    foreach (var m in monsters.Where(m => m.IsAlive))
+                    {
+                        m.IsConfused = true;
+                        m.ConfusedDuration = Math.Max(m.ConfusedDuration, 2);
+                    }
+                    terminal.SetColor("bright_magenta");
+                    terminal.WriteLine("The chaos leaves surviving enemies bewildered!");
+                }
                 // Skip single target damage since we did AoE
                 actualDamage = 0;
             }
@@ -9382,7 +9541,7 @@ public partial class CombatEngine
         // Off-hand follow-up for melee attack abilities when dual-wielding
         // Power Strike etc. empower the main hand — the off-hand still gets its normal swing
         if (ability.Type == ClassAbilitySystem.AbilityType.Attack && abilityResult.Damage > 0 && player.IsDualWielding
-            && abilityResult.SpecialEffect != "aoe" && abilityResult.SpecialEffect != "aoe_taunt")
+            && !abilityResult.SpecialEffect.Contains("aoe"))
         {
             var offHandTarget = (target != null && target.IsAlive) ? target : GetRandomLivingMonster(monsters);
             if (offHandTarget != null && offHandTarget.IsAlive)
@@ -9995,11 +10154,20 @@ public partial class CombatEngine
                 }
                 break;
 
-            case "legend":
+            case "party_song":
+                // Bard songs affect the entire party
+                ApplyBardSongToParty(player, abilityResult, result);
+                break;
+
+            case "party_legend":
+                // Legend Incarnate: party-wide buff + regeneration
                 if (!player.ActiveStatuses.ContainsKey(StatusEffect.Regenerating))
-                    player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 5;
+                    player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 6;
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine("You become the legend! Songs of power flow through you!");
+                terminal.WriteLine(isPlayer
+                    ? "You become the legend! Songs of power flow through you!"
+                    : $"{actorName} becomes the legend! Songs of power flow through them!");
+                ApplyBardSongToParty(player, abilityResult, result);
                 break;
 
             case "legendary":
@@ -15319,11 +15487,18 @@ public partial class CombatEngine
                 }
                 break;
 
-            case "legend":
+            case "party_song":
+                // Bard songs affect the entire party
+                ApplyBardSongToParty(player, abilityResult, result);
+                break;
+
+            case "party_legend":
+                // Legend Incarnate: party-wide buff + regeneration
                 if (!player.ActiveStatuses.ContainsKey(StatusEffect.Regenerating))
-                    player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 5;
+                    player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 6;
                 terminal.SetColor("bright_yellow");
                 terminal.WriteLine("You become the legend! Songs of power flow through you!");
+                ApplyBardSongToParty(player, abilityResult, result);
                 break;
 
             case "legendary":
@@ -17274,6 +17449,7 @@ public partial class CombatEngine
 
                 // Check for level up
                 long xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
+                bool didLevelUp = false;
                 while (teammate.Experience >= xpForNextLevel && teammate.Level < 100)
                 {
                     teammate.Level++;
@@ -17287,8 +17463,47 @@ public partial class CombatEngine
                     terminal.WriteLine($"  {teammate.DisplayName} leveled up! (Lv {teammate.Level})");
                     NewsSystem.Instance?.Newsy(true, $"{teammate.DisplayName} has achieved Level {teammate.Level}!");
                     xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
+                    didLevelUp = true;
                 }
+
+                // Sync changes to canonical ActiveNPCs entry — if the world sim rebuilt
+                // ActiveNPCs (via RestoreNPCsFromData) since the dungeon started, our
+                // teammate reference may be orphaned. Propagate XP/level/stats to the
+                // canonical NPC so the next world_state save persists the changes.
+                SyncNPCTeammateToActiveNPCs(teammate, didLevelUp);
             }
+        }
+    }
+
+    /// <summary>
+    /// After modifying an NPC teammate's XP/level in combat, propagate the changes
+    /// to the canonical NPC in ActiveNPCs. If the world sim rebuilt ActiveNPCs
+    /// (via RestoreNPCsFromData) since the dungeon started, the teammate reference
+    /// in the party list becomes orphaned — pointing to an old object that will never
+    /// be serialized. This method finds the canonical NPC by ID and copies the
+    /// combat-modified stats so the next world_state save persists them.
+    /// </summary>
+    private static void SyncNPCTeammateToActiveNPCs(Character teammate, bool didLevelUp)
+    {
+        if (teammate is not NPC npcTeammate) return;
+        var npcSystem = UsurperRemake.Systems.NPCSpawnSystem.Instance;
+        if (npcSystem?.ActiveNPCs == null) return;
+
+        var canonical = npcSystem.ActiveNPCs.FirstOrDefault(n => n.ID == npcTeammate.ID);
+        if (canonical == null || ReferenceEquals(canonical, npcTeammate)) return;
+
+        // The teammate is orphaned — copy combat-modified state to canonical NPC
+        canonical.Experience = npcTeammate.Experience;
+        canonical.Level = npcTeammate.Level;
+        canonical.BaseMaxHP = npcTeammate.BaseMaxHP;
+        canonical.BaseStrength = npcTeammate.BaseStrength;
+        canonical.BaseDefence = npcTeammate.BaseDefence;
+        canonical.HP = npcTeammate.HP;
+        canonical.RecalculateStats();
+
+        if (didLevelUp)
+        {
+            DebugLogger.Instance.LogInfo("COMBAT", $"Synced orphaned NPC teammate {npcTeammate.DisplayName} level {canonical.Level} back to ActiveNPCs");
         }
     }
 

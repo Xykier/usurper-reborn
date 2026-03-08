@@ -876,6 +876,13 @@ public class Character
             IsCursed = equipment.IsCursed,
             Cursed = equipment.IsCursed
         };
+
+        // Preserve CON/INT as LootEffects for re-equip
+        if (equipment.ConstitutionBonus != 0)
+            item.LootEffects.Add(((int)LootGenerator.SpecialEffect.Constitution, equipment.ConstitutionBonus));
+        if (equipment.IntelligenceBonus != 0)
+            item.LootEffects.Add(((int)LootGenerator.SpecialEffect.Intelligence, equipment.IntelligenceBonus));
+
         return item;
     }
 

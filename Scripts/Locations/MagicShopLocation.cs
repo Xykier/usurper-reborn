@@ -1174,6 +1174,8 @@ public partial class MagicShopLocation : BaseLocation
                 if (equip.DexterityBonus != 0) stats.Add($"Dex{(equip.DexterityBonus > 0 ? "+" : "")}{equip.DexterityBonus}");
                 if (equip.DefenceBonus != 0) stats.Add($"Def{(equip.DefenceBonus > 0 ? "+" : "")}{equip.DefenceBonus}");
                 if (equip.WisdomBonus != 0) stats.Add($"Wis{(equip.WisdomBonus > 0 ? "+" : "")}{equip.WisdomBonus}");
+                if (equip.ConstitutionBonus != 0) stats.Add($"Con{(equip.ConstitutionBonus > 0 ? "+" : "")}{equip.ConstitutionBonus}");
+                if (equip.IntelligenceBonus != 0) stats.Add($"Int{(equip.IntelligenceBonus > 0 ? "+" : "")}{equip.IntelligenceBonus}");
                 if (equip.MaxManaBonus != 0) stats.Add($"Mana{(equip.MaxManaBonus > 0 ? "+" : "")}{equip.MaxManaBonus}");
                 terminal.SetColor("green");
                 terminal.Write(string.Join(" ", stats));
@@ -1574,7 +1576,7 @@ public partial class MagicShopLocation : BaseLocation
                 suffix = " (Blessed)";
                 break;
             case 6: // Ocean's Touch
-                enchanted.MaxManaBonus += 30; enchanted.WisdomBonus += 4;
+                enchanted.IntelligenceBonus += 6; enchanted.WisdomBonus += 4;
                 suffix = " (Ocean-Touched)";
                 break;
             case 7: // Ward
