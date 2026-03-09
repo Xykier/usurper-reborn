@@ -19,7 +19,22 @@ public static class BugReportSystem
     private const string GitHubIssuesUrl = "https://github.com/binary-knight/usurper-reborn/issues/new";
     private const string DiscordWebhookUrl = "https://discord.com/api/webhooks/1470253721979060255/XcJU1bpTaX3HSPdvuCBEaMyJffwASodZSPwi_R5wEmcoF94aKDORoPdiLZEeSRyhgVLR";
 
-    private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private static readonly HttpClient _httpClient = CreateTlsClient();
+
+    private static HttpClient CreateTlsClient()
+    {
+        try
+        {
+            var handler = new System.Net.Http.HttpClientHandler();
+            handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 |
+                                   System.Security.Authentication.SslProtocols.Tls13;
+            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) };
+        }
+        catch
+        {
+            return new HttpClient() { Timeout = TimeSpan.FromSeconds(10) };
+        }
+    }
 
     /// <summary>
     /// Generate a bug report, save locally, post to Discord, and optionally open browser.

@@ -293,7 +293,7 @@ public static class LootGenerator
 
             // Swords - Balanced (Assassin included for dual-wield builds)
             ("Short Sword", new[] { "All" }, 1, 25, 10),
-            ("Long Sword", new[] { "Warrior", "Paladin", "Ranger", "Assassin" }, 10, 50, 20),
+            ("Long Sword", new[] { "All" }, 10, 50, 20),
             ("Broadsword", new[] { "Warrior", "Paladin", "Barbarian", "Assassin" }, 20, 70, 35),
             ("Bastard Sword", new[] { "Warrior", "Paladin", "Assassin" }, 35, 85, 55),
             ("Greatsword", new[] { "Warrior", "Barbarian" }, 50, 100, 80),
@@ -313,6 +313,14 @@ public static class LootGenerator
             ("Flail", new[] { "Cleric", "Paladin", "Alchemist" }, 40, 85, 60),
             ("Holy Mace", new[] { "Cleric", "Paladin" }, 60, 100, 85),
             ("Scepter of Judgment", new[] { "Paladin" }, 80, 100, 120),
+
+            // General weapons - Available to all classes at higher levels
+            ("Fine Dagger", new[] { "All" }, 25, 55, 18),
+            ("Soldier's Sword", new[] { "All" }, 30, 65, 28),
+            ("Forged Mace", new[] { "All" }, 35, 70, 32),
+            ("Tempered Blade", new[] { "All" }, 50, 85, 48),
+            ("Runed Sword", new[] { "All" }, 65, 100, 65),
+            ("Ancient Blade", new[] { "All" }, 80, 100, 85),
 
             // Staves - Magic focused
             ("Quarterstaff", new[] { "Magician", "Sage", "Cleric", "Alchemist" }, 1, 35, 8),
@@ -480,6 +488,13 @@ public static class LootGenerator
             ("War Paint Armor", new[] { "Barbarian" }, 30, 75, 42),
             ("Berserker's Plate", new[] { "Barbarian" }, 55, 95, 72),
             ("Titan's Harness", new[] { "Barbarian" }, 80, 100, 105),
+
+            // General body armor - Available to all classes at higher levels
+            ("Reinforced Leather", new[] { "All" }, 25, 55, 22),
+            ("Chainweave Tunic", new[] { "All" }, 35, 70, 35),
+            ("Forged Brigandine", new[] { "All" }, 50, 85, 52),
+            ("Runed Hauberk", new[] { "All" }, 65, 100, 70),
+            ("Ancient Mail", new[] { "All" }, 80, 100, 90),
         };
 
         // Per-slot armor templates for dungeon loot drops
@@ -488,12 +503,15 @@ public static class LootGenerator
             ("Leather Cap", new[] { "All" }, 1, 25, 4),
             ("Iron Helm", new[] { "Warrior", "Paladin", "Barbarian" }, 10, 45, 12),
             ("Chain Coif", new[] { "Warrior", "Paladin", "Cleric", "Ranger" }, 15, 55, 16),
+            ("Reinforced Helm", new[] { "All" }, 20, 50, 14),
             ("Steel Helm", new[] { "Warrior", "Paladin", "Barbarian" }, 25, 65, 25),
             ("Wizard's Hat", new[] { "Magician", "Sage" }, 15, 60, 10),
             ("Fighter's Headband", new[] { "Assassin", "Barbarian", "Ranger" }, 10, 55, 8),
             ("Shadow Hood", new[] { "Assassin", "Ranger" }, 20, 70, 18),
+            ("Forged Helm", new[] { "All" }, 35, 70, 30),
             ("Battle Crown", new[] { "Warrior", "Paladin" }, 40, 80, 38),
             ("Mithril Helm", new[] { "All" }, 55, 90, 52),
+            ("Runed Helm", new[] { "All" }, 65, 100, 62),
             ("Crown of the Archmage", new[] { "Magician", "Sage" }, 70, 100, 65),
             ("Titan's Greathelm", new[] { "Warrior", "Barbarian" }, 75, 100, 78),
             ("Holy Diadem", new[] { "Paladin", "Cleric" }, 65, 100, 60),
@@ -505,10 +523,13 @@ public static class LootGenerator
             ("Iron Vambraces", new[] { "Warrior", "Paladin", "Barbarian" }, 10, 45, 10),
             ("Chain Sleeves", new[] { "Warrior", "Paladin", "Cleric" }, 15, 55, 14),
             ("Studded Armguards", new[] { "Ranger", "Assassin" }, 15, 50, 12),
+            ("Reinforced Bracers", new[] { "All" }, 20, 50, 12),
             ("Steel Vambraces", new[] { "Warrior", "Paladin" }, 25, 65, 22),
             ("Silk Arm Wraps", new[] { "Magician", "Sage", "Assassin" }, 10, 50, 7),
             ("Barbarian Arm Guards", new[] { "Barbarian" }, 20, 65, 18),
+            ("Forged Armguards", new[] { "All" }, 35, 70, 28),
             ("Mithril Armguards", new[] { "All" }, 45, 85, 40),
+            ("Runed Bracers", new[] { "All" }, 65, 100, 58),
             ("Shadow Bracers", new[] { "Assassin" }, 40, 80, 35),
             ("Plate Vambraces", new[] { "Warrior", "Paladin" }, 55, 95, 55),
             ("Holy Armguards", new[] { "Paladin", "Cleric" }, 60, 100, 58),
@@ -522,10 +543,13 @@ public static class LootGenerator
             ("Chain Gauntlets", new[] { "Warrior", "Paladin", "Cleric" }, 15, 55, 14),
             ("Thief's Gloves", new[] { "Assassin", "Ranger" }, 10, 50, 10),
             ("Iron Gauntlets", new[] { "Warrior", "Paladin", "Barbarian" }, 20, 60, 18),
+            ("Reinforced Gloves", new[] { "All" }, 20, 50, 10),
             ("Silk Handwraps", new[] { "Magician", "Sage", "Assassin" }, 10, 50, 7),
             ("Steel Gauntlets", new[] { "Warrior", "Paladin" }, 35, 75, 30),
             ("Spiked Fists", new[] { "Barbarian", "Warrior" }, 30, 70, 25),
+            ("Forged Gauntlets", new[] { "All" }, 35, 70, 26),
             ("Mithril Gloves", new[] { "All" }, 50, 85, 42),
+            ("Runed Gauntlets", new[] { "All" }, 65, 100, 56),
             ("Shadow Handwraps", new[] { "Assassin" }, 45, 85, 38),
             ("Plate Gauntlets", new[] { "Warrior", "Paladin" }, 60, 95, 55),
             ("Dragon Grip", new[] { "All" }, 80, 100, 72),
@@ -538,10 +562,13 @@ public static class LootGenerator
             ("Chain Leggings", new[] { "Warrior", "Paladin", "Cleric", "Ranger" }, 15, 55, 15),
             ("Studded Legguards", new[] { "Ranger", "Assassin" }, 15, 50, 12),
             ("Iron Greaves", new[] { "Warrior", "Paladin", "Barbarian" }, 20, 60, 20),
+            ("Reinforced Leggings", new[] { "All" }, 20, 50, 12),
             ("Silk Trousers", new[] { "Magician", "Sage" }, 10, 50, 7),
             ("Steel Greaves", new[] { "Warrior", "Paladin" }, 35, 75, 32),
             ("Barbarian Legguards", new[] { "Barbarian" }, 25, 70, 22),
+            ("Forged Greaves", new[] { "All" }, 35, 70, 28),
             ("Mithril Legguards", new[] { "All" }, 50, 85, 45),
+            ("Runed Legguards", new[] { "All" }, 65, 100, 58),
             ("Shadow Leggings", new[] { "Assassin" }, 40, 80, 35),
             ("Plate Greaves", new[] { "Warrior", "Paladin" }, 60, 95, 58),
             ("Titan's Legplates", new[] { "Warrior", "Barbarian" }, 80, 100, 75),
@@ -553,11 +580,14 @@ public static class LootGenerator
             ("Leather Boots", new[] { "All" }, 5, 30, 5),
             ("Iron Boots", new[] { "Warrior", "Paladin", "Barbarian" }, 15, 50, 12),
             ("Scout's Boots", new[] { "Ranger", "Assassin" }, 10, 50, 9),
+            ("Reinforced Boots", new[] { "All" }, 20, 50, 10),
             ("Chain Boots", new[] { "Warrior", "Paladin", "Cleric" }, 20, 60, 16),
             ("Silk Slippers", new[] { "Magician", "Sage" }, 10, 50, 6),
             ("Steel Sabatons", new[] { "Warrior", "Paladin" }, 35, 75, 28),
             ("Shadow Treads", new[] { "Assassin" }, 30, 70, 22),
+            ("Forged Boots", new[] { "All" }, 35, 70, 26),
             ("Mithril Boots", new[] { "All" }, 50, 85, 42),
+            ("Runed Boots", new[] { "All" }, 65, 100, 55),
             ("Traveler's Sandals", new[] { "Assassin", "Ranger" }, 20, 70, 15),
             ("Plate Sabatons", new[] { "Warrior", "Paladin" }, 60, 95, 52),
             ("Dragonhide Boots", new[] { "All" }, 80, 100, 70),
@@ -569,10 +599,13 @@ public static class LootGenerator
             ("Leather Belt", new[] { "All" }, 5, 30, 4),
             ("Chain Belt", new[] { "Warrior", "Paladin", "Cleric" }, 15, 50, 10),
             ("Sash of Focus", new[] { "Magician", "Sage", "Assassin" }, 10, 50, 7),
+            ("Reinforced Belt", new[] { "All" }, 20, 50, 10),
             ("War Belt", new[] { "Warrior", "Barbarian" }, 20, 60, 15),
             ("Thief's Girdle", new[] { "Assassin", "Ranger" }, 15, 55, 11),
+            ("Forged Girdle", new[] { "All" }, 35, 70, 22),
             ("Steel Girdle", new[] { "Warrior", "Paladin" }, 35, 75, 25),
             ("Mithril Belt", new[] { "All" }, 50, 85, 38),
+            ("Runed Belt", new[] { "All" }, 65, 100, 50),
             ("Holy Sash", new[] { "Paladin", "Cleric" }, 40, 80, 30),
             ("Titan's Belt", new[] { "Warrior", "Barbarian" }, 65, 100, 55),
             ("Dragonscale Belt", new[] { "All" }, 80, 100, 65),
@@ -586,8 +619,10 @@ public static class LootGenerator
             ("Shadow Mask", new[] { "Assassin" }, 15, 60, 10),
             ("War Mask", new[] { "Warrior", "Barbarian" }, 25, 65, 18),
             ("Mystic Veil", new[] { "Magician", "Sage", "Cleric" }, 20, 65, 12),
+            ("Forged Visor", new[] { "All" }, 35, 70, 24),
             ("Steel Faceplate", new[] { "Warrior", "Paladin" }, 40, 80, 30),
             ("Mithril Visor", new[] { "All" }, 55, 90, 42),
+            ("Runed Mask", new[] { "All" }, 65, 100, 52),
             ("Death Mask", new[] { "Assassin" }, 50, 90, 38),
             ("Dragon Visage", new[] { "All" }, 80, 100, 60),
         };
@@ -599,8 +634,10 @@ public static class LootGenerator
             ("Ranger's Cloak", new[] { "Ranger" }, 10, 50, 10),
             ("Shadow Cloak", new[] { "Assassin", "Ranger" }, 15, 55, 14),
             ("Wizard's Mantle", new[] { "Magician", "Sage" }, 15, 55, 10),
+            ("Reinforced Cloak", new[] { "All" }, 20, 50, 12),
             ("War Cloak", new[] { "Warrior", "Paladin", "Barbarian" }, 20, 60, 16),
             ("Elven Cloak", new[] { "All" }, 30, 70, 25),
+            ("Forged-Thread Cape", new[] { "All" }, 40, 75, 32),
             ("Cloak of Shadows", new[] { "Assassin" }, 40, 80, 32),
             ("Holy Shroud", new[] { "Paladin", "Cleric" }, 35, 75, 28),
             ("Mithril Weave Cloak", new[] { "All" }, 55, 90, 45),
@@ -613,9 +650,12 @@ public static class LootGenerator
             // Bucklers (light shields - usable by more classes)
             ("Wooden Buckler", new[] { "All" }, 1, 20, 3),
             ("Iron Buckler", new[] { "All" }, 8, 35, 8),
-            ("Steel Buckler", new[] { "Warrior", "Paladin", "Ranger", "Assassin" }, 15, 50, 14),
+            ("Steel Buckler", new[] { "All" }, 15, 50, 14),
+            ("Reinforced Shield", new[] { "All" }, 25, 60, 18),
             ("Duelist's Buckler", new[] { "Warrior", "Paladin", "Ranger", "Assassin" }, 30, 70, 22),
+            ("Forged Shield", new[] { "All" }, 35, 70, 28),
             ("Elven Buckler", new[] { "All" }, 50, 85, 38),
+            ("Runed Shield", new[] { "All" }, 65, 100, 50),
             ("Phantom Buckler", new[] { "Assassin", "Ranger" }, 70, 100, 55),
 
             // Standard Shields (balanced protection)
@@ -692,8 +732,8 @@ public static class LootGenerator
 
         #region Template Accessors (for ShopItemGenerator)
 
-        // One-handed weapons are indices 0-54, two-handed start at index 55
-        internal const int TwoHandedWeaponStartIndex = 55;
+        // One-handed weapons are indices 0-60, two-handed start at index 61
+        internal const int TwoHandedWeaponStartIndex = 61;
 
         internal static IReadOnlyList<(string Name, string[] Classes, int MinLevel, int MaxLevel, float BasePower)>
             GetWeaponTemplates() => WeaponTemplates;

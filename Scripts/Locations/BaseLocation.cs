@@ -2270,6 +2270,12 @@ public abstract class BaseLocation
                 await ShowHealthStatus();
                 return (true, false);
 
+            case "gear":
+            case "eq":
+            case "equipment":
+                await ShowGearWithTeamSelection();
+                return (true, false);
+
             case "p":
             case "pref":
             case "prefs":
@@ -2484,6 +2490,7 @@ public abstract class BaseLocation
         WriteCmdAlias("/quests", "/q", "- View active quests");
         WriteCmdAlias("/gold", "/g", "- Show gold and bank balance");
         WriteCmdAlias("/health", "/hp", "- Show health and mana status");
+        WriteCmdAlias("/gear", "/eq", "- Show detailed equipment and bonuses (yours or team)");
         WriteCmdAlias("/potion", "/pot", "- Use a healing potion");
         WriteCmdAlias("/herb", "/j", "- Use an herb from your pouch");
         WriteCmdAlias("/materials", "/mat", "- View crafting materials");
@@ -5348,6 +5355,249 @@ public abstract class BaseLocation
             UsurperRemake.Systems.Faction.TheShadows => "bright_magenta",
             _ => "white"
         };
+    }
+
+    /// <summary>
+    /// Show gear with optional team member selection
+    /// </summary>
+    protected async Task ShowGearWithTeamSelection()
+    {
+        if (currentPlayer == null) return;
+
+        // Build list of available targets
+        var targets = new List<(string label, Character character)>();
+        targets.Add(($"{currentPlayer.DisplayName} (You)", currentPlayer));
+
+        // NPC teammates
+        var npcTeammates = NPCSpawnSystem.Instance?.ActiveNPCs?
+            .Where(n => !string.IsNullOrEmpty(n.Team) && n.Team == currentPlayer.Team && !n.IsDead && n.IsAlive)
+            .ToList() ?? new List<NPC>();
+        foreach (var npc in npcTeammates)
+            targets.Add(($"{npc.DisplayName} (Teammate)", npc));
+
+        // Companions
+        var companions = CompanionSystem.Instance?.GetCompanionsAsCharacters() ?? new List<Character>();
+        foreach (var comp in companions)
+            targets.Add(($"{comp.DisplayName} (Companion)", comp));
+
+        // Spouse
+        if (!string.IsNullOrEmpty(currentPlayer.SpouseName))
+        {
+            var spouseNpc = NPCSpawnSystem.Instance?.GetNPCByName(currentPlayer.SpouseName);
+            if (spouseNpc != null && !spouseNpc.IsDead)
+                targets.Add(($"{spouseNpc.DisplayName} (Spouse)", spouseNpc));
+        }
+
+        // If only the player, show directly
+        if (targets.Count == 1)
+        {
+            ShowDetailedGear();
+            await terminal.PressAnyKey();
+            return;
+        }
+
+        // Show selection
+        terminal.WriteLine("");
+        terminal.SetColor("bright_yellow");
+        terminal.WriteLine("  Whose gear do you want to inspect?");
+        terminal.WriteLine("");
+
+        for (int i = 0; i < targets.Count; i++)
+        {
+            terminal.SetColor("white");
+            terminal.Write($"  {i + 1}. ");
+            terminal.SetColor("cyan");
+            terminal.WriteLine(targets[i].label);
+        }
+
+        terminal.WriteLine("");
+        string input = await terminal.GetInput("  Selection (or Enter for yours): ");
+
+        Character selected;
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            selected = currentPlayer;
+        }
+        else if (int.TryParse(input.Trim(), out int choice) && choice >= 1 && choice <= targets.Count)
+        {
+            selected = targets[choice - 1].character;
+        }
+        else
+        {
+            selected = currentPlayer;
+        }
+
+        ShowDetailedGear(selected);
+        await terminal.PressAnyKey();
+    }
+
+    /// <summary>
+    /// Show detailed gear breakdown with all stats for every equipped item
+    /// </summary>
+    protected void ShowDetailedGear(Character? target = null)
+    {
+        var player = target ?? currentPlayer;
+        if (player == null) return;
+
+        terminal.WriteLine("");
+        UIHelper.WriteBoxHeader(terminal, $"Equipment — {player.DisplayName}", "bright_yellow", 76);
+        terminal.WriteLine("");
+
+        var slots = new (EquipmentSlot slot, string label)[]
+        {
+            (EquipmentSlot.MainHand, "Main Hand"),
+            (EquipmentSlot.OffHand, "Off Hand"),
+            (EquipmentSlot.Head, "Head"),
+            (EquipmentSlot.Body, "Body"),
+            (EquipmentSlot.Arms, "Arms"),
+            (EquipmentSlot.Hands, "Hands"),
+            (EquipmentSlot.Legs, "Legs"),
+            (EquipmentSlot.Feet, "Feet"),
+            (EquipmentSlot.Waist, "Waist"),
+            (EquipmentSlot.Face, "Face"),
+            (EquipmentSlot.Cloak, "Cloak"),
+            (EquipmentSlot.Neck, "Neck"),
+            (EquipmentSlot.LFinger, "Left Ring"),
+            (EquipmentSlot.RFinger, "Right Ring"),
+        };
+
+        int totalWP = 0, totalAC = 0, totalStr = 0, totalDex = 0, totalCon = 0;
+        int totalInt = 0, totalWis = 0, totalCha = 0, totalAgi = 0, totalDef = 0;
+        int totalHP = 0, totalMP = 0, totalSta = 0;
+        int itemCount = 0;
+
+        foreach (var (slot, label) in slots)
+        {
+            var item = player.GetEquipment(slot);
+            terminal.SetColor("white");
+            terminal.Write($"  {label,-11}");
+
+            if (item == null)
+            {
+                // Two-handed weapon check for off-hand
+                if (slot == EquipmentSlot.OffHand)
+                {
+                    var mainHand = player.GetEquipment(EquipmentSlot.MainHand);
+                    if (mainHand?.Handedness == WeaponHandedness.TwoHanded)
+                    {
+                        terminal.SetColor("darkgray");
+                        terminal.WriteLine("(using 2H weapon)");
+                        continue;
+                    }
+                }
+                terminal.SetColor("darkgray");
+                terminal.WriteLine("Empty");
+                continue;
+            }
+
+            itemCount++;
+
+            // Item name with rarity color
+            terminal.SetColor(GetEquipmentRarityColor(item.Rarity));
+            terminal.WriteLine(item.IsIdentified ? item.Name : "Unidentified");
+
+            // Accumulate totals
+            totalWP += item.WeaponPower;
+            totalAC += item.ArmorClass + item.ShieldBonus;
+            totalStr += item.StrengthBonus;
+            totalDex += item.DexterityBonus;
+            totalCon += item.ConstitutionBonus;
+            totalInt += item.IntelligenceBonus;
+            totalWis += item.WisdomBonus;
+            totalCha += item.CharismaBonus;
+            totalAgi += item.AgilityBonus;
+            totalDef += item.DefenceBonus;
+            totalHP += item.MaxHPBonus;
+            totalMP += item.MaxManaBonus;
+            totalSta += item.StaminaBonus;
+
+            if (!item.IsIdentified) continue;
+
+            // Line 1: Combat stats
+            var combatStats = new List<string>();
+            if (item.WeaponPower > 0) combatStats.Add($"WP:{item.WeaponPower}");
+            if (item.ArmorClass > 0) combatStats.Add($"AC:{item.ArmorClass}");
+            if (item.ShieldBonus > 0) combatStats.Add($"Block:{item.ShieldBonus}");
+            if (item.DefenceBonus > 0) combatStats.Add($"Def:{item.DefenceBonus:+#;-#;0}");
+
+            // Primary stats
+            if (item.StrengthBonus != 0) combatStats.Add($"Str:{item.StrengthBonus:+#;-#;0}");
+            if (item.DexterityBonus != 0) combatStats.Add($"Dex:{item.DexterityBonus:+#;-#;0}");
+            if (item.ConstitutionBonus != 0) combatStats.Add($"Con:{item.ConstitutionBonus:+#;-#;0}");
+            if (item.IntelligenceBonus != 0) combatStats.Add($"Int:{item.IntelligenceBonus:+#;-#;0}");
+            if (item.WisdomBonus != 0) combatStats.Add($"Wis:{item.WisdomBonus:+#;-#;0}");
+            if (item.CharismaBonus != 0) combatStats.Add($"Cha:{item.CharismaBonus:+#;-#;0}");
+            if (item.AgilityBonus != 0) combatStats.Add($"Agi:{item.AgilityBonus:+#;-#;0}");
+            if (item.MaxHPBonus != 0) combatStats.Add($"HP:{item.MaxHPBonus:+#;-#;0}");
+            if (item.MaxManaBonus != 0) combatStats.Add($"MP:{item.MaxManaBonus:+#;-#;0}");
+            if (item.StaminaBonus != 0) combatStats.Add($"Sta:{item.StaminaBonus:+#;-#;0}");
+
+            if (combatStats.Count > 0)
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine($"             {string.Join(", ", combatStats)}");
+            }
+
+            // Line 2: Special properties (enchantments, procs, etc.)
+            var specials = new List<string>();
+            if (item.CriticalChanceBonus > 0) specials.Add($"Crit +{item.CriticalChanceBonus}%");
+            if (item.CriticalDamageBonus > 0) specials.Add($"CritDmg +{item.CriticalDamageBonus}%");
+            if (item.LifeSteal > 0) specials.Add($"Lifesteal {item.LifeSteal}%");
+            if (item.ManaSteal > 0) specials.Add($"Manasteal {item.ManaSteal}%");
+            if (item.ArmorPiercing > 0) specials.Add($"ArmorPen {item.ArmorPiercing}%");
+            if (item.Thorns > 0) specials.Add($"Thorns {item.Thorns}%");
+            if (item.HPRegen > 0) specials.Add($"HPRegen {item.HPRegen}/rd");
+            if (item.ManaRegen > 0) specials.Add($"MPRegen {item.ManaRegen}/rd");
+            if (item.PoisonDamage > 0) specials.Add($"Poison {item.PoisonDamage}");
+            if (item.MagicResistance > 0) specials.Add($"MagRes {item.MagicResistance}%");
+            if (item.HasFireEnchant) specials.Add("Fire");
+            if (item.HasFrostEnchant) specials.Add("Frost");
+            if (item.HasLightningEnchant) specials.Add("Lightning");
+            if (item.HasPoisonEnchant) specials.Add("Poison");
+            if (item.HasHolyEnchant) specials.Add("Holy");
+            if (item.HasShadowEnchant) specials.Add("Shadow");
+            if (item.IsCursed) specials.Add("CURSED");
+
+            if (specials.Count > 0)
+            {
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine($"             {string.Join(", ", specials)}");
+            }
+        }
+
+        // Totals
+        terminal.WriteLine("");
+        terminal.SetColor("bright_yellow");
+        terminal.WriteLine($"  Totals ({itemCount} items equipped):");
+        terminal.SetColor("white");
+
+        // Combat totals
+        terminal.Write("    ");
+        if (totalWP > 0) { terminal.SetColor("bright_red"); terminal.Write($"WP:{totalWP}  "); }
+        if (totalAC > 0) { terminal.SetColor("bright_cyan"); terminal.Write($"AC:{totalAC}  "); }
+        if (totalDef > 0) { terminal.SetColor("bright_cyan"); terminal.Write($"Def:+{totalDef}  "); }
+        terminal.WriteLine("");
+
+        // Stat totals
+        var statLine = new List<string>();
+        if (totalStr != 0) statLine.Add($"Str:{totalStr:+#;-#;0}");
+        if (totalDex != 0) statLine.Add($"Dex:{totalDex:+#;-#;0}");
+        if (totalCon != 0) statLine.Add($"Con:{totalCon:+#;-#;0}");
+        if (totalInt != 0) statLine.Add($"Int:{totalInt:+#;-#;0}");
+        if (totalWis != 0) statLine.Add($"Wis:{totalWis:+#;-#;0}");
+        if (totalCha != 0) statLine.Add($"Cha:{totalCha:+#;-#;0}");
+        if (totalAgi != 0) statLine.Add($"Agi:{totalAgi:+#;-#;0}");
+        if (totalHP != 0) statLine.Add($"HP:{totalHP:+#;-#;0}");
+        if (totalMP != 0) statLine.Add($"MP:{totalMP:+#;-#;0}");
+        if (totalSta != 0) statLine.Add($"Sta:{totalSta:+#;-#;0}");
+
+        if (statLine.Count > 0)
+        {
+            terminal.SetColor("green");
+            terminal.WriteLine($"    {string.Join(", ", statLine)}");
+        }
+
+        terminal.WriteLine("");
     }
 
     /// <summary>

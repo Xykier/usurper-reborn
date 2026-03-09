@@ -512,8 +512,16 @@ namespace UsurperRemake.Systems
                 DebugLogger.Instance.LogInfo("UPDATE", $"Downloading update from: {asset.browser_download_url}");
                 DebugLogger.Instance.LogInfo("UPDATE", $"Temp directory: {tempDir}");
 
-                // Download the update
-                using var client = new HttpClient();
+                // Download the update — use TLS 1.2 handler for Win7 compatibility
+                var dlHandler = new HttpClientHandler();
+                try
+                {
+                    dlHandler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 |
+                                             System.Security.Authentication.SslProtocols.Tls13;
+                }
+                catch { /* SslProtocols may be restricted on some platforms */ }
+
+                using var client = new HttpClient(dlHandler);
                 client.DefaultRequestHeaders.Add("User-Agent", $"UsurperReborn/{GameConfig.Version}");
                 client.Timeout = TimeSpan.FromMinutes(10); // Allow longer timeout for downloads
 

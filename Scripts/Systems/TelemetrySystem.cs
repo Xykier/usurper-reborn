@@ -18,7 +18,7 @@ public class TelemetrySystem
     private static TelemetrySystem? _instance;
     public static TelemetrySystem Instance => _instance ??= new TelemetrySystem();
 
-    private static readonly HttpClient httpClient = new HttpClient();
+    private static readonly HttpClient httpClient = CreateTlsClient();
 
     // PostHog configuration
     // Note: PostHog public API keys are designed to be embedded in client apps (like GA tracking IDs)
@@ -47,6 +47,25 @@ public class TelemetrySystem
 
     // Game version for all events
     private string gameVersion = "unknown";
+
+    /// <summary>
+    /// Create an HttpClient with TLS 1.2+ configured for Win7 compatibility
+    /// </summary>
+    private static HttpClient CreateTlsClient()
+    {
+        try
+        {
+            var handler = new HttpClientHandler();
+            handler.SslProtocols = System.Security.Authentication.SslProtocols.Tls12 |
+                                   System.Security.Authentication.SslProtocols.Tls13;
+            return new HttpClient(handler);
+        }
+        catch
+        {
+            // Fall back to default if SslProtocols not supported
+            return new HttpClient();
+        }
+    }
 
     public TelemetrySystem()
     {
