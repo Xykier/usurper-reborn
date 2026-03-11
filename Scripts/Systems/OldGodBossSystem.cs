@@ -969,7 +969,7 @@ namespace UsurperRemake.Systems
 
             foreach (var line in boss.SaveDialogue)
             {
-                terminal.WriteLine($"  \"{line}\"", "bright_cyan");
+                PrintDialogueLine(terminal, line,"bright_cyan");
                 await Task.Delay(300);
             }
 
@@ -1040,7 +1040,7 @@ namespace UsurperRemake.Systems
 
             foreach (var line in boss.DefeatDialogue)
             {
-                terminal.WriteLine($"  \"{line}\"", boss.ThemeColor);
+                PrintDialogueLine(terminal, line,boss.ThemeColor);
                 await Task.Delay(1500); // Give players time to read each line
             }
 
@@ -1187,6 +1187,43 @@ namespace UsurperRemake.Systems
             }
             int filled = (int)(percent * width);
             return new string('█', filled) + new string('░', width - filled);
+        }
+
+        /// <summary>
+        /// Print a single line of Old God dialogue with context-aware formatting.
+        /// Lines starting with "GODNAME:" are spoken dialogue — printed as-is in the theme color.
+        /// Lines starting with "> [" are player choice prompts — printed in bright_cyan.
+        /// Empty lines pass through as blank lines.
+        /// All other lines are narration/action — printed in italic *...* style in a softer color.
+        /// </summary>
+        public void PrintDialogueLine(TerminalEmulator term, string line, string themeColor)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                term.WriteLine("");
+                return;
+            }
+
+            // Spoken dialogue: "GODNAME: "..." " or "BOTH: ..." etc.
+            bool isSpeech = System.Text.RegularExpressions.Regex.IsMatch(line, @"^[A-Z][A-Z ]+:");
+            if (isSpeech)
+            {
+                term.SetColor(themeColor);
+                term.WriteLine($"  {line}");
+                return;
+            }
+
+            // Player choice prompt lines
+            if (line.StartsWith("> ["))
+            {
+                term.SetColor("bright_cyan");
+                term.WriteLine($"  {line}");
+                return;
+            }
+
+            // Narration / action — wrap in *...* and use a slightly softer color
+            term.SetColor("gray");
+            term.WriteLine($"  *{line}*");
         }
 
         #endregion

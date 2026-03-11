@@ -541,8 +541,8 @@ public static class SpellSystem
                 result.SpecialEffect = "fail";
             }
 
-            // Can still learn from failure (capped for NPCs/companions)
-            int spellProfCap = TrainingSystem.GetProficiencyCapForCharacter(caster);
+            // Can still learn from failure — combat use improves up to Good; past Good requires manual training
+            int spellProfCap = Math.Min(TrainingSystem.GetProficiencyCapForCharacter(caster), 3); // 3 = ProficiencyLevel.Good — past Good requires manual training
             if (TrainingSystem.TryImproveFromUse(caster, skillId, random, spellProfCap))
             {
                 var newLevel = TrainingSystem.GetSkillProficiency(caster, skillId);

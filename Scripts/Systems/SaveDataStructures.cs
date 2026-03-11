@@ -157,6 +157,14 @@ namespace UsurperRemake.Systems
         public int BaseStatsSpeed { get; set; }
         public int BaseStatsHealingPower { get; set; }
 
+        // Secondary stats
+        public int Constitution { get; set; } = 10;
+        public int Intelligence { get; set; } = 10;
+        public int Wisdom { get; set; } = 10;
+        public int Charisma { get; set; } = 10;
+        public int Dexterity { get; set; } = 10;
+        public int Agility { get; set; } = 10;
+
         // Equipment (slot enum int -> equipment database ID)
         public Dictionary<int, int> EquippedItemsSave { get; set; } = new();
 
@@ -522,6 +530,8 @@ namespace UsurperRemake.Systems
         public bool SettlementHerbClaimedToday { get; set; }
         public bool SettlementShrineUsedToday { get; set; }
         public bool SettlementCircleUsedToday { get; set; }
+        public bool SettlementWorkshopUsedToday { get; set; }
+        public int WorkshopBuffCombats { get; set; } = 0;
 
         // Faction consumable properties (v0.40.2)
         public int PoisonCoatingCombats { get; set; }
@@ -1349,9 +1359,10 @@ namespace UsurperRemake.Systems
         public int FloorLevel { get; set; }
         public DateTime LastClearedAt { get; set; }          // When floor was fully cleared
         public DateTime LastVisitedAt { get; set; }          // When player last visited
-        public bool EverCleared { get; set; } = false;       // Has this floor ever been fully cleared? (for first-clear bonus)
-        public bool IsPermanentlyClear { get; set; } = false; // Boss/seal floors stay cleared forever
-        public bool BossDefeated { get; set; } = false;      // True if the actual boss room boss was defeated
+        public bool EverCleared { get; set; } = false;              // Has this floor ever been fully cleared?
+        public bool IsPermanentlyClear { get; set; } = false;       // Boss/seal floors stay cleared forever
+        public bool BossDefeated { get; set; } = false;             // True if the actual boss room boss was defeated
+        public bool CompletionBonusAwarded { get; set; } = false;   // Completion XP/gold bonus already paid out
         public string CurrentRoomId { get; set; } = "";      // Where player left off
         public List<DungeonRoomStateData> Rooms { get; set; } = new();
     }

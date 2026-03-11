@@ -1784,9 +1784,10 @@ namespace UsurperRemake.Systems
         public int FloorLevel { get; set; }
         public DateTime LastClearedAt { get; set; } = DateTime.MinValue;
         public DateTime LastVisitedAt { get; set; } = DateTime.MinValue;
-        public bool EverCleared { get; set; } = false;        // For first-clear bonus eligibility
-        public bool IsPermanentlyClear { get; set; } = false; // Boss/seal floors
-        public bool BossDefeated { get; set; } = false;       // True if boss room boss was actually defeated
+        public bool EverCleared { get; set; } = false;              // For first-clear bonus eligibility
+        public bool IsPermanentlyClear { get; set; } = false;       // Boss/seal floors
+        public bool BossDefeated { get; set; } = false;             // True if boss room boss was actually defeated
+        public bool CompletionBonusAwarded { get; set; } = false;   // Completion XP/gold bonus already paid out
         public string CurrentRoomId { get; set; } = "";
 
         // Room-level state

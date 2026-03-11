@@ -118,6 +118,9 @@ public class Monster
     public bool IsConfused { get; set; } = false;       // Confused - may skip or hit self
     public int ConfusedDuration { get; set; } = 0;
 
+    public bool IsCorroded { get; set; } = false;       // Armor corroded — reduced defence
+    public int CorrodedDuration { get; set; } = 0;
+
     // Ability use tracking to prevent infinite stacking
     public bool HasHardenedArmor { get; set; } = false;
     public bool HasEnraged { get; set; } = false;

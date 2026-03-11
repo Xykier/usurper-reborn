@@ -700,7 +700,7 @@ public class LevelMasterLocation : BaseLocation
                 break;
 
             case CharacterClass.Alchemist:
-                player.BaseIntelligence += 3;
+                player.BaseIntelligence += 4;
                 player.BaseWisdom += 2;
                 player.BaseDexterity += 2;
                 player.BaseMaxHP += 5;
@@ -830,6 +830,185 @@ public class LevelMasterLocation : BaseLocation
 
         // Recalculate all stats from base values
         player.RecalculateStats();
+    }
+
+    /// <summary>
+    /// Ensures an NPC/companion Character has class-appropriate stats for their level.
+    /// Computes the expected minimum stat values from level-up scaling and applies
+    /// Math.Max(current, expected) — never a nerf, only a buff for under-scaled characters.
+    /// Safe to call multiple times (idempotent).
+    /// </summary>
+    public static void EnsureClassStatsForLevel(Character npc)
+    {
+        if (npc == null || npc.Level <= 1) return;
+
+        int levelsGained = npc.Level - 1; // number of level-up applications
+
+        // Compute expected cumulative gains from pure level scaling
+        // (baseline starting value assumed to be 10 for secondary stats)
+        long expStr = 0, expDex = 0, expAgi = 0, expInt = 0, expWis = 0;
+        long expCha = 0, expCon = 0, expSta = 0, expDef = 0, expHP = 0, expMana = 0;
+
+        // Everyone gets +1 DEF, +1 STA per level
+        expDef += levelsGained;
+        expSta += levelsGained;
+        expHP  += levelsGained * 5;
+
+        switch (npc.Class)
+        {
+            case CharacterClass.Magician:
+                expInt  += levelsGained * 4;
+                expWis  += levelsGained * 3;
+                expMana += levelsGained * 15;
+                expHP   += levelsGained * 6;
+                expStr  += levelsGained;
+                expDef  += levelsGained;
+                expCon  += levelsGained * 2;
+                break;
+            case CharacterClass.Cleric:
+                expWis  += levelsGained * 4;
+                expInt  += levelsGained * 2;
+                expMana += levelsGained * 12;
+                expHP   += levelsGained * 6;
+                expStr  += levelsGained * 2;
+                expCon  += levelsGained * 2;
+                break;
+            case CharacterClass.Sage:
+                expInt  += levelsGained * 5;
+                expWis  += levelsGained * 4;
+                expMana += levelsGained * 18;
+                expHP   += levelsGained * 5;
+                expStr  += levelsGained;
+                expDef  += levelsGained;
+                expCon  += levelsGained;
+                break;
+            case CharacterClass.Alchemist:
+                expInt  += levelsGained * 4;
+                expWis  += levelsGained * 2;
+                expDex  += levelsGained * 2;
+                expHP   += levelsGained * 5;
+                expCon  += levelsGained * 2;
+                expSta  += levelsGained * 2;
+                break;
+            case CharacterClass.Warrior:
+                expStr  += levelsGained * 3;
+                expCon  += levelsGained * 3;
+                expHP   += levelsGained * 12;
+                expDex  += levelsGained * 2;
+                expDef  += levelsGained * 2;
+                break;
+            case CharacterClass.Barbarian:
+                expStr  += levelsGained * 4;
+                expCon  += levelsGained * 4;
+                expHP   += levelsGained * 12;
+                expSta  += levelsGained * 2;
+                break;
+            case CharacterClass.Paladin:
+                expStr  += levelsGained * 3;
+                expCon  += levelsGained * 3;
+                expWis  += levelsGained * 2;
+                expCha  += levelsGained * 2;
+                expHP   += levelsGained * 10;
+                expDef  += levelsGained;
+                break;
+            case CharacterClass.Assassin:
+                expDex  += levelsGained * 4;
+                expAgi  += levelsGained * 3;
+                expStr  += levelsGained * 2;
+                expHP   += levelsGained * 6;
+                expSta  += levelsGained * 2;
+                break;
+            case CharacterClass.Ranger:
+                expDex  += levelsGained * 3;
+                expAgi  += levelsGained * 3;
+                expStr  += levelsGained * 2;
+                expWis  += levelsGained;
+                expHP   += levelsGained * 8;
+                expSta  += levelsGained * 2;
+                break;
+            case CharacterClass.Jester:
+                expDex  += levelsGained * 3;
+                expAgi  += levelsGained * 3;
+                expCha  += levelsGained * 3;
+                expHP   += levelsGained * 5;
+                expSta  += levelsGained * 2;
+                break;
+            case CharacterClass.Bard:
+                expCha  += levelsGained * 4;
+                expDex  += levelsGained * 2;
+                expAgi  += levelsGained * 2;
+                expInt  += levelsGained * 2;
+                expHP   += levelsGained * 5;
+                expSta  += levelsGained * 2;
+                break;
+            case CharacterClass.Tidesworn:
+                expStr  += levelsGained * 4;
+                expCon  += levelsGained * 4;
+                expWis  += levelsGained * 3;
+                expCha  += levelsGained * 2;
+                expDef  += levelsGained * 2;
+                expHP   += levelsGained * 13;
+                expMana += levelsGained * 8;
+                break;
+            case CharacterClass.Wavecaller:
+                expCha  += levelsGained * 5;
+                expWis  += levelsGained * 4;
+                expInt  += levelsGained * 3;
+                expCon  += levelsGained * 2;
+                expAgi  += levelsGained * 2;
+                expHP   += levelsGained * 7;
+                expMana += levelsGained * 14;
+                break;
+            case CharacterClass.Cyclebreaker:
+                expStr  += levelsGained * 3;
+                expInt  += levelsGained * 3;
+                expWis  += levelsGained * 3;
+                expDex  += levelsGained * 3;
+                expCon  += levelsGained * 3;
+                expAgi  += levelsGained * 2;
+                expHP   += levelsGained * 9;
+                expMana += levelsGained * 10;
+                break;
+            case CharacterClass.Abysswarden:
+                expDex  += levelsGained * 5;
+                expStr  += levelsGained * 4;
+                expAgi  += levelsGained * 4;
+                expInt  += levelsGained * 3;
+                expCon  += levelsGained * 2;
+                expHP   += levelsGained * 8;
+                expMana += levelsGained * 10;
+                break;
+            case CharacterClass.Voidreaver:
+                expStr  += levelsGained * 5;
+                expInt  += levelsGained * 5;
+                expDex  += levelsGained * 4;
+                expAgi  += levelsGained * 3;
+                expSta  += levelsGained * 2;
+                expHP   += levelsGained * 6;
+                expMana += levelsGained * 12;
+                break;
+            default:
+                expStr  += levelsGained * 2;
+                expCon  += levelsGained * 2;
+                expHP   += levelsGained * 8;
+                break;
+        }
+
+        // Apply only if current is below expected floor (10 = assumed starting baseline)
+        const long statFloor = 10;
+        if (expStr  > 0) npc.BaseStrength     = Math.Max(npc.BaseStrength,     statFloor + expStr);
+        if (expDex  > 0) npc.BaseDexterity    = Math.Max(npc.BaseDexterity,    statFloor + expDex);
+        if (expAgi  > 0) npc.BaseAgility      = Math.Max(npc.BaseAgility,      statFloor + expAgi);
+        if (expInt  > 0) npc.BaseIntelligence = Math.Max(npc.BaseIntelligence, statFloor + expInt);
+        if (expWis  > 0) npc.BaseWisdom       = Math.Max(npc.BaseWisdom,       statFloor + expWis);
+        if (expCha  > 0) npc.BaseCharisma     = Math.Max(npc.BaseCharisma,     statFloor + expCha);
+        if (expCon  > 0) npc.BaseConstitution = Math.Max(npc.BaseConstitution, statFloor + expCon);
+        if (expSta  > 0) npc.BaseStamina      = Math.Max(npc.BaseStamina,      statFloor + expSta);
+        if (expDef  > 0) npc.BaseDefence      = Math.Max(npc.BaseDefence,            expDef);  // DEF starts at 0
+        if (expHP   > 0) npc.BaseMaxHP        = Math.Max(npc.BaseMaxHP,         100  + expHP); // baseline HP ~100
+        if (expMana > 0) npc.BaseMaxMana      = Math.Max(npc.BaseMaxMana,             expMana);
+
+        npc.RecalculateStats();
     }
 
     /// <summary>
@@ -1284,6 +1463,17 @@ public class LevelMasterLocation : BaseLocation
                 levelsToGain++;
             }
 
+            // Snapshot companion stats before level-ups
+            int beforeCHP = companion.BaseStats.HP;
+            int beforeCAtk = companion.BaseStats.Attack;
+            int beforeCDef = companion.BaseStats.Defense;
+            int beforeCSpd = companion.BaseStats.Speed;
+            int beforeCMag = companion.BaseStats.MagicPower;
+            int beforeCHeal = companion.BaseStats.HealingPower;
+            int beforeCCon = companion.Constitution;
+            int beforeCDex = companion.Dexterity, beforeCAgi = companion.Agility;
+            int beforeCInt = companion.Intelligence, beforeCWis = companion.Wisdom, beforeCCha = companion.Charisma;
+
             // Apply level-ups with proper stat gains through CompanionSystem
             if (levelsToGain > 0)
             {
@@ -1294,7 +1484,37 @@ public class LevelMasterLocation : BaseLocation
             {
                 terminal.SetColor("bright_yellow");
                 terminal.WriteLine(Loc.Get("level_master.help_companion_grown", companion.Name, companion.Level));
-                terminal.WriteLine($"{Loc.Get("combat.bar_hp")}: {companion.BaseStats.HP} | {Loc.Get("combat.bar_atk")}: {companion.BaseStats.Attack} | {Loc.Get("combat.bar_def")}: {companion.BaseStats.Defense}");
+
+                // Show stat diffs
+                var csc = new System.Collections.Generic.List<string>();
+                int dAtk = companion.BaseStats.Attack - beforeCAtk;
+                int dDef = companion.BaseStats.Defense - beforeCDef;
+                int dSpd = companion.BaseStats.Speed - beforeCSpd;
+                int dMag = companion.BaseStats.MagicPower - beforeCMag;
+                int dHeal = companion.BaseStats.HealingPower - beforeCHeal;
+                int dHP = companion.BaseStats.HP - beforeCHP;
+                int dCon = companion.Constitution - beforeCCon;
+                int dDex = companion.Dexterity - beforeCDex;
+                int dAgi = companion.Agility - beforeCAgi;
+                int dInt = companion.Intelligence - beforeCInt;
+                int dWis = companion.Wisdom - beforeCWis;
+                int dCha = companion.Charisma - beforeCCha;
+                if (dAtk > 0) csc.Add($"ATK +{dAtk}");
+                if (dDef > 0) csc.Add($"DEF +{dDef}");
+                if (dSpd > 0) csc.Add($"SPD +{dSpd}");
+                if (dMag > 0) csc.Add($"MAG +{dMag}");
+                if (dHeal > 0) csc.Add($"HEAL +{dHeal}");
+                if (dCon > 0) csc.Add($"CON +{dCon}");
+                if (dDex > 0) csc.Add($"DEX +{dDex}");
+                if (dAgi > 0) csc.Add($"AGI +{dAgi}");
+                if (dInt > 0) csc.Add($"INT +{dInt}");
+                if (dWis > 0) csc.Add($"WIS +{dWis}");
+                if (dCha > 0) csc.Add($"CHA +{dCha}");
+                if (dHP > 0) csc.Add($"HP +{dHP}");
+                terminal.SetColor("bright_green");
+                if (csc.Count > 0)
+                    terminal.WriteLine("  " + string.Join("  ", csc));
+
                 terminal.WriteLine(Loc.Get("level_master.help_effectiveness"));
             }
         }
@@ -1305,15 +1525,25 @@ public class LevelMasterLocation : BaseLocation
             recipient.Experience += xpToGive;
             int startLevel = recipient.Level;
 
+            // Snapshot stats before any level-ups
+            long beforeHP = recipient.BaseMaxHP;
+            long beforeStr = recipient.BaseStrength;
+            long beforeDef = recipient.BaseDefence;
+            long beforeDex = recipient.BaseDexterity;
+            long beforeAgi = recipient.BaseAgility;
+            long beforeInt = recipient.BaseIntelligence;
+            long beforeWis = recipient.BaseWisdom;
+            long beforeCha = recipient.BaseCharisma;
+            long beforeSta = recipient.BaseStamina;
+            long beforeMana = recipient.BaseMaxMana;
+
             while (recipient.Experience >= GetExperienceForLevel(recipient.Level + 1) && recipient.Level < GameConfig.MaxLevel)
             {
                 recipient.Level++;
                 levelsGained++;
 
-                // Update base stats on level up (matches WorldSimulator.NPCLevelUp behavior)
-                recipient.BaseMaxHP += 10 + random.Next(5, 15);
-                recipient.BaseStrength += random.Next(1, 3);
-                recipient.BaseDefence += random.Next(1, 2);
+                // Use class-appropriate stat gains (same as auto-level-up for players)
+                ApplyClassStatIncreases(recipient);
             }
 
             if (levelsGained > 0)
@@ -1327,13 +1557,38 @@ public class LevelMasterLocation : BaseLocation
 
                 terminal.SetColor("bright_yellow");
                 if (levelsGained == 1)
-                {
                     terminal.WriteLine(Loc.Get("level_master.help_npc_level", recipient.Name, recipient.Level));
-                }
                 else
-                {
                     terminal.WriteLine(Loc.Get("level_master.help_npc_multi", recipient.Name, levelsGained, startLevel, recipient.Level));
+
+                // Show stat changes
+                var statChanges = new System.Collections.Generic.List<string>();
+                long dHP = recipient.BaseMaxHP - beforeHP;
+                long dStr = recipient.BaseStrength - beforeStr;
+                long dDef = recipient.BaseDefence - beforeDef;
+                long dDex = recipient.BaseDexterity - beforeDex;
+                long dAgi = recipient.BaseAgility - beforeAgi;
+                long dInt = recipient.BaseIntelligence - beforeInt;
+                long dWis = recipient.BaseWisdom - beforeWis;
+                long dCha = recipient.BaseCharisma - beforeCha;
+                long dSta = recipient.BaseStamina - beforeSta;
+                long dMana = recipient.BaseMaxMana - beforeMana;
+                if (dStr > 0) statChanges.Add($"STR +{dStr}");
+                if (dDef > 0) statChanges.Add($"DEF +{dDef}");
+                if (dDex > 0) statChanges.Add($"DEX +{dDex}");
+                if (dAgi > 0) statChanges.Add($"AGI +{dAgi}");
+                if (dInt > 0) statChanges.Add($"INT +{dInt}");
+                if (dWis > 0) statChanges.Add($"WIS +{dWis}");
+                if (dCha > 0) statChanges.Add($"CHA +{dCha}");
+                if (dHP > 0) statChanges.Add($"HP +{dHP}");
+                if (dSta > 0) statChanges.Add($"STA +{dSta}");
+                if (dMana > 0) statChanges.Add($"MP +{dMana}");
+                if (statChanges.Count > 0)
+                {
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine("  " + string.Join("  ", statChanges));
                 }
+
                 NewsSystem.Instance?.Newsy(true, Loc.Get("level_master.advanced_level_news", recipient.Name, recipient.Level, currentPlayer.Name2));
             }
         }

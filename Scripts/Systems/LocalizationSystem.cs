@@ -30,11 +30,11 @@ namespace UsurperRemake.Systems
         private static readonly Dictionary<string, string> KnownLanguageNames = new(StringComparer.OrdinalIgnoreCase)
         {
             { "en", "English" },
-            { "es", "Español" },
+            { "es", "Español (AI Translated)" },
             { "fr", "Français" },
             { "de", "Deutsch" },
             { "pt", "Português" },
-            { "it", "Italiano" },
+            { "it", "Italiano (AI Translated)" },
             { "nl", "Nederlands" },
             { "pl", "Polski" },
             { "ru", "Русский" },

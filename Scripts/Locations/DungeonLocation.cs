@@ -706,6 +706,7 @@ public class DungeonLocation : BaseLocation
             var npc = npcSystem.ActiveNPCs?.FirstOrDefault(n => n.ID == npcId && n.IsAlive);
             if (npc != null && !teammates.Any(t => t is NPC existingNpc && existingNpc.ID == npcId))
             {
+                LevelMasterLocation.EnsureClassStatsForLevel(npc); // Retroactively fix legacy stat gaps
                 teammates.Add(npc);
                 npc.UpdateLocation("Dungeon");
                 restoredCount++;
@@ -5165,15 +5166,10 @@ public class DungeonLocation : BaseLocation
     /// </summary>
     private async Task AwardFloorCompletionBonus(Character player, int floorLevel)
     {
-        // Check if this is the first time clearing this floor
-        bool isFirstClear = true;
-        if (player.DungeonFloorStates.TryGetValue(floorLevel, out var floorState))
-        {
-            isFirstClear = !floorState.EverCleared;
-        }
-
-        // Only award bonus on first clear
-        if (!isFirstClear)
+        // Check if the completion bonus has already been paid out for this floor
+        // Note: EverCleared can be set by seal collection before the bonus is awarded,
+        // so we use a separate CompletionBonusAwarded flag to track payout.
+        if (player.DungeonFloorStates.TryGetValue(floorLevel, out var floorState) && floorState.CompletionBonusAwarded)
         {
             terminal.WriteLine("");
             terminal.WriteLine(Loc.Get("dungeon.floor_recleared"), "gray");
@@ -5234,6 +5230,14 @@ public class DungeonLocation : BaseLocation
         {
             player.ClearedSpecialFloors.Add(floorLevel);
         }
+
+        // Mark the completion bonus as paid so we don't award it again on re-clears
+        if (!player.DungeonFloorStates.TryGetValue(floorLevel, out var bonusFloorState))
+        {
+            bonusFloorState = new DungeonFloorState { FloorLevel = floorLevel };
+            player.DungeonFloorStates[floorLevel] = bonusFloorState;
+        }
+        bonusFloorState.CompletionBonusAwarded = true;
 
         await Task.Delay(2500);
     }

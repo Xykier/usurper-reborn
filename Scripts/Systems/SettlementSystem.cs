@@ -729,9 +729,9 @@ namespace UsurperRemake.Systems
             if (HasBuilding(SettlementBuilding.Palisade, BuildingTier.Upgraded))
                 services.Add(("4", "Palisade — Defense Buff", SettlementBuilding.Palisade));
             if (HasBuilding(SettlementBuilding.Workshop, BuildingTier.Upgraded))
-                services.Add(("5", "Workshop — Identify Item", SettlementBuilding.Workshop));
+                services.Add(("5", "Workshop — Sharpen Weapon (+20% ATK)", SettlementBuilding.Workshop));
             if (HasBuilding(SettlementBuilding.Watchtower, BuildingTier.Upgraded))
-                services.Add(("6", "Watchtower — Scout Dungeon Floor", SettlementBuilding.Watchtower));
+                services.Add(("6", "Watchtower — Reveal Dungeon Floor", SettlementBuilding.Watchtower));
             if (HasBuilding(SettlementBuilding.CouncilHall, BuildingTier.Built))
                 services.Add(("7", "Council Hall — Claim Gold Share", SettlementBuilding.CouncilHall));
 

@@ -217,6 +217,7 @@ public partial class CombatEngine
             if (attacker.PoisonCoatingCombats <= 0) attacker.ActivePoisonType = PoisonType.None;
         }
         if (attacker.WellRestedCombats > 0) attacker.WellRestedCombats--;
+        if (attacker.WorkshopBuffCombats > 0) attacker.WorkshopBuffCombats--;
         if (attacker.LoversBlissCombats > 0) attacker.LoversBlissCombats--;
         if (attacker.DivineBlessingCombats > 0) attacker.DivineBlessingCombats--;
         if (attacker.HerbBuffCombats > 0)
@@ -391,6 +392,7 @@ public partial class CombatEngine
             if (player.PoisonCoatingCombats <= 0) player.ActivePoisonType = PoisonType.None;
         }
         if (player.WellRestedCombats > 0) player.WellRestedCombats--;
+        if (player.WorkshopBuffCombats > 0) player.WorkshopBuffCombats--;
         if (player.LoversBlissCombats > 0) player.LoversBlissCombats--;
         if (player.DivineBlessingCombats > 0) player.DivineBlessingCombats--;
         if (player.HerbBuffCombats > 0)
@@ -597,20 +599,67 @@ public partial class CombatEngine
             BroadcastGroupCombatEvent(result, introSb.ToString());
         }
 
-        // Ambush: monsters get a free attack round before the player can act
+        // Ambush: determine how many monsters catch the leader off guard via opposed roll.
+        // Monster stealth vs leader awareness (AGI + DEX + level scaling).
+        // Only monsters that win the roll get a free attack — partial ambushes are common.
         if (isAmbush && player.IsAlive && monsters.Any(m => m.IsAlive))
         {
-            terminal.SetColor("bright_red");
-            terminal.WriteLine("*** AMBUSH! The monsters strike before you can react! ***");
-            terminal.WriteLine("");
-            result.CombatLog.Add("Ambush! Monsters attack first!");
-            // Broadcast ambush warning to followers
-            bool hasGroupAmbush = result.Teammates?.Any(t => t.IsGroupedPlayer) == true;
-            BroadcastGroupCombatEvent(result,
-                "\u001b[1;31m  *** AMBUSH! Monsters strike before the party can react! ***\u001b[0m");
+            var ambushRng = new Random();
 
-            // Process ambush attacks — capture per-monster for group broadcast
-            foreach (var ambushMonster in monsters.Where(m => m.IsAlive))
+            // Leader awareness: AGI + DEX (raw base stats) + level*2, plus a d20 roll per monster
+            long leaderAgi = player.BaseAgility;
+            long leaderDex = player.BaseDexterity;
+            long leaderAwareness = leaderAgi / 4 + leaderDex / 4 + player.Level * 2;
+
+            // Roll per monster: monster.Level*3 + d20 vs leaderAwareness + d20
+            var ambushingMonsters = monsters
+                .Where(m => m.IsAlive)
+                .Where(m =>
+                {
+                    int monsterRoll  = m.Level * 3 + ambushRng.Next(1, 21);
+                    int playerRoll   = (int)leaderAwareness + ambushRng.Next(1, 21);
+                    return monsterRoll > playerRoll;
+                })
+                .ToList();
+
+            int totalMonsters  = monsters.Count(m => m.IsAlive);
+            int ambushCount    = ambushingMonsters.Count;
+
+            bool hasGroupAmbush = result.Teammates?.Any(t => t.IsGroupedPlayer) == true;
+
+            if (ambushCount == 0)
+            {
+                // Perfect detection — no free attacks
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("*** You sensed the ambush! Your quick reflexes deny them a free strike! ***");
+                terminal.WriteLine("");
+                result.CombatLog.Add("Ambush detected! No monsters got a free attack.");
+                BroadcastGroupCombatEvent(result,
+                    "\u001b[1;32m  *** The party sensed the ambush — no free strikes! ***\u001b[0m");
+            }
+            else if (ambushCount < totalMonsters)
+            {
+                // Partial ambush
+                terminal.SetColor("yellow");
+                terminal.WriteLine($"*** PARTIAL AMBUSH! {ambushCount} of {totalMonsters} monsters catch you off guard! ***");
+                terminal.WriteLine("");
+                result.CombatLog.Add($"Partial ambush! {ambushCount}/{totalMonsters} monsters attack first.");
+                BroadcastGroupCombatEvent(result,
+                    $"\u001b[1;33m  *** PARTIAL AMBUSH! {ambushCount} of {totalMonsters} monsters strike first! ***\u001b[0m");
+            }
+            else
+            {
+                // Full ambush — all monsters got through
+                terminal.SetColor("bright_red");
+                terminal.WriteLine("*** AMBUSH! The monsters strike before you can react! ***");
+                terminal.WriteLine("");
+                result.CombatLog.Add("Ambush! All monsters attack first!");
+                BroadcastGroupCombatEvent(result,
+                    "\u001b[1;31m  *** AMBUSH! Monsters strike before the party can react! ***\u001b[0m");
+            }
+
+            // Process free attacks for monsters that won the initiative roll
+            foreach (var ambushMonster in ambushingMonsters)
             {
                 if (!player.IsAlive) break;
 
@@ -634,7 +683,8 @@ public partial class CombatEngine
                 terminal.WriteLine(Loc.Get("combat.slain_ambush"));
             }
 
-            await Task.Delay(GetCombatDelay(1500));
+            if (ambushCount > 0)
+                await Task.Delay(GetCombatDelay(1500));
         }
 
         // Main combat loop
@@ -946,6 +996,11 @@ public partial class CombatEngine
 
             // === ALL MONSTERS' TURNS ===
             var livingMonsters = monsters.Where(m => m.IsAlive).ToList();
+
+            // Reset per-round hit counters for multi-hit damage reduction
+            if (result.Teammates != null)
+                foreach (var tm in result.Teammates) tm._hitsThisRound = 0;
+
             foreach (var monster in livingMonsters)
             {
                 // Stop if entire party is dead (not just leader)
@@ -2630,6 +2685,12 @@ public partial class CombatEngine
             attackPower += (long)(attackPower * attacker.WellRestedBonus);
         }
 
+        // Workshop weapon sharpening buff (+20% damage, 10 combats)
+        if (attacker.WorkshopBuffCombats > 0)
+        {
+            attackPower += (long)(attackPower * 0.20);
+        }
+
         // God Slayer bonus damage (post-Old God victory buff)
         if (attacker.HasGodSlayerBuff)
         {
@@ -2775,6 +2836,10 @@ public partial class CombatEngine
             long pierced = defense * armorPiercePct / 100;
             defense = Math.Max(0, defense - pierced);
         }
+
+        // Corrosive Cloud: corroded monsters have 40% reduced defense
+        if (target is Monster corroded && corroded.IsCorroded)
+            defense = Math.Max(0, (long)(defense * 0.6));
 
         long actualDamage = Math.Max(1, attackPower - defense);
 
@@ -3342,6 +3407,8 @@ public partial class CombatEngine
             if (!monster.IsAlive)
             {
                 terminal.WriteLine(monster.IsBurning ? $"{monster.Name} is consumed by flames!" : $"{monster.Name} succumbs to poison!", monster.IsBurning ? "red" : "dark_green");
+                if (!result.DefeatedMonsters.Contains(monster))
+                    result.DefeatedMonsters.Add(monster);
                 return;
             }
         }
@@ -3390,6 +3457,17 @@ public partial class CombatEngine
             }
             await Task.Delay(GetCombatDelay(600));
             return;
+        }
+
+        // Tick corrosion duration
+        if (monster.IsCorroded)
+        {
+            monster.CorrodedDuration--;
+            if (monster.CorrodedDuration <= 0)
+            {
+                monster.IsCorroded = false;
+                terminal.WriteLine(Loc.Get("combat.corrode_fades", monster.Name), "gray");
+            }
         }
 
         // Check if monster is feared (from Fear spell or Intimidating Roar)
@@ -3460,6 +3538,8 @@ public partial class CombatEngine
                     monster.HP = 0;
                     terminal.SetColor("bright_green");
                     terminal.WriteLine(Loc.Get("combat.confusion_defeat", monster.Name));
+                    if (!result.DefeatedMonsters.Contains(monster))
+                        result.DefeatedMonsters.Add(monster);
                 }
                 if (monster.ConfusedDuration <= 0) monster.IsConfused = false;
                 await Task.Delay(GetCombatDelay(600));
@@ -5442,6 +5522,154 @@ public partial class CombatEngine
     }
 
     /// <summary>
+    /// Apply Alchemist party effects (heals, buffs, cleanses) to all living teammates.
+    /// </summary>
+    private void ApplyAlchemistPartyEffect(Character alchemist, ClassAbilityResult abilityResult, CombatResult result, string effectType)
+    {
+        var teammates = result.Teammates?.Where(t => t.IsAlive).ToList();
+
+        switch (effectType)
+        {
+            case "party_heal_mist":
+            {
+                // Self heal (full, with Potion Mastery)
+                int selfHeal = abilityResult.Healing;
+                selfHeal = (int)Math.Min(selfHeal, alchemist.MaxHP - alchemist.HP);
+                if (selfHeal > 0)
+                {
+                    alchemist.HP += selfHeal;
+                    terminal.WriteLine($"  You recover {selfHeal} HP from the mist!", "bright_green");
+                }
+                // Teammates get 75%
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        long tmHeal = Math.Min((long)(abilityResult.Healing * 0.75), tm.MaxHP - tm.HP);
+                        if (tmHeal > 0)
+                        {
+                            tm.HP += tmHeal;
+                            terminal.WriteLine($"  {tm.DisplayName} recovers {tmHeal} HP!", "bright_green");
+                        }
+                    }
+                }
+                break;
+            }
+            case "party_stimulant":
+            {
+                // Self buff
+                alchemist.TempAttackBonus += abilityResult.AttackBonus;
+                alchemist.TempAttackBonusDuration = Math.Max(alchemist.TempAttackBonusDuration, abilityResult.Duration);
+                terminal.WriteLine($"  You feel the stimulant surge through you! (+{abilityResult.AttackBonus} ATK)", "bright_yellow");
+                // Teammates get 75%
+                if (teammates != null)
+                {
+                    int tmBonus = (int)(abilityResult.AttackBonus * 0.75);
+                    foreach (var tm in teammates)
+                    {
+                        tm.TempAttackBonus += tmBonus;
+                        tm.TempAttackBonusDuration = Math.Max(tm.TempAttackBonusDuration, abilityResult.Duration);
+                        terminal.WriteLine($"  {tm.DisplayName} is energized! (+{tmBonus} ATK)", "yellow");
+                    }
+                }
+                break;
+            }
+            case "party_smoke_screen":
+            {
+                // Self defense buff
+                alchemist.TempDefenseBonus += abilityResult.DefenseBonus;
+                alchemist.TempDefenseBonusDuration = Math.Max(alchemist.TempDefenseBonusDuration, abilityResult.Duration);
+                terminal.WriteLine($"  You vanish into the smoke! (+{abilityResult.DefenseBonus} DEF)", "gray");
+                // Teammates get full value
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        tm.TempDefenseBonus += abilityResult.DefenseBonus;
+                        tm.TempDefenseBonusDuration = Math.Max(tm.TempDefenseBonusDuration, abilityResult.Duration);
+                        terminal.WriteLine($"  {tm.DisplayName} is obscured by smoke! (+{abilityResult.DefenseBonus} DEF)", "gray");
+                    }
+                }
+                break;
+            }
+            case "party_battle_brew":
+            {
+                // Self buff
+                alchemist.TempAttackBonus += abilityResult.AttackBonus;
+                alchemist.TempAttackBonusDuration = Math.Max(alchemist.TempAttackBonusDuration, abilityResult.Duration);
+                alchemist.TempDefenseBonus += abilityResult.DefenseBonus;
+                alchemist.TempDefenseBonusDuration = Math.Max(alchemist.TempDefenseBonusDuration, abilityResult.Duration);
+                terminal.WriteLine($"  You feel invincible! (+{abilityResult.AttackBonus} ATK, +{abilityResult.DefenseBonus} DEF)", "bright_cyan");
+                // Teammates get 75%
+                if (teammates != null)
+                {
+                    int tmAtk = (int)(abilityResult.AttackBonus * 0.75);
+                    int tmDef = (int)(abilityResult.DefenseBonus * 0.75);
+                    foreach (var tm in teammates)
+                    {
+                        tm.TempAttackBonus += tmAtk;
+                        tm.TempAttackBonusDuration = Math.Max(tm.TempAttackBonusDuration, abilityResult.Duration);
+                        tm.TempDefenseBonus += tmDef;
+                        tm.TempDefenseBonusDuration = Math.Max(tm.TempDefenseBonusDuration, abilityResult.Duration);
+                        terminal.WriteLine($"  {tm.DisplayName} is empowered! (+{tmAtk} ATK, +{tmDef} DEF)", "cyan");
+                    }
+                }
+                break;
+            }
+            case "party_antidote":
+            {
+                // Cleanse self
+                alchemist.Poison = 0;
+                alchemist.PoisonTurns = 0;
+                alchemist.RemoveStatus(StatusEffect.Poisoned);
+                alchemist.Plague = false;
+                alchemist.Smallpox = false;
+                alchemist.Measles = false;
+                alchemist.Leprosy = false;
+                terminal.WriteLine("  Your ailments are neutralized!", "bright_green");
+                // Cleanse teammates
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        tm.Poison = 0;
+                        tm.PoisonTurns = 0;
+                        tm.RemoveStatus(StatusEffect.Poisoned);
+                        if (tm is Character c) { c.Plague = false; c.Smallpox = false; c.Measles = false; c.Leprosy = false; }
+                        terminal.WriteLine($"  {tm.DisplayName}'s ailments are cured!", "bright_green");
+                    }
+                }
+                break;
+            }
+            case "party_remedy":
+            {
+                // Full heal self + cleanse
+                int selfHeal = (int)Math.Min(abilityResult.Healing, alchemist.MaxHP - alchemist.HP);
+                if (selfHeal > 0) { alchemist.HP += selfHeal; terminal.WriteLine($"  You are fully restored! (+{selfHeal} HP)", "bright_green"); }
+                alchemist.Poison = 0; alchemist.PoisonTurns = 0; alchemist.RemoveStatus(StatusEffect.Poisoned);
+                alchemist.RemoveStatus(StatusEffect.Bleeding); alchemist.RemoveStatus(StatusEffect.Burning);
+                alchemist.RemoveStatus(StatusEffect.Cursed); alchemist.RemoveStatus(StatusEffect.Weakened);
+                alchemist.Plague = false; alchemist.Smallpox = false; alchemist.Measles = false; alchemist.Leprosy = false;
+                // Full heal + cleanse teammates
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        long tmHeal = Math.Min((long)(abilityResult.Healing * 0.75), tm.MaxHP - tm.HP);
+                        if (tmHeal > 0) { tm.HP += tmHeal; }
+                        tm.Poison = 0; tm.PoisonTurns = 0; tm.RemoveStatus(StatusEffect.Poisoned);
+                        tm.RemoveStatus(StatusEffect.Bleeding); tm.RemoveStatus(StatusEffect.Burning);
+                        tm.RemoveStatus(StatusEffect.Cursed); tm.RemoveStatus(StatusEffect.Weakened);
+                        if (tm is Character c) { c.Plague = false; c.Smallpox = false; c.Measles = false; c.Leprosy = false; }
+                        terminal.WriteLine($"  {tm.DisplayName} is fully restored! (+{tmHeal} HP, all ailments cured)", "bright_green");
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    /// <summary>
     /// Consolidates lifesteal, elemental procs, sunforged healing, and poison coating.
     /// </summary>
     private void ApplyPostHitEnchantments(Character attacker, Monster target, long damage, CombatResult result)
@@ -6861,7 +7089,11 @@ public partial class CombatEngine
         };
 
         bool isWeapon = lootItem.Type == global::ObjType.Weapon;
-        int itemPower = isWeapon ? lootItem.Attack : lootItem.Armor;
+        bool isAccessory = lootItem.Type == global::ObjType.Neck || lootItem.Type == global::ObjType.Fingers;
+        int itemPower = isWeapon ? lootItem.Attack
+            : isAccessory ? (lootItem.Strength + lootItem.Dexterity + lootItem.Wisdom
+                           + lootItem.Charisma + lootItem.Agility + lootItem.HP + lootItem.Mana + lootItem.Armor + lootItem.Attack)
+            : lootItem.Armor;
 
         Character? bestCandidate = null;
         int bestUpgradePercent = 0;
@@ -6884,10 +7116,14 @@ public partial class CombatEngine
             int currentPower = 0;
             if (currentEquip != null)
             {
-                currentPower = isWeapon ? currentEquip.WeaponPower : currentEquip.ArmorClass;
+                currentPower = isWeapon ? currentEquip.WeaponPower
+                    : isAccessory ? (currentEquip.StrengthBonus + currentEquip.DexterityBonus + currentEquip.IntelligenceBonus + currentEquip.WisdomBonus
+                                   + currentEquip.ConstitutionBonus + currentEquip.CharismaBonus + currentEquip.AgilityBonus + currentEquip.ArmorClass + currentEquip.WeaponPower)
+                    : currentEquip.ArmorClass;
             }
 
-            // Only pick up if it's strictly better
+            // Only pick up if it's strictly better (accessories with all-zero stats: always upgrade if slot empty)
+            if (isAccessory && itemPower == 0 && currentPower == 0) continue;
             if (itemPower <= currentPower) continue;
 
             int upgradePercent;
@@ -8172,7 +8408,9 @@ public partial class CombatEngine
 
         foreach (var monster in livingMonsters)
         {
-            long actualDamage = Math.Max(1, damagePerMonster - monster.ArmPow);
+            long armor = monster.ArmPow;
+            if (monster.IsCorroded) armor = Math.Max(0, (long)(armor * 0.6));
+            long actualDamage = Math.Max(1, damagePerMonster - armor);
 
             // Marked targets take 30% bonus damage
             if (monster.IsMarked)
@@ -9509,6 +9747,7 @@ public partial class CombatEngine
                 if (abilityResult.SpecialEffect != "armor_pierce")
                 {
                     long defense = target.Defence / 2; // Abilities partially bypass defense
+                    if (target.IsCorroded) defense = Math.Max(0, (long)(defense * 0.6));
                     actualDamage = Math.Max(1, actualDamage - defense);
                 }
 
@@ -10093,6 +10332,53 @@ public partial class CombatEngine
                         player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 5;
                     terminal.SetColor("bright_yellow");
                     terminal.WriteLine(Loc.Get("combat.ability_transmute"));
+                }
+                break;
+
+            case "party_stimulant":
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("You distribute stimulant vials to the party!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_stimulant");
+                break;
+
+            case "party_heal_mist":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("A healing mist washes over the party!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_heal_mist");
+                break;
+
+            case "party_antidote":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("The antidote bomb neutralizes all toxins!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_antidote");
+                break;
+
+            case "party_smoke_screen":
+                terminal.SetColor("gray");
+                terminal.WriteLine("A dense smoke screen blankets the party!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_smoke_screen");
+                break;
+
+            case "party_battle_brew":
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("You hand out battle tinctures — the party surges with power!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_battle_brew");
+                break;
+
+            case "party_remedy":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("The Grand Remedy flows through the party — all wounds close!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_remedy");
+                break;
+
+            case "aoe_corrode":
+                // Apply IsCorroded to all living monsters (multi-monster version)
+                foreach (var corrodeTarget in monsters.Where(m => m.IsAlive))
+                {
+                    corrodeTarget.IsCorroded = true;
+                    corrodeTarget.CorrodedDuration = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                    terminal.SetColor("dark_green");
+                    terminal.WriteLine($"  {corrodeTarget.Name} is corroded — armor dissolves!");
                 }
                 break;
 
@@ -13267,7 +13553,7 @@ public partial class CombatEngine
                         long abilityDefense = (long)(Math.Sqrt(companion.Defence) * 3);
                         long actualDmg = Math.Max(1, abilityResult.DirectDamage - abilityDefense);
                         if (monster.IsBoss)
-                            actualDmg = Math.Max(actualDmg, monster.Level * 2);
+                            actualDmg = Math.Max(actualDmg, (long)(monster.Level * 1.5));
                         companion.HP -= actualDmg;
                         terminal.WriteLine($"{companion.DisplayName} takes {actualDmg} damage from {abilityName}!", "red");
                         result.CombatLog.Add($"{monster.Name} uses {abilityName} on {companion.DisplayName} for {actualDmg}");
@@ -13278,7 +13564,7 @@ public partial class CombatEngine
                         long abilityDefense = (long)(Math.Sqrt(companion.Defence) * 3);
                         long dmg = Math.Max(1, (long)(monster.GetAttackPower() * abilityResult.DamageMultiplier) - abilityDefense);
                         if (monster.IsBoss)
-                            dmg = Math.Max(dmg, monster.Level * 2);
+                            dmg = Math.Max(dmg, (long)(monster.Level * 1.5));
                         companion.HP -= dmg;
                         if (abilityResult.LifeStealPercent > 0)
                         {
@@ -13313,7 +13599,7 @@ public partial class CombatEngine
                 {
                     // Old God abilities use custom names that don't match MonsterAbilities enum.
                     // Generate direct damage so these thematic attacks still hurt companions.
-                    long bossDmg = monster.Level * 3 + random.Next(0, monster.Level);
+                    long bossDmg = (long)(monster.Level * 2) + random.Next(0, monster.Level);
                     companion.HP = Math.Max(0, companion.HP - bossDmg);
                     terminal.SetColor("bright_red");
                     terminal.WriteLine($"{monster.Name} unleashes {abilityName}!");
@@ -13351,11 +13637,22 @@ public partial class CombatEngine
         long actualDamage = Math.Max(1, monsterAttack - companionDefense);
 
         // Boss monsters deal at least level-scaled damage — divine power overwhelms mortal defenses
+        // Reduced from level*3 to level*1.5 — companions were dying in 2-3 rounds from bosses
         if (monster.IsBoss)
         {
-            long minBossDamage = monster.Level * 3;
+            long minBossDamage = (long)(monster.Level * 1.5);
             actualDamage = Math.Max(actualDamage, minBossDamage);
         }
+
+        // Multi-hit damage reduction: when companions take multiple hits per round,
+        // reduce subsequent hits by 25% (representing bracing/defensive stance)
+        if (companion._hitsThisRound > 0)
+        {
+            double reduction = Math.Min(0.50, companion._hitsThisRound * 0.25); // 25% per extra hit, cap 50%
+            actualDamage = (long)(actualDamage * (1.0 - reduction));
+            actualDamage = Math.Max(1, actualDamage);
+        }
+        companion._hitsThisRound++;
 
         // Apply damage to companion
         companion.HP = Math.Max(0, companion.HP - actualDamage);
@@ -15047,6 +15344,7 @@ public partial class CombatEngine
             if (abilityResult.SpecialEffect != "armor_pierce")
             {
                 long defense = monster.Defence / 2; // Abilities partially bypass defense
+                if (monster.IsCorroded) defense = Math.Max(0, (long)(defense * 0.6));
                 actualDamage = Math.Max(1, actualDamage - defense);
             }
 
@@ -15534,6 +15832,53 @@ public partial class CombatEngine
                         player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 5;
                     terminal.SetColor("bright_yellow");
                     terminal.WriteLine(Loc.Get("combat.ability_transmute"));
+                }
+                break;
+
+            case "party_stimulant":
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("You distribute stimulant vials to the party!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_stimulant");
+                break;
+
+            case "party_heal_mist":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("A healing mist washes over the party!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_heal_mist");
+                break;
+
+            case "party_antidote":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("The antidote bomb neutralizes all toxins!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_antidote");
+                break;
+
+            case "party_smoke_screen":
+                terminal.SetColor("gray");
+                terminal.WriteLine("A dense smoke screen blankets the party!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_smoke_screen");
+                break;
+
+            case "party_battle_brew":
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("You hand out battle tinctures — the party surges with power!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_battle_brew");
+                break;
+
+            case "party_remedy":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("The Grand Remedy flows through the party — all wounds close!");
+                ApplyAlchemistPartyEffect(player, abilityResult, result, "party_remedy");
+                break;
+
+            case "aoe_corrode":
+                // Apply IsCorroded to the single target (single-monster combat)
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.IsCorroded = true;
+                    monster.CorrodedDuration = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                    terminal.SetColor("dark_green");
+                    terminal.WriteLine($"  {monster.Name} is corroded — armor dissolves!");
                 }
                 break;
 
@@ -17420,6 +17765,12 @@ public partial class CombatEngine
             long xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
             while (teammate.Experience >= xpForNextLevel && teammate.Level < 100)
             {
+                // Snapshot stats before this level's gains
+                long bHP = teammate.BaseMaxHP; long bStr = teammate.BaseStrength; long bDef = teammate.BaseDefence;
+                long bDex = teammate.BaseDexterity; long bAgi = teammate.BaseAgility; long bInt = teammate.BaseIntelligence;
+                long bWis = teammate.BaseWisdom; long bCha = teammate.BaseCharisma; long bSta = teammate.BaseStamina;
+                long bMana = teammate.BaseMaxMana;
+
                 teammate.Level++;
 
                 // Apply class-based stat gains on level up (same as players)
@@ -17431,6 +17782,20 @@ public partial class CombatEngine
 
                 terminal.SetColor("bright_green");
                 terminal.WriteLine($"  {teammate.DisplayName} leveled up! (Lv {teammate.Level})");
+
+                // Show stat changes
+                var sc = new System.Collections.Generic.List<string>();
+                if (teammate.BaseStrength - bStr > 0) sc.Add($"STR +{teammate.BaseStrength - bStr}");
+                if (teammate.BaseDefence - bDef > 0) sc.Add($"DEF +{teammate.BaseDefence - bDef}");
+                if (teammate.BaseDexterity - bDex > 0) sc.Add($"DEX +{teammate.BaseDexterity - bDex}");
+                if (teammate.BaseAgility - bAgi > 0) sc.Add($"AGI +{teammate.BaseAgility - bAgi}");
+                if (teammate.BaseIntelligence - bInt > 0) sc.Add($"INT +{teammate.BaseIntelligence - bInt}");
+                if (teammate.BaseWisdom - bWis > 0) sc.Add($"WIS +{teammate.BaseWisdom - bWis}");
+                if (teammate.BaseCharisma - bCha > 0) sc.Add($"CHA +{teammate.BaseCharisma - bCha}");
+                if (teammate.BaseMaxHP - bHP > 0) sc.Add($"HP +{teammate.BaseMaxHP - bHP}");
+                if (teammate.BaseStamina - bSta > 0) sc.Add($"STA +{teammate.BaseStamina - bSta}");
+                if (teammate.BaseMaxMana - bMana > 0) sc.Add($"MP +{teammate.BaseMaxMana - bMana}");
+                if (sc.Count > 0) terminal.WriteLine($"    {string.Join("  ", sc)}");
 
                 // Generate news for spouse/lover level ups
                 NewsSystem.Instance?.Newsy(true, $"{teammate.DisplayName} has achieved Level {teammate.Level}!");
@@ -17497,12 +17862,31 @@ public partial class CombatEngine
                 bool didLevelUp = false;
                 while (teammate.Experience >= xpForNextLevel && teammate.Level < 100)
                 {
+                    long bHP = teammate.BaseMaxHP; long bStr = teammate.BaseStrength; long bDef = teammate.BaseDefence;
+                    long bDex = teammate.BaseDexterity; long bAgi = teammate.BaseAgility; long bInt = teammate.BaseIntelligence;
+                    long bWis = teammate.BaseWisdom; long bCha = teammate.BaseCharisma; long bSta = teammate.BaseStamina;
+                    long bMana = teammate.BaseMaxMana;
+
                     teammate.Level++;
                     LevelMasterLocation.ApplyClassStatIncreases(teammate);
                     teammate.RecalculateStats();
                     teammate.HP = teammate.MaxHP;
                     terminal.SetColor("bright_green");
                     terminal.WriteLine($"  {teammate.DisplayName} leveled up! (Lv {teammate.Level})");
+
+                    var sc = new System.Collections.Generic.List<string>();
+                    if (teammate.BaseStrength - bStr > 0) sc.Add($"STR +{teammate.BaseStrength - bStr}");
+                    if (teammate.BaseDefence - bDef > 0) sc.Add($"DEF +{teammate.BaseDefence - bDef}");
+                    if (teammate.BaseDexterity - bDex > 0) sc.Add($"DEX +{teammate.BaseDexterity - bDex}");
+                    if (teammate.BaseAgility - bAgi > 0) sc.Add($"AGI +{teammate.BaseAgility - bAgi}");
+                    if (teammate.BaseIntelligence - bInt > 0) sc.Add($"INT +{teammate.BaseIntelligence - bInt}");
+                    if (teammate.BaseWisdom - bWis > 0) sc.Add($"WIS +{teammate.BaseWisdom - bWis}");
+                    if (teammate.BaseCharisma - bCha > 0) sc.Add($"CHA +{teammate.BaseCharisma - bCha}");
+                    if (teammate.BaseMaxHP - bHP > 0) sc.Add($"HP +{teammate.BaseMaxHP - bHP}");
+                    if (teammate.BaseStamina - bSta > 0) sc.Add($"STA +{teammate.BaseStamina - bSta}");
+                    if (teammate.BaseMaxMana - bMana > 0) sc.Add($"MP +{teammate.BaseMaxMana - bMana}");
+                    if (sc.Count > 0) terminal.WriteLine($"    {string.Join("  ", sc)}");
+
                     NewsSystem.Instance?.Newsy(true, $"{teammate.DisplayName} has achieved Level {teammate.Level}!");
                     xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
                     didLevelUp = true;
@@ -18242,8 +18626,7 @@ public partial class CombatEngine
 
         foreach (var line in dialogue)
         {
-            terminal.SetColor(ctx.BossData.ThemeColor);
-            terminal.WriteLine($"  \"{line}\"");
+            OldGodBossSystem.Instance?.PrintDialogueLine(terminal, line, ctx.BossData.ThemeColor);
             await Task.Delay(200);
         }
 

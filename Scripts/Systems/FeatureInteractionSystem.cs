@@ -183,9 +183,20 @@ public class FeatureInteractionSystem
 
         if (lore.RevealsOldGod != null)
         {
-            terminal.SetColor("bright_magenta");
-            terminal.WriteLine(Loc.Get("feature.sense_presence", lore.RevealsOldGod));
-            // Could trigger story flag here
+            // Only show "sense presence" if the god hasn't been defeated yet
+            bool godDefeated = false;
+            if (Enum.TryParse<OldGodType>(lore.RevealsOldGod, out var godType))
+            {
+                var story = StoryProgressionSystem.Instance;
+                if (story.OldGodStates.TryGetValue(godType, out var godState))
+                    godDefeated = godState.Status == GodStatus.Defeated || godState.Status == GodStatus.Consumed || godState.Status == GodStatus.Saved || godState.Status == GodStatus.Allied;
+            }
+
+            if (!godDefeated)
+            {
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("feature.sense_presence", lore.RevealsOldGod));
+            }
         }
 
         // Track for achievements

@@ -261,6 +261,8 @@ public class Character
     public int TempDefenseBonus { get; set; } = 0;
     public int TempDefenseBonusDuration { get; set; } = 0;
     public bool DodgeNextAttack { get; set; } = false;
+    /// <summary>Tracks hits taken this round for multi-hit damage reduction. Reset each combat round.</summary>
+    public int _hitsThisRound = 0;
 
     // Ability-applied combat state flags (combat-transient, not serialized)
     public bool HasBloodlust { get; set; } = false;      // Barbarian: heal on kill
@@ -562,6 +564,8 @@ public class Character
     public bool SettlementHerbClaimedToday { get; set; }
     public bool SettlementShrineUsedToday { get; set; }
     public bool SettlementCircleUsedToday { get; set; }
+    public bool SettlementWorkshopUsedToday { get; set; }
+    public int WorkshopBuffCombats { get; set; } = 0;  // Combats remaining with Workshop weapon sharpening buff
 
     // Wilderness exploration (v0.49.4)
     public int WildernessExplorationsToday { get; set; } = 0;

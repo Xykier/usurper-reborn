@@ -573,22 +573,22 @@ public class SettlementLocation : BaseLocation
 
     private async Task UseWorkshopService()
     {
-        // Find first unidentified item in inventory
-        var unidentified = currentPlayer.Inventory?.FirstOrDefault(i => i != null && !i.IsIdentified);
-        if (unidentified == null)
+        if (currentPlayer.SettlementWorkshopUsedToday)
         {
             terminal.SetColor("yellow");
-            terminal.WriteLine(Loc.Get("ui.no_unidentified_items"));
+            terminal.WriteLine("  The smiths have already sharpened your weapon today. Return tomorrow.");
             await terminal.PressAnyKey();
             return;
         }
 
-        unidentified.IsIdentified = true;
         terminal.SetColor("bright_green");
         terminal.WriteLine("");
-        terminal.WriteLine(Loc.Get("settlement.workshop_desc"));
+        terminal.WriteLine("  The settlement smiths heat your blade in the forge and hone it to a razor edge.");
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine(Loc.Get("settlement.workshop_identified", unidentified.Name));
+        terminal.WriteLine("  Your weapon has been sharpened! +20% damage for 10 combats.");
+
+        currentPlayer.WorkshopBuffCombats = 10;
+        currentPlayer.SettlementWorkshopUsedToday = true;
 
         await terminal.PressAnyKey();
     }
@@ -597,49 +597,110 @@ public class SettlementLocation : BaseLocation
     {
         terminal.SetColor("cyan");
         terminal.WriteLine("");
-        string input = await terminal.GetInput(Loc.Get("settlement.watchtower_prompt"));
+        string input = await terminal.GetInput("Which dungeon floor to reveal? (1-100): ");
         if (!int.TryParse(input, out int floor) || floor < 1 || floor > 100)
         {
             terminal.WriteLine(Loc.Get("ui.cancelled"), "gray");
             return;
         }
 
-        terminal.SetColor("bright_green");
+        // Generate the floor deterministically (same seed = same layout)
+        var dungeonFloor = DungeonGenerator.GenerateFloor(floor);
+
+        terminal.SetColor("bright_cyan");
         terminal.WriteLine("");
-        terminal.WriteLine(Loc.Get("settlement.watchtower_report", floor));
+        terminal.WriteLine($"  ╔══ WATCHTOWER SCOUT REPORT: Floor {floor} ══╗");
         terminal.SetColor("white");
 
-        // Generate some useful info about the floor
-        var sampleMonster = MonsterGenerator.GenerateMonster(floor);
-        if (sampleMonster != null)
+        // Special floor warnings
+        int[] oldGodFloors = { 25, 40, 55, 70, 85, 95, 100 };
+        int[] sealFloors   = { 15, 30, 45, 60, 80, 99 };
+        if (oldGodFloors.Contains(floor))
         {
-            terminal.WriteLine(Loc.Get("settlement.watchtower_creatures", sampleMonster.Level));
-            terminal.WriteLine(Loc.Get("settlement.watchtower_example", sampleMonster.Name));
+            terminal.SetColor("bright_red");
+            terminal.WriteLine($"  ⚠ WARNING: An Old God dwells on this floor. Do not enter unprepared.");
+            terminal.SetColor("white");
         }
-
-        // Check for special floors
-        var specialFloors = new Dictionary<int, string>
-        {
-            { 15, Loc.Get("settlement.special_floor_15") },
-            { 25, Loc.Get("settlement.special_floor_25") },
-            { 30, Loc.Get("settlement.special_floor_30") },
-            { 40, Loc.Get("settlement.special_floor_40") },
-            { 45, Loc.Get("settlement.special_floor_45") },
-            { 55, Loc.Get("settlement.special_floor_55") },
-            { 60, Loc.Get("settlement.special_floor_60") },
-            { 70, Loc.Get("settlement.special_floor_70") },
-            { 80, Loc.Get("settlement.special_floor_80") },
-            { 85, Loc.Get("settlement.special_floor_85") },
-            { 95, Loc.Get("settlement.special_floor_95") },
-            { 99, Loc.Get("settlement.special_floor_99") },
-            { 100, Loc.Get("settlement.special_floor_100") }
-        };
-
-        if (specialFloors.TryGetValue(floor, out string hint))
+        else if (sealFloors.Contains(floor))
         {
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine(Loc.Get("settlement.watchtower_special", hint));
+            terminal.WriteLine($"  ★ SEAL FLOOR: An ancient seal awaits collection.");
+            terminal.SetColor("white");
         }
+
+        terminal.SetColor("gray");
+        terminal.WriteLine($"  Theme: {dungeonFloor.Theme}  |  Danger: {dungeonFloor.DangerLevel}/10  |  Rooms: {dungeonFloor.Rooms.Count}");
+        terminal.WriteLine("");
+
+        // Room-by-room breakdown
+        int roomNum = 0;
+        foreach (var room in dungeonFloor.Rooms)
+        {
+            roomNum++;
+            string roomIcon = room.Type switch
+            {
+                RoomType.BossAntechamber => "[BOSS]",
+                RoomType.SecretVault     => "[SECRET]",
+                RoomType.Shrine          => "[SHRINE]",
+                RoomType.MeditationChamber => "[MEDITATE]",
+                RoomType.LoreLibrary     => "[LORE]",
+                RoomType.ArenaRoom       => "[ARENA]",
+                RoomType.MerchantDen     => "[MERCHANT]",
+                RoomType.Settlement      => "[OUTPOST]",
+                _                        => ""
+            };
+
+            // Build tags
+            var tags = new System.Text.StringBuilder();
+            if (room.HasMonsters)   tags.Append(" Monsters");
+            if (room.HasTrap)       tags.Append(" Trap");
+            if (room.HasTreasure)   tags.Append(" Treasure");
+            if (room.HasEvent)      tags.Append(" Event");
+            if (room.IsBossRoom)    tags.Append(" [BOSS ROOM]");
+            if (room.IsSecretRoom)  tags.Append(" [SECRET]");
+            if (room.HasStairsDown) tags.Append(" ↓Stairs");
+
+            string tagStr = tags.Length > 0 ? " —" + tags : "";
+
+            // Color by danger
+            if (room.IsBossRoom)
+                terminal.SetColor("bright_red");
+            else if (room.HasMonsters && room.DangerRating >= 7)
+                terminal.SetColor("red");
+            else if (room.IsSecretRoom || room.HasTreasure)
+                terminal.SetColor("bright_yellow");
+            else if (room.Type == RoomType.Shrine || room.Type == RoomType.MeditationChamber)
+                terminal.SetColor("bright_cyan");
+            else if (room.Type == RoomType.MerchantDen)
+                terminal.SetColor("bright_green");
+            else
+                terminal.SetColor("white");
+
+            string label = roomIcon.Length > 0 ? $" {roomIcon}" : "";
+            terminal.WriteLine($"  {roomNum,2}. {room.Name}{label}{tagStr}");
+
+            // Sample monster if present (Monsters list is empty at gen-time; generate a sample)
+            if (room.HasMonsters)
+            {
+                terminal.SetColor("gray");
+                if (room.Monsters.Count > 0)
+                {
+                    var m = room.Monsters[0];
+                    string plural = room.Monsters.Count > 1 ? $" (+{room.Monsters.Count - 1} more)" : "";
+                    terminal.WriteLine($"      → {m.Name} (Lv {m.Level}){plural}");
+                }
+                else
+                {
+                    var sample = MonsterGenerator.GenerateMonster(floor);
+                    if (sample != null)
+                        terminal.WriteLine($"      → {sample.Name} (Lv {sample.Level})");
+                }
+            }
+        }
+
+        terminal.SetColor("gray");
+        terminal.WriteLine("");
+        terminal.WriteLine("  (Scout report reflects floor layout at time of observation)");
 
         await terminal.PressAnyKey();
     }

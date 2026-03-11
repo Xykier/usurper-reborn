@@ -791,6 +791,8 @@ namespace UsurperRemake.Systems
                 SettlementHerbClaimedToday = player.SettlementHerbClaimedToday,
                 SettlementShrineUsedToday = player.SettlementShrineUsedToday,
                 SettlementCircleUsedToday = player.SettlementCircleUsedToday,
+                SettlementWorkshopUsedToday = player.SettlementWorkshopUsedToday,
+                WorkshopBuffCombats = player.WorkshopBuffCombats,
 
                 // Faction consumable properties (v0.40.2)
                 PoisonCoatingCombats = player.PoisonCoatingCombats,
@@ -859,6 +861,7 @@ namespace UsurperRemake.Systems
                     EverCleared = state.EverCleared,
                     IsPermanentlyClear = state.IsPermanentlyClear,
                     BossDefeated = state.BossDefeated,
+                    CompletionBonusAwarded = state.CompletionBonusAwarded,
                     CurrentRoomId = state.CurrentRoomId,
                     Rooms = new List<DungeonRoomStateData>()
                 };
@@ -1620,6 +1623,13 @@ namespace UsurperRemake.Systems
                     BaseStatsMagicPower = c.BaseStatsMagicPower,
                     BaseStatsSpeed = c.BaseStatsSpeed,
                     BaseStatsHealingPower = c.BaseStatsHealingPower,
+                    // Secondary stats
+                    Constitution = c.Constitution,
+                    Intelligence = c.Intelligence,
+                    Wisdom = c.Wisdom,
+                    Charisma = c.Charisma,
+                    Dexterity = c.Dexterity,
+                    Agility = c.Agility,
                     EquippedItemsSave = c.EquippedItemsSave,
                     DisabledAbilities = c.DisabledAbilities,
                     SkillProficiencies = c.SkillProficiencies ?? new(),
@@ -2067,6 +2077,13 @@ namespace UsurperRemake.Systems
                             BaseStatsMagicPower = c.BaseStatsMagicPower,
                             BaseStatsSpeed = c.BaseStatsSpeed,
                             BaseStatsHealingPower = c.BaseStatsHealingPower,
+                            // Secondary stats
+                            Constitution = c.Constitution,
+                            Intelligence = c.Intelligence,
+                            Wisdom = c.Wisdom,
+                            Charisma = c.Charisma,
+                            Dexterity = c.Dexterity,
+                            Agility = c.Agility,
                             EquippedItemsSave = c.EquippedItemsSave ?? new Dictionary<int, int>(),
                             DisabledAbilities = c.DisabledAbilities ?? new List<string>(),
                             SkillProficiencies = c.SkillProficiencies ?? new(),

@@ -343,6 +343,9 @@ public class MusicShopLocation : BaseLocation
 
     protected override async Task<bool> ProcessChoice(string choice)
     {
+        var (handled, shouldExit) = await TryProcessGlobalCommand(choice);
+        if (handled) return shouldExit;
+
         switch (choice.ToUpper())
         {
             case "B":

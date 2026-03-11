@@ -4049,6 +4049,8 @@ public partial class GameEngine
         player.SettlementHerbClaimedToday = playerData.SettlementHerbClaimedToday;
         player.SettlementShrineUsedToday = playerData.SettlementShrineUsedToday;
         player.SettlementCircleUsedToday = playerData.SettlementCircleUsedToday;
+        player.SettlementWorkshopUsedToday = playerData.SettlementWorkshopUsedToday;
+        player.WorkshopBuffCombats = playerData.WorkshopBuffCombats;
 
         // Restore chest contents
         var playerKey = (player is Player pp ? pp.RealName : player.Name2) ?? player.Name2;
@@ -4261,6 +4263,7 @@ public partial class GameEngine
                 EverCleared = saved.EverCleared,
                 IsPermanentlyClear = saved.IsPermanentlyClear,
                 BossDefeated = saved.BossDefeated,
+                CompletionBonusAwarded = saved.CompletionBonusAwarded,
                 CurrentRoomId = saved.CurrentRoomId,
                 RoomStates = new Dictionary<string, UsurperRemake.Systems.DungeonRoomState>()
             };

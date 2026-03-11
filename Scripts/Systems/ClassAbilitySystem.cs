@@ -143,6 +143,19 @@ public static class ClassAbilitySystem
             SpecialEffect = "last_stand",
             AvailableToClasses = new[] { CharacterClass.Warrior, CharacterClass.Barbarian, CharacterClass.Paladin }
         },
+        ["savage_charge"] = new ClassAbility
+        {
+            Id = "savage_charge",
+            Name = "Savage Charge",
+            Description = "Hurl yourself at the enemy with crushing force, staggering them.",
+            LevelRequired = 47,
+            StaminaCost = 45,
+            Cooldown = 3,
+            Type = AbilityType.Attack,
+            BaseDamage = 100,
+            SpecialEffect = "stun",
+            AvailableToClasses = new[] { CharacterClass.Warrior }
+        },
         ["whirlwind"] = new ClassAbility
         {
             Id = "whirlwind",
@@ -1081,7 +1094,7 @@ public static class ClassAbilitySystem
             Id = "acid_splash",
             Name = "Acid Splash",
             Description = "Throw acid that melts through armor. Ignores defense.",
-            LevelRequired = 24,
+            LevelRequired = 14,
             StaminaCost = 30,
             Cooldown = 3,
             Type = AbilityType.Attack,
@@ -1142,6 +1155,127 @@ public static class ClassAbilitySystem
             SpecialEffect = "aoe",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
+        ["stimulant_brew"] = new ClassAbility
+        {
+            Id = "stimulant_brew",
+            Name = "Stimulant Brew",
+            Description = "Distribute stimulant vials to the whole party, boosting attack and stamina.",
+            LevelRequired = 6,
+            StaminaCost = 25,
+            Cooldown = 4,
+            Type = AbilityType.Buff,
+            AttackBonus = 20,
+            Duration = 4,
+            SpecialEffect = "party_stimulant",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["healing_mist"] = new ClassAbility
+        {
+            Id = "healing_mist",
+            Name = "Healing Mist",
+            Description = "Lob a mist canister that heals the entire party.",
+            LevelRequired = 20,
+            StaminaCost = 35,
+            Cooldown = 4,
+            Type = AbilityType.Heal,
+            BaseHealing = 65,
+            SpecialEffect = "party_heal_mist",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["antidote_bomb"] = new ClassAbility
+        {
+            Id = "antidote_bomb",
+            Name = "Antidote Bomb",
+            Description = "Throw an antidote bomb that cures poison and disease from all allies.",
+            LevelRequired = 26,
+            StaminaCost = 30,
+            Cooldown = 5,
+            Type = AbilityType.Utility,
+            BaseHealing = 20,
+            SpecialEffect = "party_antidote",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["explosive_flask"] = new ClassAbility
+        {
+            Id = "explosive_flask",
+            Name = "Explosive Flask",
+            Description = "A volatile flask that detonates on impact, hitting all enemies.",
+            LevelRequired = 32,
+            StaminaCost = 40,
+            Cooldown = 4,
+            Type = AbilityType.Attack,
+            BaseDamage = 75,
+            SpecialEffect = "aoe",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["smoke_screen"] = new ClassAbility
+        {
+            Id = "smoke_screen",
+            Name = "Smoke Screen",
+            Description = "A billowing smoke screen that grants the whole party evasion.",
+            LevelRequired = 40,
+            StaminaCost = 35,
+            Cooldown = 5,
+            Type = AbilityType.Defense,
+            DefenseBonus = 40,
+            Duration = 3,
+            SpecialEffect = "party_smoke_screen",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["rejuvenating_brew"] = new ClassAbility
+        {
+            Id = "rejuvenating_brew",
+            Name = "Rejuvenating Brew",
+            Description = "Distribute powerful healing brews to the entire party.",
+            LevelRequired = 54,
+            StaminaCost = 50,
+            Cooldown = 5,
+            Type = AbilityType.Heal,
+            BaseHealing = 115,
+            SpecialEffect = "party_heal_mist",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["battle_tincture"] = new ClassAbility
+        {
+            Id = "battle_tincture",
+            Name = "Battle Tincture",
+            Description = "A powerful combat tincture that enhances the whole party's fighting ability.",
+            LevelRequired = 64,
+            StaminaCost = 55,
+            Cooldown = 6,
+            Type = AbilityType.Buff,
+            AttackBonus = 50,
+            DefenseBonus = 35,
+            Duration = 5,
+            SpecialEffect = "party_battle_brew",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["corrosive_cloud"] = new ClassAbility
+        {
+            Id = "corrosive_cloud",
+            Name = "Corrosive Cloud",
+            Description = "Release a cloud of acid that damages all enemies and shreds their armor.",
+            LevelRequired = 68,
+            StaminaCost = 55,
+            Cooldown = 5,
+            Type = AbilityType.Attack,
+            BaseDamage = 110,
+            SpecialEffect = "aoe_corrode",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["grand_remedy"] = new ClassAbility
+        {
+            Id = "grand_remedy",
+            Name = "Grand Remedy",
+            Description = "The ultimate curative — fully restores the party and cures all ailments.",
+            LevelRequired = 80,
+            StaminaCost = 65,
+            Cooldown = 6,
+            Type = AbilityType.Heal,
+            BaseHealing = 175,
+            SpecialEffect = "party_remedy",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
         ["transmutation"] = new ClassAbility
         {
             Id = "transmutation",
@@ -1156,6 +1290,19 @@ public static class ClassAbilitySystem
             BaseHealing = 110,  // Healing - scales with CON+WIS, +50% from Potion Mastery
             Duration = 6,
             SpecialEffect = "transmute",
+            AvailableToClasses = new[] { CharacterClass.Alchemist }
+        },
+        ["cataclysm_bomb"] = new ClassAbility
+        {
+            Id = "cataclysm_bomb",
+            Name = "Cataclysm Bomb",
+            Description = "The alchemical doomsday weapon. Devastates every enemy on the field.",
+            LevelRequired = 94,
+            StaminaCost = 80,
+            Cooldown = 6,
+            Type = AbilityType.Attack,
+            BaseDamage = 200,
+            SpecialEffect = "aoe",
             AvailableToClasses = new[] { CharacterClass.Alchemist }
         },
 
@@ -2078,9 +2225,9 @@ public static class ClassAbilitySystem
         if (result.Damage > 0) result.Damage = (int)(result.Damage * profMult);
         if (result.Healing > 0) result.Healing = (int)(result.Healing * profMult);
 
-        // Training through use — small chance to improve proficiency (capped for NPCs/companions)
+        // Training through use — small chance to improve proficiency up to Good; past Good requires manual training
         var prevLevel = proficiency;
-        int abilityProfCap = TrainingSystem.GetProficiencyCapForCharacter(user);
+        int abilityProfCap = Math.Min(TrainingSystem.GetProficiencyCapForCharacter(user), 3); // 3 = ProficiencyLevel.Good — past Good requires manual training
         if (TrainingSystem.TryImproveFromUse(user, abilityId, random, abilityProfCap))
         {
             var newLevel = TrainingSystem.GetSkillProficiency(user, abilityId);

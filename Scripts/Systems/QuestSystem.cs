@@ -96,6 +96,9 @@ public partial class QuestSystem
         // Track in player list
         player.ActiveQuests.Add(foundQuest);
 
+        // Count claims against daily limit (not completions)
+        player.RoyQuestsToday++;
+
         // GD.Print($"[QuestSystem] Quest claimed by {player.Name2}: {foundQuest.Id}");
 
         // Send confirmation mail (Pascal: Quest claim notification)
@@ -164,7 +167,6 @@ public partial class QuestSystem
         
         // Update player statistics
         player.RoyQuests++;
-        player.RoyQuestsToday++;
         player.ActiveQuests.Remove(quest);
 
         // Update global statistics tracking
@@ -221,6 +223,10 @@ public partial class QuestSystem
     /// </summary>
     public static List<Quest> GetAvailableQuests(Character player)
     {
+        // At daily limit — no point showing quests that can't be claimed
+        if (player.RoyQuestsToday >= GameConfig.MaxQuestsPerDay)
+            return new List<Quest>();
+
         return questDatabase.Where(q =>
             !q.Deleted &&
             string.IsNullOrEmpty(q.Occupier) &&

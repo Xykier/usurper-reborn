@@ -2903,42 +2903,46 @@ public class MainStreetLocation : BaseLocation
         terminal.WriteLine($"  {Loc.Get("main_street.gods_desc")}");
         terminal.WriteLine("");
 
-        var godData = new[]
+        var allGods = new (OldGodType type, string name, int floor)[]
         {
-            ("Maelketh", Loc.Get("main_street.god_maelketh_title"), "maelketh_encountered", "maelketh_defeated"),
-            ("Terravok", Loc.Get("main_street.god_terravok_title"), "terravok_encountered", "terravok_defeated"),
-            ("Manwe", Loc.Get("main_street.god_manwe_title"), "manwe_encountered", "manwe_defeated")
+            (OldGodType.Maelketh, "Maelketh",  25),
+            (OldGodType.Veloura,  "Veloura",   40),
+            (OldGodType.Thorgrim, "Thorgrim",  55),
+            (OldGodType.Noctura,  "Noctura",   70),
+            (OldGodType.Aurelion, "Aurelion",  85),
+            (OldGodType.Terravok, "Terravok",  95),
+            (OldGodType.Manwe,    "Manwe",    100),
         };
 
-        foreach (var (name, title, encFlag, defFlag) in godData)
+        foreach (var (godType, godName, floor) in allGods)
         {
-            bool encountered = story.HasStoryFlag(encFlag);
-            bool defeated = story.HasStoryFlag(defFlag);
-
-            string status;
-            string color;
-            string location;
-            if (defeated)
+            if (story.OldGodStates.TryGetValue(godType, out var godState) &&
+                godState.HasBeenEncountered)
             {
-                status = Loc.Get("main_street.god_defeated");
-                color = "bright_green";
-                location = Loc.Get("main_street.god_conquered");
-            }
-            else if (encountered)
-            {
-                status = Loc.Get("main_street.god_encountered");
-                color = "bright_yellow";
-                location = Loc.Get("main_street.god_known");
+                string statusText = godState.Status switch
+                {
+                    GodStatus.Defeated  => Loc.Get("main_street.god_defeated"),
+                    GodStatus.Consumed  => Loc.Get("main_street.god_defeated"),
+                    GodStatus.Saved     => Loc.Get("main_street.god_saved"),
+                    GodStatus.Allied    => Loc.Get("main_street.god_saved"),
+                    GodStatus.Hostile   => Loc.Get("main_street.god_encountered"),
+                    GodStatus.Awakened  => Loc.Get("main_street.god_encountered"),
+                    _                   => Loc.Get("main_street.god_encountered"),
+                };
+                string color = godState.Status switch
+                {
+                    GodStatus.Defeated or GodStatus.Consumed => "bright_green",
+                    GodStatus.Saved    or GodStatus.Allied   => "cyan",
+                    _                                        => "bright_yellow",
+                };
+                terminal.SetColor(color);
+                terminal.WriteLine($"    Fl.{floor,-4} {godName,-10} [{statusText}]");
             }
             else
             {
-                status = Loc.Get("main_street.god_unknown");
-                color = "darkgray";
-                location = Loc.Get("main_street.god_somewhere");
+                terminal.SetColor("darkgray");
+                terminal.WriteLine($"    Fl.{floor,-4} {"????",-10} [{Loc.Get("main_street.god_unknown")}]");
             }
-
-            terminal.SetColor(color);
-            terminal.WriteLine($"    {name,-10} {title,-15} {location,-25} [{status,-12}]");
         }
         terminal.WriteLine("");
 

@@ -151,8 +151,16 @@ public class QuestHallLocation : BaseLocation
 
         if (quests.Count == 0)
         {
-            terminal.WriteLine(Loc.Get("quest_hall.no_quests_available"), "yellow");
-            terminal.WriteLine(Loc.Get("quest_hall.your_level", currentPlayer.Level), "gray");
+            if (currentPlayer.RoyQuestsToday >= GameConfig.MaxQuestsPerDay)
+            {
+                terminal.WriteLine(Loc.Get("quest_hall.daily_limit_reached"), "yellow");
+                terminal.WriteLine(Loc.Get("quest_hall.daily_limit_info", GameConfig.MaxQuestsPerDay), "gray");
+            }
+            else
+            {
+                terminal.WriteLine(Loc.Get("quest_hall.no_quests_available"), "yellow");
+                terminal.WriteLine(Loc.Get("quest_hall.your_level", currentPlayer.Level), "gray");
+            }
         }
         else
         {
@@ -196,7 +204,15 @@ public class QuestHallLocation : BaseLocation
 
         if (quests.Count == 0)
         {
-            terminal.WriteLine(Loc.Get("quest_hall.no_quests_claim"), "yellow");
+            if (currentPlayer.RoyQuestsToday >= GameConfig.MaxQuestsPerDay)
+            {
+                terminal.WriteLine(Loc.Get("quest_hall.daily_limit_reached"), "yellow");
+                terminal.WriteLine(Loc.Get("quest_hall.daily_limit_info", GameConfig.MaxQuestsPerDay), "gray");
+            }
+            else
+            {
+                terminal.WriteLine(Loc.Get("quest_hall.no_quests_claim"), "yellow");
+            }
             await Task.Delay(1000);
             return;
         }

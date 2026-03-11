@@ -252,12 +252,14 @@ public static class MonsterAbilities
             case AbilityType.Regeneration:
                 var healAmount = Math.Max(5, monster.MaxHP / 10);
                 monster.HP = Math.Min(monster.HP + healAmount, monster.MaxHP);
-                result.SkipNormalAttack = false; // Can still attack
+                result.DamageMultiplier = 0; // Heal only — no damage to target
+                result.SkipNormalAttack = false; // Can still attack normally
                 result.Message = $"{monster.Name} regenerates {healAmount} HP!";
                 result.MessageColor = "bright_green";
                 break;
 
             case AbilityType.Thorns:
+                result.DamageMultiplier = 0; // Passive reflect — no direct damage
                 result.ReflectDamagePercent = 25;
                 result.Message = $"{monster.Name}'s thorny hide wounds attackers!";
                 result.MessageColor = "yellow";
@@ -277,16 +279,19 @@ public static class MonsterAbilities
                     result.Message = $"{monster.Name}'s armor is already hardened!";
                     result.MessageColor = "darkgray";
                 }
+                result.DamageMultiplier = 0; // Buff only — no damage
                 result.SkipNormalAttack = true;
                 break;
 
             case AbilityType.Vanish:
+                result.DamageMultiplier = 0; // Evasion buff — no damage
                 result.EvasionBonus = 30;
                 result.Message = $"{monster.Name} fades into the shadows!";
                 result.MessageColor = "darkgray";
                 break;
 
             case AbilityType.Phase:
+                result.DamageMultiplier = 0; // Damage avoidance — no damage
                 if (_rnd.Next(100) < 25)
                 {
                     result.AvoidAllDamage = true;

@@ -360,7 +360,7 @@ namespace UsurperRemake.Data
                     "NOCTURA: \"I have been watching you since you fell through the Veil.\"",
                     "NOCTURA: \"Guiding you. Testing you. Preparing you.\"",
                     "",
-                    "\"The question is: are you ready for the truth?\""
+                    "NOCTURA: \"The question is: are you ready for the truth?\""
                 },
 
                 Phase1Threshold = 1.0f,
@@ -524,7 +524,7 @@ namespace UsurperRemake.Data
                     "",
                     "AURELION: \"You know what that means? You wont be able to lie. Ever.\"",
                     "",
-                    "\"Yeah. I know.\"",
+                    "YOU: \"Yeah. I know.\"",
                     "",
                     "The light leaves him and settles into you, warm and heavy.",
                     "Aurelion slumps. He looks relieved.",
@@ -606,7 +606,7 @@ namespace UsurperRemake.Data
                     "TERRAVOK: \"I WAS... FOUNDATION... PROTECTOR...\"",
                     "TERRAVOK: \"THEY USED ME... TO BUILD THEIR PRISONS...\"",
                     "",
-                    "\"SHOULD I... WAKE FULLY? OR... SLEEP... FOREVER?\""
+                    "TERRAVOK: \"SHOULD I... WAKE FULLY? OR... SLEEP... FOREVER?\""
                 },
 
                 DefeatDialogue = new[]
@@ -723,10 +723,10 @@ namespace UsurperRemake.Data
                     "MANWE: \"I have watched mortals rise and fall for ten thousand years.\"",
                     "MANWE: \"I created the gods to guide you, but they grew cruel.\"",
                     "",
-                    "\"I have waited for one who could either FIX what I broke...\"",
-                    "\"...or END what I started.\"",
+                    "MANWE: \"I have waited for one who could either FIX what I broke...\"",
+                    "MANWE: \"...or END what I started.\"",
                     "",
-                    "\"What say you, child of dust?\""
+                    "MANWE: \"What say you, child of dust?\""
                 },
 
                 DefeatDialogue = new[]

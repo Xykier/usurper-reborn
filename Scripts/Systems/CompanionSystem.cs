@@ -623,15 +623,15 @@ namespace UsurperRemake.Systems
                         CombatRole.Bard => CharacterClass.Bard,
                         _ => CharacterClass.Warrior
                     },
-                    // Initialize Base* fields for RecalculateStats
+                    // Initialize Base* fields for RecalculateStats — use secondary stats if scaled
                     BaseStrength = companion.BaseStats.Attack,
                     BaseDefence = companion.BaseStats.Defense,
-                    BaseDexterity = companion.BaseStats.Speed,
-                    BaseAgility = companion.BaseStats.Speed,
-                    BaseIntelligence = companion.BaseStats.MagicPower,
-                    BaseWisdom = companion.BaseStats.HealingPower,
-                    BaseCharisma = 10,
-                    BaseConstitution = 10 + companion.Level,
+                    BaseDexterity = Math.Max(companion.BaseStats.Speed, companion.Dexterity),
+                    BaseAgility = Math.Max(companion.BaseStats.Speed, companion.Agility),
+                    BaseIntelligence = Math.Max(companion.BaseStats.MagicPower, companion.Intelligence),
+                    BaseWisdom = Math.Max(companion.BaseStats.HealingPower, companion.Wisdom),
+                    BaseCharisma = Math.Max(10, companion.Charisma),
+                    BaseConstitution = Math.Max(10 + companion.Level, companion.Constitution),
                     BaseStamina = 10 + companion.Level,
                     BaseMaxHP = companion.BaseStats.HP,
                     BaseMaxMana = companion.BaseStats.MagicPower * 5
@@ -1483,6 +1483,12 @@ namespace UsurperRemake.Systems
                     BaseStatsMagicPower = c.BaseStats.MagicPower,
                     BaseStatsSpeed = c.BaseStats.Speed,
                     BaseStatsHealingPower = c.BaseStats.HealingPower,
+                    Constitution = c.Constitution,
+                    Intelligence = c.Intelligence,
+                    Wisdom = c.Wisdom,
+                    Charisma = c.Charisma,
+                    Dexterity = c.Dexterity,
+                    Agility = c.Agility,
                     EquippedItemsSave = c.EquippedItems.ToDictionary(kvp => (int)kvp.Key, kvp => kvp.Value),
                     DisabledAbilities = c.DisabledAbilities.ToList(),
                     SkillProficiencies = c.SkillProficiencies?.Count > 0 ? new Dictionary<string, int>(c.SkillProficiencies) : new(),
@@ -1594,6 +1600,27 @@ namespace UsurperRemake.Systems
                         companion.BaseStats.MagicPower = save.BaseStatsMagicPower;
                         companion.BaseStats.Speed = save.BaseStatsSpeed;
                         companion.BaseStats.HealingPower = save.BaseStatsHealingPower;
+
+                        // Secondary stats: restore if saved with non-default values (level > 1 companions
+                        // should have values above 10). If all are still 10, this is a legacy save
+                        // that predates secondary stat tracking — scale them from level now.
+                        bool hasScaledSecondaryStats = save.Constitution > 10 || save.Intelligence > 10 ||
+                                                       save.Wisdom > 10 || save.Charisma > 10 ||
+                                                       save.Dexterity > 10 || save.Agility > 10;
+                        if (hasScaledSecondaryStats)
+                        {
+                            companion.Constitution = save.Constitution;
+                            companion.Intelligence = save.Intelligence;
+                            companion.Wisdom = save.Wisdom;
+                            companion.Charisma = save.Charisma;
+                            companion.Dexterity = save.Dexterity;
+                            companion.Agility = save.Agility;
+                        }
+                        else if (companion.Level > 1)
+                        {
+                            // Legacy save — secondary stats were never tracked; scale them now
+                            ScaleCompanionSecondaryStatsToLevel(companion);
+                        }
                     }
                     else if (companion.IsRecruited && companion.Level > 1)
                     {
@@ -1735,6 +1762,13 @@ namespace UsurperRemake.Systems
             while (companion.Experience >= xpForNextLevel && companion.Level < 100)
             {
                 int oldLevel = companion.Level;
+
+                // Snapshot stats before this level
+                int bHP = companion.BaseStats.HP, bAtk = companion.BaseStats.Attack, bDef = companion.BaseStats.Defense;
+                int bSpd = companion.BaseStats.Speed, bMag = companion.BaseStats.MagicPower, bHeal = companion.BaseStats.HealingPower;
+                int bCon = companion.Constitution, bDex = companion.Dexterity;
+                int bAgi = companion.Agility, bInt = companion.Intelligence, bWis = companion.Wisdom, bCha = companion.Charisma;
+
                 companion.Level++;
 
                 // Log companion level up
@@ -1745,6 +1779,41 @@ namespace UsurperRemake.Systems
 
                 terminal?.SetColor("bright_green");
                 terminal?.WriteLine(Loc.Get("companion.reached_level", companion.Name, companion.Level));
+
+                // Show stat changes
+                if (terminal != null)
+                {
+                    var sc = new List<string>();
+                    int dAtk = companion.BaseStats.Attack - bAtk;
+                    int dDef = companion.BaseStats.Defense - bDef;
+                    int dSpd = companion.BaseStats.Speed - bSpd;
+                    int dMag = companion.BaseStats.MagicPower - bMag;
+                    int dHeal = companion.BaseStats.HealingPower - bHeal;
+                    int dHP = companion.BaseStats.HP - bHP;
+                    int dCon = companion.Constitution - bCon;
+                    int dDex = companion.Dexterity - bDex;
+                    int dAgi = companion.Agility - bAgi;
+                    int dInt = companion.Intelligence - bInt;
+                    int dWis = companion.Wisdom - bWis;
+                    int dCha = companion.Charisma - bCha;
+                    if (dAtk > 0) sc.Add($"ATK +{dAtk}");
+                    if (dDef > 0) sc.Add($"DEF +{dDef}");
+                    if (dSpd > 0) sc.Add($"SPD +{dSpd}");
+                    if (dMag > 0) sc.Add($"MAG +{dMag}");
+                    if (dHeal > 0) sc.Add($"HEAL +{dHeal}");
+                    if (dCon > 0) sc.Add($"CON +{dCon}");
+                    if (dDex > 0) sc.Add($"DEX +{dDex}");
+                    if (dAgi > 0) sc.Add($"AGI +{dAgi}");
+                    if (dInt > 0) sc.Add($"INT +{dInt}");
+                    if (dWis > 0) sc.Add($"WIS +{dWis}");
+                    if (dCha > 0) sc.Add($"CHA +{dCha}");
+                    if (dHP > 0) sc.Add($"HP +{dHP}");
+                    if (sc.Count > 0)
+                    {
+                        terminal.SetColor("bright_green");
+                        terminal.WriteLine("  " + string.Join("  ", sc));
+                    }
+                }
 
                 // Update loyalty slightly on level up (bonding through shared experience)
                 ModifyLoyalty(companion.Id, 1, "Leveled up through shared combat");
@@ -1774,11 +1843,12 @@ namespace UsurperRemake.Systems
                     wrapper.Level = companion.Level;
                     wrapper.BaseStrength = companion.BaseStats.Attack;
                     wrapper.BaseDefence = companion.BaseStats.Defense;
-                    wrapper.BaseDexterity = companion.BaseStats.Speed;
-                    wrapper.BaseAgility = companion.BaseStats.Speed;
-                    wrapper.BaseIntelligence = companion.BaseStats.MagicPower;
-                    wrapper.BaseWisdom = companion.BaseStats.HealingPower;
-                    wrapper.BaseConstitution = 10 + companion.Level;
+                    wrapper.BaseDexterity = Math.Max(companion.BaseStats.Speed, companion.Dexterity);
+                    wrapper.BaseAgility = Math.Max(companion.BaseStats.Speed, companion.Agility);
+                    wrapper.BaseIntelligence = Math.Max(companion.BaseStats.MagicPower, companion.Intelligence);
+                    wrapper.BaseWisdom = Math.Max(companion.BaseStats.HealingPower, companion.Wisdom);
+                    wrapper.BaseConstitution = Math.Max(10 + companion.Level, companion.Constitution);
+                    wrapper.BaseCharisma = Math.Max(10, companion.Charisma);
                     wrapper.BaseStamina = 10 + companion.Level;
                     wrapper.BaseMaxHP = companion.BaseStats.HP;
                     wrapper.BaseMaxMana = companion.BaseStats.MagicPower * 5;
@@ -1808,52 +1878,59 @@ namespace UsurperRemake.Systems
         {
             var random = new Random();
 
-            // Base HP gain
-            int hpGain = 8 + random.Next(4, 12);
+            // Base HP gain: 12-24 per level, +1 for every 10 levels (tiered scaling)
+            int hpGain = 12 + random.Next(0, 13) + (companion.Level / 10);
 
-            // Role-specific stat gains
+            // Role-specific stat gains (BaseStats for combat + Character properties for depth)
             switch (companion.CombatRole)
             {
                 case CombatRole.Tank:
-                    // Tanks get extra HP and Defense
-                    hpGain += 5;
-                    companion.BaseStats.HP += hpGain;
+                    companion.BaseStats.HP += hpGain + 8;
                     companion.BaseStats.Defense += 2 + random.Next(0, 2);
                     companion.BaseStats.Attack += 1 + random.Next(0, 2);
+                    companion.Constitution += 3;
+                    companion.Wisdom += 1;
                     break;
 
                 case CombatRole.Damage:
-                    // Damage dealers get Attack and Speed
                     companion.BaseStats.HP += hpGain;
                     companion.BaseStats.Attack += 2 + random.Next(1, 3);
                     companion.BaseStats.Speed += 1 + random.Next(0, 2);
                     companion.BaseStats.Defense += 1;
+                    companion.Dexterity += 3;
+                    companion.Agility += 2;
                     break;
 
                 case CombatRole.Healer:
-                    // Healers get Healing Power and Magic
-                    companion.BaseStats.HP += hpGain;
+                    companion.BaseStats.HP += hpGain + 2;
                     companion.BaseStats.HealingPower += 3 + random.Next(1, 3);
                     companion.BaseStats.MagicPower += 2 + random.Next(0, 2);
                     companion.BaseStats.Defense += 1;
+                    companion.Wisdom += 3;
+                    companion.Intelligence += 2;
+                    companion.Constitution += 1;
                     break;
 
                 case CombatRole.Hybrid:
-                    // Hybrids get balanced gains
-                    companion.BaseStats.HP += hpGain;
+                    companion.BaseStats.HP += hpGain + 1;
                     companion.BaseStats.Attack += 1 + random.Next(0, 2);
                     companion.BaseStats.Defense += 1 + random.Next(0, 2);
                     companion.BaseStats.MagicPower += 2 + random.Next(0, 2);
                     companion.BaseStats.HealingPower += 1 + random.Next(0, 2);
+                    companion.Intelligence += 2;
+                    companion.Wisdom += 2;
+                    companion.Charisma += 2;
                     break;
 
                 case CombatRole.Bard:
-                    // Bards get Magic Power, Healing, Speed
-                    companion.BaseStats.HP += hpGain;
+                    companion.BaseStats.HP += hpGain + 1;
                     companion.BaseStats.MagicPower += 3 + random.Next(0, 2);
                     companion.BaseStats.HealingPower += 2 + random.Next(0, 2);
                     companion.BaseStats.Speed += 1 + random.Next(0, 2);
                     companion.BaseStats.Attack += 1;
+                    companion.Charisma += 3;
+                    companion.Intelligence += 2;
+                    companion.Dexterity += 1;
                     break;
             }
 
@@ -2024,38 +2101,104 @@ namespace UsurperRemake.Systems
 
             for (int i = 0; i < levelsAboveBase; i++)
             {
-                int hpGain = 8 + random.Next(4, 12);
+                int currentLevel = i + 2; // Level they're scaling to (starts at 2)
+                // HP gain scales with level — companions need to keep pace with monster damage
+                // Base: 12-20, plus 1 extra per 10 levels (so level 50 gets 16-24, level 100 gets 21-29)
+                int hpGain = 12 + random.Next(4, 12) + (currentLevel / 10);
                 switch (companion.CombatRole)
                 {
                     case CombatRole.Tank:
-                        companion.BaseStats.HP += hpGain + 5;
-                        companion.BaseStats.Defense += 2;
+                        companion.BaseStats.HP += hpGain + 8;
+                        companion.BaseStats.Defense += 3;
                         companion.BaseStats.Attack += 1;
+                        companion.Constitution += 3;
+                        companion.Wisdom += 1;
                         break;
                     case CombatRole.Damage:
                         companion.BaseStats.HP += hpGain;
                         companion.BaseStats.Attack += 2;
+                        companion.BaseStats.Defense += 1;
                         companion.BaseStats.Speed += 1;
+                        companion.Dexterity += 3;
+                        companion.Agility += 2;
                         break;
                     case CombatRole.Healer:
-                        companion.BaseStats.HP += hpGain;
+                        companion.BaseStats.HP += hpGain + 2;
                         companion.BaseStats.HealingPower += 3;
                         companion.BaseStats.MagicPower += 2;
+                        companion.BaseStats.Defense += 1;
+                        companion.Wisdom += 3;
+                        companion.Intelligence += 2;
+                        companion.Constitution += 1;
                         break;
                     case CombatRole.Hybrid:
-                        companion.BaseStats.HP += hpGain;
+                        companion.BaseStats.HP += hpGain + 1;
                         companion.BaseStats.Attack += 1;
                         companion.BaseStats.MagicPower += 2;
                         companion.BaseStats.HealingPower += 1;
+                        companion.BaseStats.Defense += 1;
+                        companion.Intelligence += 2;
+                        companion.Wisdom += 2;
+                        companion.Charisma += 2;
                         break;
                     case CombatRole.Bard:
-                        companion.BaseStats.HP += hpGain;
+                        companion.BaseStats.HP += hpGain + 1;
                         companion.BaseStats.MagicPower += 3;
                         companion.BaseStats.HealingPower += 2;
                         companion.BaseStats.Speed += 1;
                         companion.BaseStats.Attack += 1;
+                        companion.BaseStats.Defense += 1;
+                        companion.Charisma += 3;
+                        companion.Intelligence += 2;
+                        companion.Dexterity += 1;
                         break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Scale ONLY the secondary stats (Constitution, Intelligence, etc.) to the companion's
+        /// current level. Used for legacy saves that predate secondary stat tracking.
+        /// Does NOT touch BaseStats (HP/Attack/Defense) since those are already restored from save.
+        /// </summary>
+        private void ScaleCompanionSecondaryStatsToLevel(Companion companion)
+        {
+            int levelsAboveBase = companion.Level - 1;
+            if (levelsAboveBase <= 0) return;
+
+            // Secondary stats start at 10 (default)
+            companion.Constitution = 10;
+            companion.Intelligence = 10;
+            companion.Wisdom = 10;
+            companion.Charisma = 10;
+            companion.Dexterity = 10;
+            companion.Agility = 10;
+
+            switch (companion.CombatRole)
+            {
+                case CombatRole.Tank:
+                    companion.Constitution += levelsAboveBase * 3;
+                    companion.Wisdom += levelsAboveBase;
+                    break;
+                case CombatRole.Damage:
+                    companion.Dexterity += levelsAboveBase * 3;
+                    companion.Agility += levelsAboveBase * 2;
+                    break;
+                case CombatRole.Healer:
+                    companion.Wisdom += levelsAboveBase * 3;
+                    companion.Intelligence += levelsAboveBase * 2;
+                    companion.Constitution += levelsAboveBase;
+                    break;
+                case CombatRole.Hybrid:
+                    companion.Intelligence += levelsAboveBase * 2;
+                    companion.Wisdom += levelsAboveBase * 2;
+                    companion.Charisma += levelsAboveBase * 2;
+                    break;
+                case CombatRole.Bard:
+                    companion.Charisma += levelsAboveBase * 3;
+                    companion.Intelligence += levelsAboveBase * 2;
+                    companion.Dexterity += levelsAboveBase;
+                    break;
             }
         }
 
@@ -2229,6 +2372,14 @@ namespace UsurperRemake.Systems
         public int Level { get; set; } = 1;
         public long Experience { get; set; } = 0;
 
+        // Secondary stats (tracked separately from BaseStats, used in combat wrapper)
+        public int Constitution { get; set; } = 10;
+        public int Intelligence { get; set; } = 10;
+        public int Wisdom { get; set; } = 10;
+        public int Charisma { get; set; } = 10;
+        public int Dexterity { get; set; } = 10;
+        public int Agility { get; set; } = 10;
+
         // Healing potions (NPCs manage their own supply)
         public int HealingPotions { get; set; } = 0;
         public int MaxHealingPotions => 5 + Level;
@@ -2327,6 +2478,14 @@ namespace UsurperRemake.Systems
         public int BaseStatsMagicPower { get; set; }
         public int BaseStatsSpeed { get; set; }
         public int BaseStatsHealingPower { get; set; }
+
+        // Secondary stats
+        public int Constitution { get; set; } = 10;
+        public int Intelligence { get; set; } = 10;
+        public int Wisdom { get; set; } = 10;
+        public int Charisma { get; set; } = 10;
+        public int Dexterity { get; set; } = 10;
+        public int Agility { get; set; } = 10;
 
         // Equipment (slot enum int -> equipment database ID)
         public Dictionary<int, int> EquippedItemsSave { get; set; } = new();
