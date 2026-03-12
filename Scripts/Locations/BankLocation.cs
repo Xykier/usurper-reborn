@@ -644,7 +644,7 @@ public class BankLocation : BaseLocation
 
         // Show list of players/NPCs
         var allNPCs = NPCSpawnSystem.Instance.ActiveNPCs ?? new List<NPC>();
-        var validTargets = allNPCs.Where(n => n.IsAlive).Take(10).ToList();
+        var validTargets = allNPCs.Where(n => n.IsAlive && !n.IsDead).Take(10).ToList();
 
         terminal.SetColor("white");
         terminal.WriteLine(Loc.Get("bank.account_holders"));
@@ -1331,7 +1331,7 @@ public class BankLocation : BaseLocation
             long stolenGold = _safeContents / 4;
             long goldBeforeRob = currentPlayer.Gold;
             currentPlayer.Gold = SafeAddGold(currentPlayer.Gold, stolenGold);
-            _safeContents -= stolenGold;
+            _safeContents = Math.Max(0, _safeContents - stolenGold);
             DebugLogger.Instance.LogInfo("GOLD", $"BANK ROBBERY: {currentPlayer.DisplayName} stole {stolenGold:N0}g (gold {goldBeforeRob:N0}->{currentPlayer.Gold:N0})");
 
             terminal.WriteLine("");

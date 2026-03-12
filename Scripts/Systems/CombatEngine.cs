@@ -1001,6 +1001,9 @@ public partial class CombatEngine
             if (result.Teammates != null)
                 foreach (var tm in result.Teammates) tm._hitsThisRound = 0;
 
+            // Reset per-round status tick flag so boss multi-attacks don't tick statuses multiple times
+            foreach (var m in livingMonsters) m.StatusTickedThisRound = false;
+
             foreach (var monster in livingMonsters)
             {
                 // Stop if entire party is dead (not just leader)
@@ -1030,7 +1033,8 @@ public partial class CombatEngine
 
                     // Skip "attacks!" message for incapacitated monsters — check status BEFORE
                     // printing so the player doesn't see "Monster attacks!" followed by "Monster is asleep!"
-                    if (monster.IsSleeping || monster.IsFeared || monster.IsStunned || monster.IsFrozen)
+                    if (monster.IsSleeping || monster.IsFeared || monster.IsStunned || monster.IsFrozen ||
+                        monster.Stunned || monster.Charmed || monster.StunRounds > 0)
                     {
                         // Still call ProcessMonsterAction to tick down durations and print status messages
                         if (hasGroup) terminal.StartCapture();
@@ -3117,6 +3121,7 @@ public partial class CombatEngine
                 if (!target.IsStunned && target.StunImmunityRounds <= 0)
                 {
                     target.IsStunned = true;
+                    target.StunDuration = 2;
                     terminal.SetColor("dark_magenta");
                     terminal.WriteLine($"  Nightshade takes hold — {target.Name} falls asleep!");
                 }
@@ -3145,6 +3150,7 @@ public partial class CombatEngine
                 if (!target.IsStunned && target.StunImmunityRounds <= 0)
                 {
                     target.IsStunned = true;
+                    target.StunDuration = 2;
                     terminal.SetColor("bright_magenta");
                     terminal.WriteLine($"  Widow's Kiss paralyzes {target.Name}!");
                 }
@@ -3391,7 +3397,16 @@ public partial class CombatEngine
 
         terminal.SetColor("red");
 
-        // Tick monster statuses
+        // Tick monster statuses — only once per round (boss multi-attacks shouldn't tick faster)
+        if (monster.StatusTickedThisRound)
+        {
+            // Already ticked this round — just check if still incapacitated
+            if (monster.StunRounds > 0 || monster.Stunned || monster.IsSleeping ||
+                monster.IsFeared || monster.IsStunned || monster.IsFrozen)
+                return;
+        }
+        monster.StatusTickedThisRound = true;
+
         if (monster.PoisonRounds > 0)
         {
             // Poison scales: 3-5% of monster's max HP + small level bonus
@@ -3530,12 +3545,11 @@ public partial class CombatEngine
             else if (random.Next(100) < 25)
             {
                 long selfDmg = Math.Max(1, monster.Strength / 3);
-                monster.HP -= selfDmg;
+                monster.HP = Math.Max(0, monster.HP - selfDmg);
                 terminal.SetColor("magenta");
                 terminal.WriteLine(Loc.Get("combat.confusion_self_damage", monster.Name, selfDmg));
                 if (monster.HP <= 0)
                 {
-                    monster.HP = 0;
                     terminal.SetColor("bright_green");
                     terminal.WriteLine(Loc.Get("combat.confusion_defeat", monster.Name));
                     if (!result.DefeatedMonsters.Contains(monster))
@@ -3959,11 +3973,13 @@ public partial class CombatEngine
         {
             float reflectPct = IsManweBattle && ArtifactSystem.Instance.HasVoidKey() ? 0.30f : 0.15f;
             long reflectedDamage = Math.Max(1, (long)(actualDamage * reflectPct));
-            monster.HP -= reflectedDamage;
+            monster.HP = Math.Max(0, monster.HP - reflectedDamage);
             terminal.WriteLine(Loc.Get("combat.scales_reflect", reflectedDamage, monster.Name), "gray");
             if (monster.HP <= 0)
             {
                 terminal.WriteLine(Loc.Get("combat.scales_destroy", monster.Name), "bright_white");
+                if (!result.DefeatedMonsters.Contains(monster))
+                    result.DefeatedMonsters.Add(monster);
             }
         }
 
@@ -3972,12 +3988,14 @@ public partial class CombatEngine
         if (thornsPct > 0 && actualDamage > 0 && monster.IsAlive)
         {
             long thornsDamage = Math.Max(1, actualDamage * thornsPct / 100);
-            monster.HP -= thornsDamage;
+            monster.HP = Math.Max(0, monster.HP - thornsDamage);
             terminal.SetColor("yellow");
             terminal.WriteLine(Loc.Get("combat.thorns_reflect", thornsDamage, monster.Name));
             if (monster.HP <= 0)
             {
                 terminal.WriteLine(Loc.Get("combat.thorns_kill", monster.Name), "bright_yellow");
+                if (!result.DefeatedMonsters.Contains(monster))
+                    result.DefeatedMonsters.Add(monster);
             }
         }
 
@@ -5072,7 +5090,7 @@ public partial class CombatEngine
         // Fatigue XP penalty — Exhausted tier only (single-player only)
         if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && result.Player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
         {
-            expReward += (long)(expReward * GameConfig.FatigueExhaustedXPPenalty);
+            expReward -= (long)(expReward * GameConfig.FatigueExhaustedXPPenalty);
         }
 
         // Auto-reset XP distribution when fighting solo — prevents 0% XP trap
@@ -9509,8 +9527,17 @@ public partial class CombatEngine
         terminal.WriteLine(Loc.Get("combat.ranged_fire", target.Name));
         await Task.Delay(GetCombatDelay(500));
 
-        // Ranged: Dexterity-based damage
-        long rangedDamage = (player.Dexterity / 2) + random.Next(5, 15);
+        // Ranged damage: DEX-based + weapon power + level bonus (mirrors melee formula)
+        long rangedDamage = player.Dexterity + (player.Level / 2) + random.Next(1, 21);
+        if (player.WeapPow > 0)
+            rangedDamage += GetEffectiveWeapPow(player.WeapPow);
+
+        // Apply weapon configuration damage modifier (2H bonus for bows)
+        double damageModifier = GetWeaponConfigDamageModifier(player);
+        rangedDamage = (long)(rangedDamage * damageModifier);
+
+        long defense = target.Defence + random.Next(0, (int)Math.Max(1, target.Defence / 8));
+        rangedDamage = Math.Max(1, rangedDamage - defense);
         rangedDamage = DifficultySystem.ApplyPlayerDamageMultiplier(rangedDamage);
 
         terminal.SetColor("green");
@@ -13100,10 +13127,11 @@ public partial class CombatEngine
             teammateCooldowns[teammate.DisplayName] = myCooldowns;
         }
 
-        // Filter to abilities the teammate can afford AND that are off cooldown
+        // Filter to abilities the teammate can afford, off cooldown, AND has required weapon
         var affordableAbilities = availableAbilities
             .Where(a => teammate.CurrentCombatStamina >= a.StaminaCost
-                     && (!myCooldowns.TryGetValue(a.Id, out int cd) || cd <= 0))
+                     && (!myCooldowns.TryGetValue(a.Id, out int cd) || cd <= 0)
+                     && ClassAbilitySystem.CanUseAbility(teammate, a.Id, myCooldowns))
             .ToList();
         if (affordableAbilities.Count == 0) return false;
 
@@ -13552,9 +13580,13 @@ public partial class CombatEngine
                         // Use sqrt-scaled defense to prevent high-armor companions from absorbing all damage
                         long abilityDefense = (long)(Math.Sqrt(companion.Defence) * 3);
                         long actualDmg = Math.Max(1, abilityResult.DirectDamage - abilityDefense);
+                        // Cap ability damage per hit (same as player path)
+                        double abCapPct = monster.IsBoss ? 0.85 : 0.75;
+                        long abMaxDmg = Math.Max(1, (long)(companion.MaxHP * abCapPct));
+                        if (actualDmg > abMaxDmg) actualDmg = abMaxDmg;
                         if (monster.IsBoss)
                             actualDmg = Math.Max(actualDmg, (long)(monster.Level * 1.5));
-                        companion.HP -= actualDmg;
+                        companion.HP = Math.Max(0, companion.HP - actualDmg);
                         terminal.WriteLine($"{companion.DisplayName} takes {actualDmg} damage from {abilityName}!", "red");
                         result.CombatLog.Add($"{monster.Name} uses {abilityName} on {companion.DisplayName} for {actualDmg}");
                     }
@@ -13563,9 +13595,13 @@ public partial class CombatEngine
                     {
                         long abilityDefense = (long)(Math.Sqrt(companion.Defence) * 3);
                         long dmg = Math.Max(1, (long)(monster.GetAttackPower() * abilityResult.DamageMultiplier) - abilityDefense);
+                        // Cap ability damage per hit
+                        double dmCapPct = monster.IsBoss ? 0.85 : 0.75;
+                        long dmMaxDmg = Math.Max(1, (long)(companion.MaxHP * dmCapPct));
+                        if (dmg > dmMaxDmg) dmg = dmMaxDmg;
                         if (monster.IsBoss)
                             dmg = Math.Max(dmg, (long)(monster.Level * 1.5));
-                        companion.HP -= dmg;
+                        companion.HP = Math.Max(0, companion.HP - dmg);
                         if (abilityResult.LifeStealPercent > 0)
                         {
                             long healAmt = dmg * abilityResult.LifeStealPercent / 100;
@@ -13635,6 +13671,15 @@ public partial class CombatEngine
         companionDefense += companion.TempDefenseBonus;
 
         long actualDamage = Math.Max(1, monsterAttack - companionDefense);
+
+        // Defending companions take half damage
+        if (companion.IsDefending)
+            actualDamage = Math.Max(1, actualDamage / 2);
+
+        // Cap damage per hit — same as player path (75% non-boss, 85% boss)
+        double capPercent = monster.IsBoss ? 0.85 : 0.75;
+        long maxDmg = Math.Max(1, (long)(companion.MaxHP * capPercent));
+        if (actualDamage > maxDmg) actualDamage = maxDmg;
 
         // Boss monsters deal at least level-scaled damage — divine power overwhelms mortal defenses
         // Reduced from level*3 to level*1.5 — companions were dying in 2-3 rounds from bosses
@@ -14094,7 +14139,7 @@ public partial class CombatEngine
         // Fatigue XP penalty — Exhausted tier only (single-player only)
         if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && result.Player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
         {
-            adjustedExp += (long)(adjustedExp * GameConfig.FatigueExhaustedXPPenalty);
+            adjustedExp -= (long)(adjustedExp * GameConfig.FatigueExhaustedXPPenalty);
         }
 
         // Auto-reset XP distribution when fighting solo — prevents 0% XP trap
@@ -17517,11 +17562,21 @@ public partial class CombatEngine
 
         if (attackScore > defenseScore)
         {
-            long damage = attacker.Dexterity / 2 + random.Next(1, 7); // d6 based
-            damage = DifficultySystem.ApplyPlayerDamageMultiplier(damage);
-            terminal.WriteLine($"You shoot an arrow for {damage} damage!", "bright_green");
-            target.HP = Math.Max(0, target.HP - damage);
-            result.CombatLog.Add($"Player ranged hits {target.Name} for {damage}");
+            // Ranged damage: DEX-based + weapon power + level bonus (mirrors melee formula)
+            long damage = attacker.Dexterity + (attacker.Level / 2) + random.Next(1, 21);
+            if (attacker.WeapPow > 0)
+                damage += GetEffectiveWeapPow(attacker.WeapPow);
+
+            // Apply weapon configuration damage modifier (2H bonus for bows)
+            double damageModifier = GetWeaponConfigDamageModifier(attacker);
+            damage = (long)(damage * damageModifier);
+
+            long defense = target.Defence + random.Next(0, (int)Math.Max(1, target.Defence / 8));
+            long actual = Math.Max(1, damage - defense);
+            actual = DifficultySystem.ApplyPlayerDamageMultiplier(actual);
+            terminal.WriteLine($"You shoot an arrow for {actual} damage!", "bright_green");
+            target.HP = Math.Max(0, target.HP - actual);
+            result.CombatLog.Add($"Player ranged hits {target.Name} for {actual}");
         }
         else
         {
@@ -17803,6 +17858,9 @@ public partial class CombatEngine
                 // Calculate next threshold
                 xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
             }
+
+            // Sync changes to canonical ActiveNPCs entry (handles orphaned references)
+            SyncNPCTeammateToActiveNPCs(teammate);
         }
     }
 
@@ -17859,7 +17917,6 @@ public partial class CombatEngine
 
                 // Check for level up
                 long xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
-                bool didLevelUp = false;
                 while (teammate.Experience >= xpForNextLevel && teammate.Level < 100)
                 {
                     long bHP = teammate.BaseMaxHP; long bStr = teammate.BaseStrength; long bDef = teammate.BaseDefence;
@@ -17889,27 +17946,26 @@ public partial class CombatEngine
 
                     NewsSystem.Instance?.Newsy(true, $"{teammate.DisplayName} has achieved Level {teammate.Level}!");
                     xpForNextLevel = GetExperienceForLevel(teammate.Level + 1);
-                    didLevelUp = true;
                 }
 
                 // Sync changes to canonical ActiveNPCs entry — if the world sim rebuilt
                 // ActiveNPCs (via RestoreNPCsFromData) since the dungeon started, our
                 // teammate reference may be orphaned. Propagate XP/level/stats to the
                 // canonical NPC so the next world_state save persists the changes.
-                SyncNPCTeammateToActiveNPCs(teammate, didLevelUp);
+                SyncNPCTeammateToActiveNPCs(teammate);
             }
         }
     }
 
     /// <summary>
-    /// After modifying an NPC teammate's XP/level in combat, propagate the changes
-    /// to the canonical NPC in ActiveNPCs. If the world sim rebuilt ActiveNPCs
-    /// (via RestoreNPCsFromData) since the dungeon started, the teammate reference
-    /// in the party list becomes orphaned — pointing to an old object that will never
-    /// be serialized. This method finds the canonical NPC by ID and copies the
-    /// combat-modified stats so the next world_state save persists them.
+    /// Propagate combat-modified state from an NPC teammate back to the canonical
+    /// NPC in ActiveNPCs. If the world sim rebuilt ActiveNPCs (via RestoreNPCsFromData)
+    /// since the dungeon started, the teammate reference becomes orphaned — pointing
+    /// to an old object that will never be serialized. This method finds the canonical
+    /// NPC by ID and copies ALL stats, equipment, and progression so the next
+    /// world_state save persists them.
     /// </summary>
-    private static void SyncNPCTeammateToActiveNPCs(Character teammate, bool didLevelUp)
+    internal static void SyncNPCTeammateToActiveNPCs(Character teammate)
     {
         if (teammate is not NPC npcTeammate) return;
         var npcSystem = UsurperRemake.Systems.NPCSpawnSystem.Instance;
@@ -17918,19 +17974,34 @@ public partial class CombatEngine
         var canonical = npcSystem.ActiveNPCs.FirstOrDefault(n => n.ID == npcTeammate.ID);
         if (canonical == null || ReferenceEquals(canonical, npcTeammate)) return;
 
-        // The teammate is orphaned — copy combat-modified state to canonical NPC
+        // The teammate is orphaned — copy all combat-modified state to canonical NPC
         canonical.Experience = npcTeammate.Experience;
         canonical.Level = npcTeammate.Level;
+        canonical.HP = npcTeammate.HP;
+
+        // Sync ALL base stats
         canonical.BaseMaxHP = npcTeammate.BaseMaxHP;
+        canonical.BaseMaxMana = npcTeammate.BaseMaxMana;
         canonical.BaseStrength = npcTeammate.BaseStrength;
         canonical.BaseDefence = npcTeammate.BaseDefence;
-        canonical.HP = npcTeammate.HP;
+        canonical.BaseDexterity = npcTeammate.BaseDexterity;
+        canonical.BaseAgility = npcTeammate.BaseAgility;
+        canonical.BaseStamina = npcTeammate.BaseStamina;
+        canonical.BaseConstitution = npcTeammate.BaseConstitution;
+        canonical.BaseIntelligence = npcTeammate.BaseIntelligence;
+        canonical.BaseWisdom = npcTeammate.BaseWisdom;
+        canonical.BaseCharisma = npcTeammate.BaseCharisma;
+
+        // Sync equipment (player may have given NPC new gear during dungeon)
+        canonical.EquippedItems.Clear();
+        foreach (var kvp in npcTeammate.EquippedItems)
+        {
+            canonical.EquippedItems[kvp.Key] = kvp.Value;
+        }
+
         canonical.RecalculateStats();
 
-        if (didLevelUp)
-        {
-            DebugLogger.Instance.LogInfo("COMBAT", $"Synced orphaned NPC teammate {npcTeammate.DisplayName} level {canonical.Level} back to ActiveNPCs");
-        }
+        DebugLogger.Instance.LogInfo("COMBAT", $"Synced orphaned NPC teammate {npcTeammate.DisplayName} (Lv {canonical.Level}) back to ActiveNPCs");
     }
 
     /// <summary>

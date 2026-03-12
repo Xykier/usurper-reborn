@@ -54,7 +54,112 @@ public static class MonsterAbilities
         Flee,               // Attempt to escape
         CallForHelp,        // Alert nearby monsters
         Enrage,             // Buff self when damaged
-        Heal                // Heal self significantly
+        Heal,               // Heal self significantly
+
+        // --- Monster Family Abilities (from MonsterFamilies.cs) ---
+
+        // Goblinoid
+        CriticalStrike,     // 2x damage single hit
+        Rally,              // Buff self: temporary strength boost
+        CommandArmy,        // Summon goblin reinforcements
+
+        // Undead
+        Paralyze,           // Chance to stun (like PetrifyingGaze)
+        Incorporeal,        // Phase-like: chance to avoid damage
+        Spellcasting,       // Cast random offensive spell
+        Phylactery,         // Self-heal when low HP
+
+        // Orc
+        Rage,               // Damage boost (like Enrage)
+        Frenzy,             // Multi-attack + damage boost
+        Warcry,             // Fear effect on player
+        Cleave,             // High damage attack
+
+        // Dragon
+        Flight,             // Evasion bonus (like Vanish)
+        DragonFear,         // Fear effect (like HorrifyingScream)
+        AncientMagic,       // High direct damage magical attack
+
+        // Demon
+        Invisibility,       // Evasion bonus (like Vanish)
+        Teleport,           // Skip attack, gain evasion next round
+        Hellfire,           // High fire damage + burn
+        Corruption,         // Curse + weaken
+        Dominate,           // Charm: player may skip turn
+
+        // Giant
+        Boulder,            // High direct damage ranged attack
+        Stoneskin,          // Armor harden (like ArmorHarden)
+        Lightning,          // High direct damage + stun chance
+        Earthquake,         // Direct damage + stun chance
+
+        // Beast/Wolf
+        PackTactics,        // Extra attack (like Multiattack but 1 extra)
+        Bite,               // Attack + bleed
+        Lycanthropy,        // Curse + bleed
+        Howl,               // Fear effect (like HorrifyingScream)
+        Moonlight,          // Regeneration + damage boost
+
+        // Fire Elemental
+        Burn,               // Attack + burn DoT
+        Immolate,           // High fire damage + burn
+        Fireball,           // Direct fire damage
+        Rebirth,            // Self-heal to full when low HP (once)
+        Inferno,            // Massive fire damage
+
+        // Ooze/Slime
+        Corrosion,          // Reduce player defense
+        Split,              // Summon copy of self
+        Engulf,             // High damage + stun
+        Absorb,             // Damage + heal self
+        ShapeShift,         // Random stat changes
+        Madness,            // Confusion effect
+
+        // Spider/Insect
+        WebTrap,            // Stun/slow effect
+        PhaseShift,         // Phase-like dodge
+        Poison,             // Apply poison DoT
+        SummonSpiders,      // Summon minions
+        DeadlyVenom,        // Strong poison + damage
+        Swarm,              // Multi-attack swarm
+        Cocoon,             // Heal self + armor boost
+
+        // Construct/Golem
+        ImmuneMagic,        // Resist magic (passive, reduces spell damage)
+        PoisonGas,          // AoE poison (like PoisonCloud)
+        Indestructible,     // Massive armor boost
+        SelfRepair,         // Heal self (like Heal)
+        Overload,           // Massive damage, self-damage
+
+        // Fey
+        Sleep,              // Put player to sleep (stun)
+        TreeMeld,           // Phase-like evasion
+        Charm,              // Player may skip turn
+        AnimateTrees,       // Summon minions
+        RootEntangle,       // Stun + damage
+        TimeStop,           // Extra attacks
+        WildShape,          // Stat boost + heal
+
+        // Sea Creature
+        TentacleGrab,       // Multi-attack + stun chance
+        InkCloud,           // Blind + evasion boost
+        Whirlpool,          // Direct damage + stun
+        TidalWave,          // High direct damage
+
+        // Celestial
+        HolySmite,          // High direct damage
+        Purify,             // Remove player buffs
+        DivineJudgment,     // Massive damage on evil-aligned
+        Sanctuary,          // Heal + armor boost
+        Resurrection,       // Revive dead allies in multi-monster
+
+        // Shadow
+        StrengthDrain,      // Reduce player strength
+        Terror,             // Fear + damage
+        Possess,            // Player attacks self
+        Nightmare,          // Direct damage + fear
+        DevourSoul,         // Soul reap variant
+        RealityBreak        // Direct damage + random debuff
     }
 
     /// <summary>
@@ -467,6 +572,729 @@ public static class MonsterAbilities
                 result.SkipNormalAttack = true;
                 result.Message = $"{monster.Name} attempts to flee!";
                 result.MessageColor = "yellow";
+                break;
+
+            // --- Monster Family Abilities ---
+
+            // Goblinoid
+            case AbilityType.CriticalStrike:
+                result.DamageMultiplier = 2.0f;
+                result.Message = $"{monster.Name} lands a critical strike!";
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Rally:
+                if (!monster.HasEnraged)
+                {
+                    monster.Strength += monster.Level / 3;
+                    monster.HasEnraged = true;
+                    result.Message = $"{monster.Name} rallies, surging with renewed vigor!";
+                }
+                else
+                {
+                    result.Message = $"{monster.Name} shouts a battle cry!";
+                }
+                result.DamageMultiplier = 1.3f;
+                result.MessageColor = "yellow";
+                break;
+
+            case AbilityType.CommandArmy:
+                result.SummonMonsters = true;
+                result.SummonCount = _rnd.Next(2, 4);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} commands its army to attack!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            // Undead
+            case AbilityType.Paralyze:
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 35;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name}'s touch paralyzes you!";
+                result.MessageColor = "cyan";
+                break;
+
+            case AbilityType.Incorporeal:
+                result.AvoidAllDamage = _rnd.Next(100) < 30;
+                result.DamageMultiplier = 0;
+                if (result.AvoidAllDamage)
+                    result.Message = $"{monster.Name} becomes incorporeal — attacks pass through!";
+                else
+                    result.Message = $"{monster.Name} flickers between planes!";
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.Spellcasting:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.3f);
+                result.InflictStatus = _rnd.Next(3) switch { 0 => StatusEffect.Cursed, 1 => StatusEffect.Weakened, _ => StatusEffect.Silenced };
+                result.StatusDuration = 3;
+                result.StatusChance = 40;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} casts a dark spell!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            case AbilityType.Phylactery:
+                if (monster.HP < monster.MaxHP / 4)
+                {
+                    var phylHeal = monster.MaxHP / 3;
+                    monster.HP = Math.Min(monster.HP + phylHeal, monster.MaxHP);
+                    result.SkipNormalAttack = true;
+                    result.Message = $"{monster.Name}'s phylactery pulses — it regenerates {phylHeal} HP!";
+                    result.MessageColor = "bright_magenta";
+                }
+                else
+                {
+                    result.DamageMultiplier = 1.2f;
+                    result.Message = $"{monster.Name} channels dark energy!";
+                    result.MessageColor = "magenta";
+                }
+                break;
+
+            // Orc
+            case AbilityType.Rage:
+                if (!monster.HasEnraged)
+                {
+                    monster.Strength += 5;
+                    monster.HasEnraged = true;
+                    result.Message = $"{monster.Name} flies into a rage!";
+                }
+                else
+                {
+                    result.Message = $"{monster.Name} attacks with furious rage!";
+                }
+                result.DamageMultiplier = 1.5f;
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Frenzy:
+                result.DamageMultiplier = 1.3f;
+                result.ExtraAttacks = _rnd.Next(1, 3);
+                result.Message = $"{monster.Name} enters a wild frenzy!";
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Warcry:
+                result.InflictStatus = StatusEffect.Feared;
+                result.StatusDuration = 2;
+                result.StatusChance = 45;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} unleashes a terrifying warcry!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            case AbilityType.Cleave:
+                result.DamageMultiplier = 2.2f;
+                result.Message = $"{monster.Name} cleaves with devastating force!";
+                result.MessageColor = "bright_red";
+                break;
+
+            // Dragon
+            case AbilityType.Flight:
+                result.EvasionBonus = 25;
+                result.DamageMultiplier = 0;
+                result.Message = $"{monster.Name} takes flight, becoming harder to hit!";
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.DragonFear:
+                result.InflictStatus = StatusEffect.Feared;
+                result.StatusDuration = 3;
+                result.StatusChance = 50;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name}'s draconic presence fills you with dread!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            case AbilityType.AncientMagic:
+                result.DirectDamage = CalculateBreathDamage(monster, 2.0f);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} unleashes ancient draconic magic!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            // Demon
+            case AbilityType.Invisibility:
+                result.EvasionBonus = 35;
+                result.DamageMultiplier = 0;
+                result.Message = $"{monster.Name} fades from sight!";
+                result.MessageColor = "gray";
+                break;
+
+            case AbilityType.Teleport:
+                result.EvasionBonus = 40;
+                result.DamageMultiplier = 0;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} teleports behind you!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            case AbilityType.Hellfire:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.8f);
+                result.InflictStatus = StatusEffect.Burning;
+                result.StatusDuration = 4;
+                result.StatusChance = 60;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} engulfs you in hellfire!";
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Corruption:
+                result.InflictStatus = StatusEffect.Cursed;
+                result.StatusDuration = 5;
+                result.StatusChance = 50;
+                result.DamageMultiplier = 1.2f;
+                result.Message = $"{monster.Name} corrupts your very essence!";
+                result.MessageColor = "magenta";
+                break;
+
+            case AbilityType.Dominate:
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 30;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} tries to dominate your will!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            // Giant
+            case AbilityType.Boulder:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.5f);
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 1;
+                result.StatusChance = 30;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} hurls a massive boulder!";
+                result.MessageColor = "gray";
+                break;
+
+            case AbilityType.Stoneskin:
+                if (!monster.HasHardenedArmor)
+                {
+                    monster.ArmPow += monster.Level;
+                    monster.HasHardenedArmor = true;
+                    result.Message = $"{monster.Name}'s skin turns to stone!";
+                }
+                else
+                {
+                    result.Message = $"{monster.Name}'s stone armor holds firm!";
+                }
+                result.DamageMultiplier = 0;
+                result.SkipNormalAttack = true;
+                result.MessageColor = "gray";
+                break;
+
+            case AbilityType.Lightning:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.7f);
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 1;
+                result.StatusChance = 40;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} calls down lightning!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            case AbilityType.Earthquake:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.4f);
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 1;
+                result.StatusChance = 50;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} causes the earth to shake violently!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            // Beast/Wolf
+            case AbilityType.PackTactics:
+                result.ExtraAttacks = 1;
+                result.DamageMultiplier = 1.1f;
+                result.Message = $"{monster.Name} coordinates with the pack!";
+                result.MessageColor = "white";
+                break;
+
+            case AbilityType.Bite:
+                result.DamageMultiplier = 1.2f;
+                result.InflictStatus = StatusEffect.Bleeding;
+                result.StatusDuration = 3;
+                result.StatusChance = 40;
+                result.Message = $"{monster.Name} bites down hard!";
+                result.MessageColor = "red";
+                break;
+
+            case AbilityType.Lycanthropy:
+                result.DamageMultiplier = 1.3f;
+                result.InflictStatus = StatusEffect.Cursed;
+                result.StatusDuration = 4;
+                result.StatusChance = 25;
+                result.Message = $"{monster.Name} attacks with supernatural ferocity!";
+                result.MessageColor = "bright_white";
+                break;
+
+            case AbilityType.Howl:
+                result.InflictStatus = StatusEffect.Feared;
+                result.StatusDuration = 2;
+                result.StatusChance = 40;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} lets loose a bone-chilling howl!";
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.Moonlight:
+                var moonHeal = Math.Max(5, monster.MaxHP / 8);
+                monster.HP = Math.Min(monster.HP + moonHeal, monster.MaxHP);
+                result.DamageMultiplier = 1.3f;
+                result.Message = $"{monster.Name} bathes in moonlight, healing {moonHeal} HP!";
+                result.MessageColor = "bright_white";
+                break;
+
+            // Fire Elemental
+            case AbilityType.Burn:
+                result.DamageMultiplier = 1.0f;
+                result.InflictStatus = StatusEffect.Burning;
+                result.StatusDuration = 3;
+                result.StatusChance = 60;
+                result.Message = $"{monster.Name} scorches you with fire!";
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Immolate:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.6f);
+                result.InflictStatus = StatusEffect.Burning;
+                result.StatusDuration = 4;
+                result.StatusChance = 70;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} immolates you in flames!";
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Fireball:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.5f);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} hurls a fireball!";
+                result.MessageColor = "bright_red";
+                break;
+
+            case AbilityType.Rebirth:
+                if (monster.HP < monster.MaxHP / 5 && !monster.HasEnraged) // Use HasEnraged as "used rebirth" flag
+                {
+                    monster.HP = monster.MaxHP;
+                    monster.HasEnraged = true;
+                    result.SkipNormalAttack = true;
+                    result.Message = $"{monster.Name} erupts in flame and is reborn!";
+                    result.MessageColor = "bright_yellow";
+                }
+                else
+                {
+                    result.DamageMultiplier = 1.5f;
+                    result.Message = $"{monster.Name} attacks with blazing fury!";
+                    result.MessageColor = "bright_red";
+                }
+                break;
+
+            case AbilityType.Inferno:
+                result.DirectDamage = CalculateBreathDamage(monster, 2.0f);
+                result.InflictStatus = StatusEffect.Burning;
+                result.StatusDuration = 5;
+                result.StatusChance = 80;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} unleashes an inferno!";
+                result.MessageColor = "bright_red";
+                break;
+
+            // Ooze/Slime
+            case AbilityType.Corrosion:
+                result.InflictStatus = StatusEffect.Weakened;
+                result.StatusDuration = 4;
+                result.StatusChance = 55;
+                result.DamageMultiplier = 0.8f;
+                result.Message = $"{monster.Name}'s acidic touch corrodes your equipment!";
+                result.MessageColor = "green";
+                break;
+
+            case AbilityType.Split:
+                result.SummonMonsters = true;
+                result.SummonCount = 1;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} splits into two!";
+                result.MessageColor = "bright_green";
+                break;
+
+            case AbilityType.Engulf:
+                result.DamageMultiplier = 1.5f;
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 1;
+                result.StatusChance = 45;
+                result.Message = $"{monster.Name} engulfs you in its mass!";
+                result.MessageColor = "bright_green";
+                break;
+
+            case AbilityType.Absorb:
+                result.DamageMultiplier = 1.0f;
+                result.LifeStealPercent = 75;
+                result.Message = $"{monster.Name} absorbs your life force!";
+                result.MessageColor = "bright_green";
+                break;
+
+            case AbilityType.ShapeShift:
+                monster.Strength += _rnd.Next(-3, 8);
+                monster.ArmPow += _rnd.Next(-3, 8);
+                result.DamageMultiplier = 1.2f;
+                result.Message = $"{monster.Name} shifts into a new horrifying form!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            case AbilityType.Madness:
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 35;
+                result.DirectDamage = CalculateBreathDamage(monster, 0.8f);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name}'s alien form drives you to the brink of madness!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            // Spider/Insect
+            case AbilityType.WebTrap:
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 45;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} traps you in sticky webbing!";
+                result.MessageColor = "white";
+                break;
+
+            case AbilityType.PhaseShift:
+                result.AvoidAllDamage = _rnd.Next(100) < 30;
+                result.DamageMultiplier = 0;
+                result.Message = result.AvoidAllDamage
+                    ? $"{monster.Name} phase shifts out of reality!"
+                    : $"{monster.Name} flickers between dimensions!";
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.Poison:
+                result.DamageMultiplier = 0.7f;
+                result.InflictStatus = StatusEffect.Poisoned;
+                result.StatusDuration = 5;
+                result.StatusChance = 65;
+                result.Message = $"{monster.Name} injects you with poison!";
+                result.MessageColor = "green";
+                break;
+
+            case AbilityType.SummonSpiders:
+                result.SummonMonsters = true;
+                result.SummonCount = _rnd.Next(2, 4);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} summons a swarm of spiders!";
+                result.MessageColor = "white";
+                break;
+
+            case AbilityType.DeadlyVenom:
+                result.DamageMultiplier = 1.3f;
+                result.InflictStatus = StatusEffect.Poisoned;
+                result.StatusDuration = 6;
+                result.StatusChance = 80;
+                result.Message = $"{monster.Name} strikes with deadly venom!";
+                result.MessageColor = "bright_green";
+                break;
+
+            case AbilityType.Swarm:
+                result.ExtraAttacks = _rnd.Next(2, 5);
+                result.DamageMultiplier = 0.6f;
+                result.Message = $"{monster.Name} sends a swarm of spiderlings!";
+                result.MessageColor = "white";
+                break;
+
+            case AbilityType.Cocoon:
+                var cocoonHeal = Math.Max(10, monster.MaxHP / 5);
+                monster.HP = Math.Min(monster.HP + cocoonHeal, monster.MaxHP);
+                if (!monster.HasHardenedArmor)
+                {
+                    monster.ArmPow += monster.Level / 3;
+                    monster.HasHardenedArmor = true;
+                }
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} wraps itself in a cocoon, healing {cocoonHeal} HP!";
+                result.MessageColor = "white";
+                break;
+
+            // Construct/Golem
+            case AbilityType.ImmuneMagic:
+                // Passive resistance — represented as armor boost
+                if (!monster.HasHardenedArmor)
+                {
+                    monster.ArmPow += monster.Level / 2;
+                    monster.HasHardenedArmor = true;
+                    result.Message = $"{monster.Name}'s magical resistance flares!";
+                }
+                else
+                {
+                    result.Message = $"{monster.Name} shrugs off magical energy!";
+                }
+                result.DamageMultiplier = 0;
+                result.SkipNormalAttack = true;
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.PoisonGas:
+                result.DirectDamage = CalculateBreathDamage(monster, 0.9f);
+                result.InflictStatus = StatusEffect.Poisoned;
+                result.StatusDuration = 5;
+                result.StatusChance = 65;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} releases a cloud of toxic gas!";
+                result.MessageColor = "green";
+                break;
+
+            case AbilityType.Indestructible:
+                if (!monster.HasHardenedArmor)
+                {
+                    monster.ArmPow += monster.Level;
+                    monster.HasHardenedArmor = true;
+                    result.Message = $"{monster.Name}'s body becomes nearly indestructible!";
+                }
+                else
+                {
+                    result.Message = $"{monster.Name}'s armor holds strong!";
+                }
+                result.DamageMultiplier = 0;
+                result.SkipNormalAttack = true;
+                result.MessageColor = "bright_white";
+                break;
+
+            case AbilityType.SelfRepair:
+                var repairAmount = Math.Max(15, monster.MaxHP / 5);
+                monster.HP = Math.Min(monster.HP + repairAmount, monster.MaxHP);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} repairs itself for {repairAmount} HP!";
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.Overload:
+                result.DirectDamage = CalculateBreathDamage(monster, 2.5f);
+                monster.HP = Math.Max(1, monster.HP - monster.MaxHP / 5); // Self-damage
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} overloads its core, unleashing devastating energy!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            // Fey
+            case AbilityType.Sleep:
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 40;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} sprinkles sleep dust over you!";
+                result.MessageColor = "bright_cyan";
+                break;
+
+            case AbilityType.TreeMeld:
+                result.AvoidAllDamage = _rnd.Next(100) < 35;
+                result.DamageMultiplier = 0;
+                result.Message = result.AvoidAllDamage
+                    ? $"{monster.Name} melds with a nearby tree, becoming untouchable!"
+                    : $"{monster.Name} partially melds with nature!";
+                result.MessageColor = "green";
+                break;
+
+            case AbilityType.Charm:
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 35;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} tries to charm you with fey magic!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            case AbilityType.AnimateTrees:
+                result.SummonMonsters = true;
+                result.SummonCount = _rnd.Next(1, 3);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} animates the surrounding trees!";
+                result.MessageColor = "bright_green";
+                break;
+
+            case AbilityType.RootEntangle:
+                result.DirectDamage = CalculateBreathDamage(monster, 0.8f);
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 2;
+                result.StatusChance = 50;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} entangles you in grasping roots!";
+                result.MessageColor = "green";
+                break;
+
+            case AbilityType.TimeStop:
+                result.ExtraAttacks = _rnd.Next(2, 4);
+                result.DamageMultiplier = 1.0f;
+                result.Message = $"{monster.Name} stops time and strikes repeatedly!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            case AbilityType.WildShape:
+                monster.Strength += monster.Level / 4;
+                var wsHeal = monster.MaxHP / 6;
+                monster.HP = Math.Min(monster.HP + wsHeal, monster.MaxHP);
+                result.DamageMultiplier = 1.4f;
+                result.Message = $"{monster.Name} wild shapes into a monstrous form!";
+                result.MessageColor = "bright_green";
+                break;
+
+            // Sea Creature
+            case AbilityType.TentacleGrab:
+                result.ExtraAttacks = _rnd.Next(1, 3);
+                result.DamageMultiplier = 0.9f;
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 1;
+                result.StatusChance = 25;
+                result.Message = $"{monster.Name} lashes out with writhing tentacles!";
+                result.MessageColor = "bright_blue";
+                break;
+
+            case AbilityType.InkCloud:
+                result.InflictStatus = StatusEffect.Blinded;
+                result.StatusDuration = 3;
+                result.StatusChance = 55;
+                result.EvasionBonus = 30;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} releases a cloud of ink!";
+                result.MessageColor = "gray";
+                break;
+
+            case AbilityType.Whirlpool:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.5f);
+                result.InflictStatus = StatusEffect.Stunned;
+                result.StatusDuration = 1;
+                result.StatusChance = 40;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} creates a devastating whirlpool!";
+                result.MessageColor = "bright_blue";
+                break;
+
+            case AbilityType.TidalWave:
+                result.DirectDamage = CalculateBreathDamage(monster, 2.0f);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} summons a massive tidal wave!";
+                result.MessageColor = "bright_blue";
+                break;
+
+            // Celestial
+            case AbilityType.HolySmite:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.6f);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} calls down holy smite!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            case AbilityType.Purify:
+                // Weaken the player's buffs by applying debuffs
+                result.InflictStatus = StatusEffect.Weakened;
+                result.StatusDuration = 3;
+                result.StatusChance = 60;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} purifies the battlefield with divine light!";
+                result.MessageColor = "bright_white";
+                break;
+
+            case AbilityType.DivineJudgment:
+                result.DirectDamage = CalculateBreathDamage(monster, 2.2f);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} passes divine judgment upon you!";
+                result.MessageColor = "bright_yellow";
+                break;
+
+            case AbilityType.Sanctuary:
+                var sancHeal = Math.Max(15, monster.MaxHP / 4);
+                monster.HP = Math.Min(monster.HP + sancHeal, monster.MaxHP);
+                if (!monster.HasHardenedArmor)
+                {
+                    monster.ArmPow += monster.Level / 3;
+                    monster.HasHardenedArmor = true;
+                }
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} creates a sanctuary, healing {sancHeal} HP!";
+                result.MessageColor = "bright_white";
+                break;
+
+            case AbilityType.Resurrection:
+                // In practice this is like SummonMinions for multi-monster
+                result.SummonMonsters = true;
+                result.SummonCount = 1;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} resurrects a fallen ally!";
+                result.MessageColor = "bright_white";
+                break;
+
+            // Shadow
+            case AbilityType.StrengthDrain:
+                result.InflictStatus = StatusEffect.Weakened;
+                result.StatusDuration = 4;
+                result.StatusChance = 55;
+                result.DamageMultiplier = 0.8f;
+                result.Message = $"{monster.Name} drains your strength!";
+                result.MessageColor = "gray";
+                break;
+
+            case AbilityType.Terror:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.0f);
+                result.InflictStatus = StatusEffect.Feared;
+                result.StatusDuration = 3;
+                result.StatusChance = 45;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} fills your mind with visions of terror!";
+                result.MessageColor = "magenta";
+                break;
+
+            case AbilityType.Possess:
+                // Self-damage effect
+                result.DirectDamage = (int)Math.Max(1, target.Strength / 2);
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} possesses you — you strike yourself!";
+                result.MessageColor = "bright_magenta";
+                break;
+
+            case AbilityType.Nightmare:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.3f);
+                result.InflictStatus = StatusEffect.Feared;
+                result.StatusDuration = 2;
+                result.StatusChance = 50;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} subjects you to a waking nightmare!";
+                result.MessageColor = "magenta";
+                break;
+
+            case AbilityType.DevourSoul:
+                if (_rnd.Next(100) < 5)
+                {
+                    result.DirectDamage = (int)target.HP;
+                    result.Message = $"{monster.Name} devours your soul!";
+                    result.MessageColor = "bright_red";
+                }
+                else
+                {
+                    result.DamageMultiplier = 1.5f;
+                    result.LifeStealPercent = 40;
+                    result.Message = $"{monster.Name} tears at your soul!";
+                    result.MessageColor = "magenta";
+                }
+                break;
+
+            case AbilityType.RealityBreak:
+                result.DirectDamage = CalculateBreathDamage(monster, 1.8f);
+                result.InflictStatus = _rnd.Next(4) switch
+                {
+                    0 => StatusEffect.Stunned,
+                    1 => StatusEffect.Feared,
+                    2 => StatusEffect.Cursed,
+                    _ => StatusEffect.Weakened
+                };
+                result.StatusDuration = 3;
+                result.StatusChance = 50;
+                result.SkipNormalAttack = true;
+                result.Message = $"{monster.Name} tears a hole in reality!";
+                result.MessageColor = "bright_magenta";
                 break;
         }
 

@@ -1661,6 +1661,9 @@ public class TeamCornerLocation : BaseLocation
         var selectedMember = teamMembers[memberIdx - 1];
         await ManageCharacterEquipment(selectedMember);
 
+        // Sync equipment changes to canonical NPC in ActiveNPCs (handles orphaned references)
+        CombatEngine.SyncNPCTeammateToActiveNPCs(selectedMember);
+
         // Auto-save after equipment changes to persist NPC equipment state
         await SaveSystem.Instance.AutoSave(currentPlayer);
     }

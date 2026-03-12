@@ -268,36 +268,51 @@ public partial class NPC : Character
         Charisma = baseStats.Charisma + level;
         Wisdom = baseStats.Wisdom + level;
         Stamina = baseStats.Stamina + (level * 3);
-        
+        Intelligence = baseStats.Intelligence + (level * 2);
+        Constitution = baseStats.Constitution + (level * 2);
+
         // Calculate HP and Mana
         MaxHP = 20 + (level * 8) + (Stamina / 2);
         HP = MaxHP;
         MaxMana = 10 + (level * 2) + (Wisdom / 3);
         Mana = MaxMana;
-        
+
         // Set gold based on archetype and level
         Gold = GetBaseGold(archetype) * level;
-        
+
         // Set experience
         Experience = GetExperienceForLevel(level);
+
+        // Save base stats so RecalculateStats() works correctly
+        BaseStrength = Strength;
+        BaseDefence = Defence;
+        BaseDexterity = Dexterity;
+        BaseAgility = Agility;
+        BaseCharisma = Charisma;
+        BaseWisdom = Wisdom;
+        BaseStamina = Stamina;
+        BaseIntelligence = Intelligence;
+        BaseConstitution = Constitution;
+        BaseMaxHP = MaxHP;
+        BaseMaxMana = MaxMana;
     }
     
     /// <summary>
     /// Get base stats for different archetypes
     /// </summary>
-    private (int Strength, int Defence, int Dexterity, int Agility, int Charisma, int Wisdom, int Stamina) GetBaseStatsForArchetype(string archetype)
+    private (int Strength, int Defence, int Dexterity, int Agility, int Charisma, int Wisdom, int Stamina, int Intelligence, int Constitution) GetBaseStatsForArchetype(string archetype)
     {
         return archetype.ToLower() switch
-        {
-            "thug" or "fighter" => (15, 12, 10, 8, 6, 7, 14),
-            "guard" => (14, 15, 8, 7, 9, 8, 16),
-            "merchant" => (8, 10, 12, 10, 15, 12, 10),
-            "priest" or "cleric" => (9, 11, 8, 7, 12, 16, 12),
-            "mystic" or "mage" => (7, 8, 10, 9, 11, 18, 8),
-            "assassin" or "thief" => (11, 9, 16, 15, 10, 12, 11),
-            "noble" => (10, 12, 11, 10, 16, 14, 12),
-            "citizen" => (10, 10, 10, 10, 10, 10, 10),
-            _ => (10, 10, 10, 10, 10, 10, 10)
+        {                                        // STR  DEF  DEX  AGI  CHA  WIS  STA  INT  CON
+            "thug" or "fighter" => (15, 12, 10, 8, 6, 7, 14, 8, 12),
+            "guard" => (14, 15, 8, 7, 9, 8, 16, 8, 14),
+            "merchant" => (8, 10, 12, 10, 15, 12, 10, 14, 10),
+            "priest" or "cleric" => (9, 11, 8, 7, 12, 16, 12, 12, 11),
+            "mystic" or "mage" => (7, 8, 10, 9, 11, 18, 8, 18, 8),
+            "assassin" or "thief" => (11, 9, 16, 15, 10, 12, 11, 12, 10),
+            "noble" => (10, 12, 11, 10, 16, 14, 12, 14, 11),
+            "citizen" => (10, 10, 10, 10, 10, 10, 10, 10, 10),
+            _ => (10, 10, 10, 10, 10, 10, 10, 10, 10)
         };
     }
     

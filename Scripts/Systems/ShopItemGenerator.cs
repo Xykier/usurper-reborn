@@ -312,6 +312,7 @@ public static class ShopItemGenerator
             case WeaponType.Staff:
                 equip.IntelligenceBonus = 1 + (int)(s * 10);         // 1-11
                 equip.WisdomBonus = (int)(s * 6);                    // 0-6
+                equip.DefenceBonus = (int)(s * 3);                   // 0-3
                 if (level >= 20) equip.IntelligenceBonus += (int)(s * 7); // 0-7 additional
                 break;
 
@@ -337,11 +338,13 @@ public static class ShopItemGenerator
                 equip.DexterityBonus = 1 + (int)(s * 9);             // 1-10
                 equip.AgilityBonus = (int)(s * 5);                   // 0-5
                 equip.CriticalChanceBonus = 2 + (int)(s * 8);        // 2-10%
+                equip.DefenceBonus = (int)(s * 3);                   // 0-3
                 break;
 
             case WeaponType.Instrument:
                 equip.CharismaBonus = 2 + (int)(s * 12);             // 2-14
                 equip.WisdomBonus = 1 + (int)(s * 8);                // 1-9
+                equip.DefenceBonus = (int)(s * 2);                   // 0-2
                 if (level >= 30) equip.IntelligenceBonus = (int)(s * 6);  // 0-6
                 if (level >= 60) equip.ConstitutionBonus = (int)(s * 5);  // 0-5
                 break;
@@ -428,12 +431,14 @@ public static class ShopItemGenerator
             case ArmorType.Cloth:
                 equip.IntelligenceBonus = Math.Max(1, (int)(s * 5 * slotScale)) + (int)(s * 5 * slotScale);
                 equip.WisdomBonus = (int)(s * 4 * slotScale);
+                equip.DefenceBonus = (int)(s * 3 * slotScale);       // 0-3 body, scales by slot
                 break;
 
             case ArmorType.Magic:
             case ArmorType.Artifact:
                 equip.IntelligenceBonus = Math.Max(1, (int)(s * 4 * slotScale)) + (int)(s * 4 * slotScale);
                 equip.WisdomBonus = (int)(s * 4 * slotScale);
+                equip.DefenceBonus = (int)(s * 3 * slotScale);       // 0-3 body, scales by slot
                 if (level >= 30) equip.MagicResistance = (int)(s * 10 * slotScale);
                 if (level >= 50) equip.ConstitutionBonus = (int)(s * 4 * slotScale);
                 break;
@@ -462,6 +467,7 @@ public static class ShopItemGenerator
         {
             equip.WisdomBonus = 1 + (int)(s * 6);
             equip.IntelligenceBonus = (int)(s * 4) + (int)(s * 3);
+            equip.DefenceBonus = (int)(s * 2);                       // 0-2
         }
         else if (name.Contains("Power") || name.Contains("Heroes") || name.Contains("Dragon"))
         {
@@ -487,6 +493,7 @@ public static class ShopItemGenerator
             equip.IntelligenceBonus = (int)(s * 5) + (int)(s * 5);
             equip.WisdomBonus = (int)(s * 5);
             equip.MagicResistance = (int)(s * 8);
+            equip.DefenceBonus = (int)(s * 2);                       // 0-2
         }
         else
         {

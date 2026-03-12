@@ -2850,8 +2850,8 @@ public class WorldSimulator
             npc.GainExperience(expGain);
             npc.GainGold(goldGain);
 
-            // 20% chance to find loot if has inventory space
-            if (random.NextDouble() < 0.20 && npc.MarketInventory.Count < npc.MaxMarketInventory)
+            // 35% chance to find loot if has inventory space
+            if (random.NextDouble() < 0.35 && npc.MarketInventory.Count < npc.MaxMarketInventory)
             {
                 var loot = NPCItemGenerator.GenerateDungeonLoot(npc, dungeonLevel);
                 npc.MarketInventory.Add(loot);
@@ -3611,7 +3611,7 @@ public class WorldSimulator
                 npc.MarketInventory.Remove(item);
             }
 
-            if (npc.Gold > 500 && random.NextDouble() < 0.5)
+            if (npc.Gold > 500 && random.NextDouble() < 0.25 && MarketplaceSystem.Instance.Listings.Count >= 5)
             {
                 MarketplaceSystem.Instance.NPCBrowseAndBuy(npc);
             }
@@ -3659,8 +3659,8 @@ public class WorldSimulator
             });
         }
 
-        // 50% chance to browse and potentially buy
-        if (npc.Gold > 500 && random.NextDouble() < 0.5)
+        // 25% chance to browse and potentially buy (reduced from 50% to prevent NPCs emptying the marketplace)
+        if (npc.Gold > 500 && random.NextDouble() < 0.25)
         {
             _ = Task.Run(async () =>
             {
@@ -3668,6 +3668,9 @@ public class WorldSimulator
                 {
                     var listings = await backend.GetActiveAuctionListings(20);
                     if (listings.Count == 0) return;
+
+                    // Don't buy if marketplace is running low — keep items available for players
+                    if (listings.Count < 5) return;
 
                     var affordable = listings
                         .Where(l => l.Price <= npc.Gold * 0.8)

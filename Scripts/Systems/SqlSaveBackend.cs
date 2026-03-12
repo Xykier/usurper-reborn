@@ -691,6 +691,33 @@ namespace UsurperRemake.Systems
             return names;
         }
 
+        /// <summary>
+        /// Check if a display name is already taken by another account.
+        /// Returns true if the name is taken by someone other than excludeUsername.
+        /// </summary>
+        public bool IsDisplayNameTaken(string displayName, string excludeUsername)
+        {
+            try
+            {
+                using var connection = OpenConnection();
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM players
+                    WHERE LOWER(display_name) = LOWER(@displayName)
+                    AND LOWER(username) != LOWER(@excludeUsername)
+                    AND username NOT LIKE 'emergency_%';";
+                cmd.Parameters.AddWithValue("@displayName", displayName);
+                cmd.Parameters.AddWithValue("@excludeUsername", excludeUsername);
+                var count = Convert.ToInt64(cmd.ExecuteScalar());
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Instance.LogError("SQL", $"Failed to check display name: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<bool> WriteAutoSave(string playerName, SaveGameData data)
         {
             // In online mode, autosave just overwrites the main save (no rotation needed)
@@ -1387,7 +1414,7 @@ namespace UsurperRemake.Systems
             }
         }
 
-        public async Task UpdateHeartbeat(string username, string location)
+        public async Task<bool> UpdateHeartbeat(string username, string location)
         {
             try
             {
@@ -1399,11 +1426,18 @@ namespace UsurperRemake.Systems
                 ";
                 cmd.Parameters.AddWithValue("@username", username);
                 cmd.Parameters.AddWithValue("@location", location);
-                await cmd.ExecuteNonQueryAsync();
+                var rowsAffected = await cmd.ExecuteNonQueryAsync();
+                if (rowsAffected == 0)
+                {
+                    DebugLogger.Instance.LogWarning("SQL", $"Heartbeat update affected 0 rows for '{username}' — row may have been deleted by stale cleanup");
+                    return false;
+                }
+                return true;
             }
             catch (Exception ex)
             {
                 DebugLogger.Instance.LogError("SQL", $"Failed to update heartbeat: {ex.Message}");
+                return false;
             }
         }
 

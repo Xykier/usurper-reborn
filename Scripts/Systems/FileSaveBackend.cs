@@ -295,6 +295,12 @@ namespace UsurperRemake.Systems
             return playerNames.OrderBy(n => n).ToList();
         }
 
+        public bool IsDisplayNameTaken(string displayName, string excludeUsername)
+        {
+            // Single-player file saves don't need duplicate display name checks
+            return false;
+        }
+
         public async Task<bool> WriteAutoSave(string playerName, SaveGameData data)
         {
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");

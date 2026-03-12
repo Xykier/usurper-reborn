@@ -169,6 +169,14 @@ namespace UsurperRemake.Systems
             // Assign faction based on class, personality, alignment, and story role
             npc.NPCFaction = DetermineFactionForNPC(template);
 
+            // Give NPCs starting market inventory so the auction house has items from day one
+            // Higher level NPCs get more items; ~50% of NPCs get at least 1 item
+            if (npc.Level >= 5 && random.NextDouble() < 0.5)
+            {
+                int itemCount = npc.Level >= 15 ? random.Next(2, 4) : random.Next(1, 3);
+                npc.MarketInventory = NPCItemGenerator.GenerateStartingInventory(npc, itemCount);
+            }
+
             return npc;
         }
 
@@ -1083,6 +1091,12 @@ namespace UsurperRemake.Systems
 
                 // Assign faction based on class, alignment, and personality
                 npc.NPCFaction = DetermineFactionForNPC(npc);
+
+                // Give immigrants some market inventory
+                if (level >= 5 && random.NextDouble() < 0.5)
+                {
+                    npc.MarketInventory = NPCItemGenerator.GenerateStartingInventory(npc, random.Next(1, 3));
+                }
 
                 return npc;
             }

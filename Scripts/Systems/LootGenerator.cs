@@ -417,6 +417,9 @@ public static class LootGenerator
             ("Longbow", new[] { "Ranger" }, 25, 70, 38),
             ("Composite Bow", new[] { "Ranger" }, 50, 90, 65),
             ("Elven Bow", new[] { "Ranger" }, 75, 100, 100),
+            ("Eagle Eye Bow", new[] { "Ranger" }, 60, 95, 80),
+            ("Sniper's Longbow", new[] { "Ranger" }, 80, 100, 115),
+            ("Windstrike Bow", new[] { "Ranger" }, 90, 100, 130),
 
             // Two-Handed Bows - Ranged weapons
             ("Short Bow", new[] { "All" }, 1, 30, 8),
@@ -701,6 +704,9 @@ public static class LootGenerator
             ("Ring of the Mage", 30, 85, 22),
             ("Signet Ring", 40, 90, 28),
             ("Band of Heroes", 55, 100, 35),
+            ("Ring of the Hunter", 15, 65, 14),
+            ("Marksman's Band", 35, 80, 22),
+            ("Windstrike Ring", 55, 100, 35),
             ("Dragon's Eye Ring", 70, 100, 45),
             ("Archmage's Sigil", 85, 100, 55),
         };
@@ -723,6 +729,8 @@ public static class LootGenerator
             ("Pendant of Might", 25, 75, 20),
             ("Talisman of Luck", 30, 80, 24),
             ("Medallion of Valor", 40, 85, 30),
+            ("Eagle Eye Pendant", 20, 70, 18),
+            ("Ranger's Talisman", 40, 85, 30),
             ("Necklace of Fireballs", 50, 95, 38),
             ("Amulet of the Planes", 65, 100, 45),
             ("Heart of the Dragon", 75, 100, 52),
@@ -1104,6 +1112,9 @@ public static class LootGenerator
             // Apply effects to item stats
             ApplyEffectsToItem(item, effects, isWeapon: true);
 
+            // Apply name-based thematic stat bonuses (e.g., staves get INT, holy weapons get WIS)
+            ApplyWeaponThematicBonuses(item, item.Name, finalPower);
+
             // If cursed, add penalties but increase power
             if (isCursed)
             {
@@ -1184,21 +1195,23 @@ public static class LootGenerator
             int hpBonus = finalPower;
             int manaBonus = Math.Max(1, finalPower * 3 / 4);
 
-            // Holy/Divine themed → Wisdom + Constitution (checked before caster to prevent "Priest's Robes" matching "robe")
+            // Holy/Divine themed → Wisdom + Constitution + Defence
             if (name.Contains("holy") || name.Contains("sacred") || name.Contains("blessed") ||
                      name.Contains("divine") || name.Contains("faith") || name.Contains("priest") ||
                      name.Contains("diadem") || name.Contains("paladin") || name.Contains("celestial"))
             {
                 item.Wisdom += primaryStat;
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 5));
+                item.Defence += Math.Max(1, finalPower / 9);
             }
-            // Caster/Focus themed → Intelligence
+            // Caster/Focus themed → Intelligence + Defence
             else if (name.Contains("focus") || name.Contains("wizard") || name.Contains("archmage") ||
                 name.Contains("arcane") || name.Contains("enchanted") || name.Contains("mystic") ||
                 name.Contains("mage") || name.Contains("silk") || name.Contains("cloth") ||
                 name.Contains("robe") || name.Contains("vestment") || name.Contains("sorcery"))
             {
                 item.LootEffects.Add(((int)SpecialEffect.Intelligence, primaryStat + manaBonus / 3));
+                item.Defence += Math.Max(1, finalPower / 9);
             }
             // Shadow/Stealth themed → Dexterity + Agility
             else if (name.Contains("shadow") || name.Contains("thief") || name.Contains("night ") ||
@@ -1224,12 +1237,13 @@ public static class LootGenerator
                 item.Defence += secondaryStat;
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 10));
             }
-            // Ranger/Scout/Elven themed → Dexterity + Agility
+            // Ranger/Scout/Elven themed → Dexterity + Agility + Defence
             else if (name.Contains("ranger") || name.Contains("scout") || name.Contains("elven") ||
                      name.Contains("forest") || name.Contains("traveler") || name.Contains("leather"))
             {
                 item.Dexterity += primaryStat;
                 item.Agility += secondaryStat;
+                item.Defence += Math.Max(1, finalPower / 9);
             }
             // Vitality/Endurance themed → Constitution
             else if (name.Contains("vitality") || name.Contains("endurance") || name.Contains("resilience") ||
@@ -1251,6 +1265,79 @@ public static class LootGenerator
             {
                 item.Defence += secondaryStat;
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, hpBonus / 10));
+            }
+        }
+
+        /// <summary>
+        /// Applies stat bonuses to weapons based on the final item name (template + effect suffixes).
+        /// Ensures weapons like "Staff of Sorcery" get INT, "Holy Avenger" gets WIS, etc.
+        /// Uses the full built name so effect suffixes like "of Sorcery" are matched.
+        /// </summary>
+        internal static void ApplyWeaponThematicBonuses(Item item, string weaponName, int finalPower)
+        {
+            var name = weaponName.ToLowerInvariant();
+
+            int primaryStat = Math.Max(1, finalPower / 6);
+            int secondaryStat = Math.Max(1, finalPower / 9);
+
+            // Caster/Sorcery themed → Intelligence + Wisdom + Defence
+            // Matches: staves, "of Sorcery" suffix, archmage, magic, mage weapons
+            if (name.Contains("staff") || name.Contains("sorcery") || name.Contains("archmage") ||
+                name.Contains("magic") || name.Contains("mage") || name.Contains("soulstaff") ||
+                name.Contains("cosmos") || name.Contains("transmuter"))
+            {
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, primaryStat));
+                item.Wisdom += secondaryStat;
+                item.Defence += Math.Max(1, finalPower / 12);
+            }
+            // Holy/Divine themed → Wisdom + Constitution + Defence
+            // Matches: holy weapons, paladin swords, blessed, scepter, righteous
+            else if (name.Contains("holy") || name.Contains("sacred") || name.Contains("blessed") ||
+                     name.Contains("divine") || name.Contains("scepter") || name.Contains("righteous") ||
+                     name.Contains("judgment") || name.Contains("avenger") || name.Contains("celestial"))
+            {
+                item.Wisdom += primaryStat;
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 8));
+                item.Defence += Math.Max(1, finalPower / 12);
+            }
+            // Shadow/Assassin themed → Dexterity + Agility
+            else if (name.Contains("shadow") || name.Contains("assassin") || name.Contains("phantom") ||
+                     name.Contains("night") || name.Contains("death") || name.Contains("venom"))
+            {
+                item.Dexterity += primaryStat;
+                item.Agility += secondaryStat;
+            }
+            // Bow/Ranger themed → Dexterity + Agility + Defence
+            else if (name.Contains("bow") || name.Contains("ranger") || name.Contains("hunter") ||
+                     name.Contains("marksman") || name.Contains("archer") || name.Contains("eagle") ||
+                     name.Contains("windstrike") || name.Contains("sniper"))
+            {
+                item.Dexterity += primaryStat;
+                item.Agility += secondaryStat;
+                item.Defence += Math.Max(1, finalPower / 12);
+            }
+            // Warrior/Battle themed → Strength
+            else if (name.Contains("berserker") || name.Contains("titan") || name.Contains("executioner") ||
+                     name.Contains("annihilator") || name.Contains("bloodreaver") || name.Contains("dragonslayer") ||
+                     name.Contains("demon"))
+            {
+                item.Strength += primaryStat;
+            }
+            // Bard/Music themed → Charisma + Dexterity + Defence
+            else if (name.Contains("song") || name.Contains("lute") || name.Contains("lyre") ||
+                     name.Contains("harp") || name.Contains("horn") || name.Contains("flute") ||
+                     name.Contains("drum") || name.Contains("opus") || name.Contains("virtuoso"))
+            {
+                item.Charisma += primaryStat;
+                item.Dexterity += secondaryStat;
+                item.Defence += Math.Max(1, finalPower / 12);
+            }
+            // Alchemist themed → Intelligence + Constitution + Defence
+            else if (name.Contains("alchemist") || name.Contains("elixir") || name.Contains("philosopher"))
+            {
+                item.LootEffects.Add(((int)SpecialEffect.Intelligence, secondaryStat));
+                item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 10));
+                item.Defence += Math.Max(1, finalPower / 12);
             }
         }
 
@@ -1298,6 +1385,7 @@ public static class LootGenerator
                 item.Wisdom += finalPower / 2;
                 item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower / 3));
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
+                item.Defence += Math.Max(1, finalPower / 10);
             }
             else if (lowerName.Contains("strength") || lowerName.Contains("power") || lowerName.Contains("heroes"))
             {
@@ -1329,17 +1417,26 @@ public static class LootGenerator
             {
                 item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower * 2 / 3));
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
+                item.Defence += Math.Max(1, finalPower / 10);
             }
             else if (lowerName.Contains("mage") || lowerName.Contains("archmage") || lowerName.Contains("sorcery") || lowerName.Contains("sigil"))
             {
                 item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower * 2 / 3));
                 item.Wisdom += finalPower / 4;
+                item.Defence += Math.Max(1, finalPower / 10);
             }
             else if (lowerName.Contains("dragon"))
             {
                 item.Strength += finalPower / 4;
                 item.Defence += finalPower / 4;
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower * 2 / 5));
+            }
+            else if (lowerName.Contains("hunter") || lowerName.Contains("marksman") || lowerName.Contains("windstrike") ||
+                     lowerName.Contains("eagle") || lowerName.Contains("ranger") || lowerName.Contains("sniper"))
+            {
+                item.Dexterity += finalPower / 2;
+                item.Agility += finalPower / 3;
+                item.Defence += Math.Max(1, finalPower / 8);
             }
             else if (accessoryType == ObjType.Fingers) // Ring — generic fallback
             {
@@ -1352,6 +1449,7 @@ public static class LootGenerator
                 item.Wisdom += finalPower / 3;
                 item.LootEffects.Add(((int)SpecialEffect.Intelligence, finalPower * 2 / 3));
                 item.LootEffects.Add(((int)SpecialEffect.Constitution, finalPower / 5));
+                item.Defence += Math.Max(1, finalPower / 10);
             }
 
             ApplyEffectsToItem(item, effects, isWeapon: false);

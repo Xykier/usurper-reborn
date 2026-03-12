@@ -899,10 +899,19 @@ namespace UsurperRemake.Systems
                 {
                     try
                     {
-                        await backend.UpdateHeartbeat(username, currentLocation);
+                        bool updated = await backend.UpdateHeartbeat(username, currentLocation);
+                        if (!updated)
+                        {
+                            // Row was deleted by stale cleanup or never inserted — re-register
+                            DebugLogger.Instance.LogWarning("HEARTBEAT", $"Re-registering '{displayName}' — heartbeat row was missing");
+                            await backend.RegisterOnline(username, displayName, currentLocation, DeferredConnectionType);
+                        }
                         cachedOnlinePlayerCount = (await backend.GetOnlinePlayers()).Count;
                     }
-                    catch { /* Silently handle heartbeat failures */ }
+                    catch (Exception ex)
+                    {
+                        DebugLogger.Instance.LogError("HEARTBEAT", $"Heartbeat failed for '{username}': {ex.Message}");
+                    }
                 }
             }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
 

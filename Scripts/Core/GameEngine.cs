@@ -3468,6 +3468,9 @@ public partial class GameEngine
             BankGold = playerData.BankGold,
             BankGuard = playerData.BankGuard,
             BankWage = playerData.BankWage,
+            Loan = playerData.BankLoan,
+            Interest = playerData.BankInterest,
+            BankRobberyAttempts = playerData.BankRobberyAttempts,
 
             // Attributes
             Strength = playerData.Strength,

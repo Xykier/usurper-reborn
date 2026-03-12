@@ -121,6 +121,9 @@ public class Monster
     public bool IsCorroded { get; set; } = false;       // Armor corroded — reduced defence
     public int CorrodedDuration { get; set; } = 0;
 
+    // Per-round status tick tracking — prevents boss multi-attacks from ticking statuses multiple times
+    public bool StatusTickedThisRound { get; set; } = false;
+
     // Ability use tracking to prevent infinite stacking
     public bool HasHardenedArmor { get; set; } = false;
     public bool HasEnraged { get; set; } = false;

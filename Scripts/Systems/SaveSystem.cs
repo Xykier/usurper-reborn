@@ -277,6 +277,14 @@ namespace UsurperRemake.Systems
         }
 
         /// <summary>
+        /// Check if a display name is already taken by another account.
+        /// </summary>
+        public bool IsDisplayNameTaken(string displayName, string excludeUsername)
+        {
+            return backend.IsDisplayNameTaken(displayName, excludeUsername);
+        }
+
+        /// <summary>
         /// Create backup of existing save before overwriting
         /// </summary>
         public void CreateBackup(string playerName)
@@ -355,6 +363,9 @@ namespace UsurperRemake.Systems
                 BankGold = player.BankGold,
                 BankGuard = player.BankGuard,
                 BankWage = player.BankWage,
+                BankLoan = player.Loan,
+                BankInterest = player.Interest,
+                BankRobberyAttempts = player.BankRobberyAttempts,
 
                 // Attributes
                 Strength = player.Strength,
@@ -1612,7 +1623,10 @@ namespace UsurperRemake.Systems
                     RomanceLevel = c.RomanceLevel,
                     PersonalQuestStarted = c.PersonalQuestStarted,
                     PersonalQuestCompleted = c.PersonalQuestCompleted,
+                    PersonalQuestSuccess = c.PersonalQuestSuccess,
                     RecruitedDay = c.RecruitedDay,
+                    HealingPotions = c.HealingPotions,
+                    ManaPotions = c.ManaPotions,
                     // Level and experience
                     Level = c.Level,
                     Experience = c.Experience,
@@ -2066,7 +2080,10 @@ namespace UsurperRemake.Systems
                             RomanceLevel = c.RomanceLevel,
                             PersonalQuestStarted = c.PersonalQuestStarted,
                             PersonalQuestCompleted = c.PersonalQuestCompleted,
+                            PersonalQuestSuccess = c.PersonalQuestSuccess,
                             RecruitedDay = c.RecruitedDay,
+                            HealingPotions = c.HealingPotions,
+                            ManaPotions = c.ManaPotions,
                             // Level and experience
                             Level = c.Level,
                             Experience = c.Experience,

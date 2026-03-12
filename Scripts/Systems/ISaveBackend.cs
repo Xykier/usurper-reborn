@@ -57,6 +57,12 @@ namespace UsurperRemake.Systems
         List<string> GetAllPlayerNames();
 
         /// <summary>
+        /// Check if a display name is already taken by another account.
+        /// Returns true if taken by someone other than excludeUsername.
+        /// </summary>
+        bool IsDisplayNameTaken(string displayName, string excludeUsername);
+
+        /// <summary>
         /// Write an autosave with rotation (keeps N most recent).
         /// </summary>
         Task<bool> WriteAutoSave(string playerName, SaveGameData data);

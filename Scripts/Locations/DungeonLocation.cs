@@ -40,6 +40,9 @@ public class DungeonLocation : BaseLocation
     // This prevents invalid keys and guide navigation from double-ticking poison.
     protected override bool SuppressBasePoisonTick => true;
 
+    // One-time tutorial flag stored in player.HintsShown
+    private const string DUNGEON_TUTORIAL_FLAG = "dungeon_tutorial_v1";
+
     public DungeonLocation() : base(
         GameLocation.Dungeons,
         "The Dungeons",
@@ -209,6 +212,9 @@ public class DungeonLocation : BaseLocation
         // Add royal mercenaries (hired bodyguards for king players)
         AddRoyalMercenariesToParty(player, term);
 
+        // Defensive deduplication after all team restoration methods
+        DeduplicateTeammates();
+
         // Check for dungeon entry fees for overleveled teammates
         // Player can always enter - unaffordable allies simply stay behind
         await CheckAndPayEntryFees(player, term);
@@ -218,6 +224,12 @@ public class DungeonLocation : BaseLocation
 
         // Show contextual hint for new players on their first dungeon entry
         HintSystem.Instance.TryShowHint(HintSystem.HINT_FIRST_DUNGEON, term, player.HintsShown);
+
+        // Show guided tutorial for first-time dungeon visitors on floor 1
+        if (currentDungeonLevel == 1 && !player.HintsShown.Contains(DUNGEON_TUTORIAL_FLAG))
+        {
+            await RunDungeonTutorial(player, term);
+        }
 
         // Mark NPC teammates as engaged so the world sim won't kill them
         foreach (var mate in teammates)
@@ -241,6 +253,211 @@ public class DungeonLocation : BaseLocation
             // Clean up group dungeon state when leader leaves
             CleanupGroupDungeonOnLeaderExit(player);
         }
+    }
+
+    /// <summary>
+    /// Guided dungeon tutorial for new players — one-time, skippable.
+    /// Teaches floor navigation, rooms, combat, potions, events, features, and rest.
+    /// </summary>
+    private async Task RunDungeonTutorial(Character player, TerminalEmulator term)
+    {
+        bool isSR = GameConfig.ScreenReaderMode;
+        bool isBBS = IsBBSSession;
+
+        // ── Ask if they want the tutorial ─────────────────────────────────────
+        term.ClearScreen();
+        if (isSR)
+        {
+            term.WriteLine("=== DUNGEON TUTORIAL ===", "bright_yellow");
+            term.WriteLine("Welcome to the Dungeons!", "white");
+        }
+        else
+        {
+            term.WriteLine("╔══════════════════════════════════════════════════════════╗", "bright_yellow");
+            term.WriteLine("║              WELCOME TO THE DUNGEONS                    ║", "bright_yellow");
+            term.WriteLine("╚══════════════════════════════════════════════════════════╝", "bright_yellow");
+        }
+        term.WriteLine("");
+        term.WriteLine("This looks like your first time venturing underground.", "white");
+        term.WriteLine("Would you like a quick guided tour? It covers everything:", "gray");
+        term.WriteLine("  navigation, combat, potions, events, and more.", "gray");
+        term.WriteLine("");
+        term.WriteLine("Skip it if you already know the ropes.", "darkgray");
+        term.WriteLine("");
+
+        string ans = await term.GetInput(isSR ? "Take the tutorial? (Y/N): " : "[Y] Take the Tutorial   [N] Skip it > ");
+        ans = ans.Trim().ToUpperInvariant();
+
+        // Mark as seen regardless of choice so we never ask again
+        player.HintsShown.Add(DUNGEON_TUTORIAL_FLAG);
+
+        if (ans != "Y")
+        {
+            term.WriteLine("Alright — good luck down there!", "gray");
+            await Task.Delay(1200);
+            return;
+        }
+
+        // Helper to show a tutorial page and wait for the player to continue
+        async Task Page(string title, string titleColor, List<(string text, string color)> lines)
+        {
+            term.ClearScreen();
+            if (isSR)
+            {
+                term.WriteLine($"=== {title.ToUpper()} ===", titleColor);
+            }
+            else
+            {
+                string bar = new string('─', Math.Min(title.Length + 4, 60));
+                term.WriteLine($"┌─ {title} ─" + new string('─', Math.Max(0, 56 - title.Length)) + "┐", titleColor);
+            }
+            term.WriteLine("");
+            foreach (var (text, color) in lines)
+                term.WriteLine(text, color);
+            term.WriteLine("");
+            await term.PressAnyKey();
+        }
+
+        // ── Screen 1: The Floor Map ────────────────────────────────────────────
+        await Page("1 of 8 — The Floor Map", "cyan", new()
+        {
+            ("The dungeon is made up of connected ROOMS spread across a floor.", "white"),
+            ("Press [M] from any room to see the map. Read it like this:", "gray"),
+            ("", "white"),
+            (isBBS ? "  @  You are here" : "  @  You are here (bright yellow)", "bright_yellow"),
+            (isBBS ? "  ?  Unexplored room (you haven't been there yet)" : "  ?  Unexplored — you haven't been there yet", "darkgray"),
+            (isBBS ? "  #  Cleared room (no threats left)" : "  #  Cleared — no threats remain", "green"),
+            (isBBS ? "  X  Room with monsters" : "  █  Room with monsters (danger!)", "red"),
+            (isBBS ? "  >  Stairs down to next floor" : "  >  Stairs down to the next floor", "blue"),
+            (isBBS ? "  B  Boss room" : "  B  Boss room — powerful enemy within", "bright_red"),
+            ("", "white"),
+            ("To move between rooms, use the direction keys:", "gray"),
+            ("  N = North   S = South   E = East   W = West", "white"),
+            ("  (or enter a room number shown on the map)", "darkgray"),
+        });
+
+        // ── Screen 2: Entering a Room ──────────────────────────────────────────
+        await Page("2 of 8 — Entering Rooms", "cyan", new()
+        {
+            ("When you enter a room, you'll see what it contains:", "white"),
+            ("", "white"),
+            ("  MONSTERS  — Enemies waiting to fight you", "red"),
+            ("  TREASURE  — Loot to collect after the monsters are dead", "bright_yellow"),
+            ("  EVENT     — A special encounter or mystery to investigate", "magenta"),
+            ("  FEATURE   — An object to examine: shrine, lever, puzzle", "cyan"),
+            ("  STAIRS    — A passage down to the next floor", "blue"),
+            ("  SAFE ROOM — No enemies here; great for resting", "green"),
+            ("", "white"),
+            ("The room menu shows the available actions. You can only loot treasure", "gray"),
+            ("or descend the stairs AFTER all monsters in the room are dead.", "gray"),
+        });
+
+        // ── Screen 3: Combat ──────────────────────────────────────────────────
+        await Page("3 of 8 — Combat", "cyan", new()
+        {
+            ("Press [F] to Fight the monsters in a room. In combat:", "white"),
+            ("", "white"),
+            ("  [A] Attack       — Standard hit. Reliable.", "bright_green"),
+            ("  [D] Defend       — Skip attacking; reduce damage you take this round.", "bright_green"),
+            ("  [P] Power Attack — Hit harder, but you take more damage too.", "bright_green"),
+            ("  [S] Precise Strike — Slower but lands more reliably on tough enemies.", "bright_green"),
+            ("  [T] Taunt        — Draw enemy attention; protects fragile allies.", "bright_green"),
+            ("  [E] Disarm       — Try to knock the enemy's weapon free.", "bright_green"),
+            ("  [C] Cast Spell   — Use magic (spellcasters only).", "bright_green"),
+            ("  [1-9] Abilities  — Your class special moves.", "bright_green"),
+            ("  [R] Flee         — Attempt to escape. May cost HP.", "yellow"),
+            ("", "white"),
+            ("Tip: check /health often. Dead is bad. Retreat is smart.", "darkgray"),
+        });
+
+        // ── Screen 4: Potions & Healing ───────────────────────────────────────
+        await Page("4 of 8 — Potions & Healing", "cyan", new()
+        {
+            ("Healing potions restore HP. Mana potions restore MP.", "white"),
+            ("", "white"),
+            ("In combat, press [U] to use a potion during your turn.", "bright_green"),
+            ("Outside combat, press [P] from the room menu anytime.", "bright_green"),
+            ("", "white"),
+            ("Where to get potions:", "gray"),
+            ("  • The Healer in town sells healing potions (expensive but reliable).", "white"),
+            ("  • Treasure chests in dungeon rooms sometimes contain potions.", "white"),
+            ("  • Monster drops can include potions.", "white"),
+            ("  • If you have Herbs, press [J] to use one (buffs vary by herb type).", "white"),
+            ("", "white"),
+            ("You carry potions automatically. Check your count with [=] (Status).", "darkgray"),
+        });
+
+        // ── Screen 5: Healing Teammates ───────────────────────────────────────
+        await Page("5 of 8 — Healing Teammates", "cyan", new()
+        {
+            ("If you have companions or NPC allies in your party, they fight with you.", "white"),
+            ("You can heal them mid-combat with:", "gray"),
+            ("", "white"),
+            ("  [H] Aid Ally — Give a potion or herbs to a wounded teammate.", "bright_green"),
+            ("", "white"),
+            ("A well-timed heal can save a companion from death.", "gray"),
+            ("Companions who die permanently are GONE — permadeath is real.", "red"),
+            ("", "white"),
+            ("Recruit companions at the Inn (Aldric) and other town locations.", "darkgray"),
+            ("They level up with you and gain their own equipment.", "darkgray"),
+        });
+
+        // ── Screen 6: Events & Investigate ───────────────────────────────────
+        await Page("6 of 8 — Events & Investigate", "cyan", new()
+        {
+            ("Some rooms have an EVENT marked on them.", "white"),
+            ("Press [V] to Investigate the event.", "bright_green"),
+            ("", "white"),
+            ("Events can be:", "gray"),
+            ("  • A traveller or wandering merchant", "white"),
+            ("  • A wounded survivor who needs help", "white"),
+            ("  • A mysterious altar or arcane node", "white"),
+            ("  • A hidden cache of treasure", "white"),
+            ("  • A trap disguised as an opportunity", "white"),
+            ("", "white"),
+            ("Events often present choices with consequences.", "gray"),
+            ("Your alignment and stats influence outcomes.", "darkgray"),
+        });
+
+        // ── Screen 7: Examine Features ────────────────────────────────────────
+        await Page("7 of 8 — Examine Features", "cyan", new()
+        {
+            ("Some rooms contain FEATURES — permanent objects to interact with.", "white"),
+            ("Press [X] to Examine them.", "bright_green"),
+            ("", "white"),
+            ("Common features include:", "gray"),
+            ("  • Shrines — Pray for a blessing (or risk a curse).", "white"),
+            ("  • Levers — Pull them in the right sequence to unlock secrets.", "white"),
+            ("  • Puzzles — Riddles and challenges for XP and loot rewards.", "white"),
+            ("  • Ancient Inscriptions — Lore about the Old Gods.", "white"),
+            ("  • Sealed Doors — Require specific items or quests to open.", "white"),
+            ("", "white"),
+            ("Features are one-time interactions per floor visit.", "darkgray"),
+        });
+
+        // ── Screen 8: Rest, Return & Tips ─────────────────────────────────────
+        await Page("8 of 8 — Rest, Return & Tips", "cyan", new()
+        {
+            ("When you're tired or wounded:", "white"),
+            ("", "white"),
+            ("  [R] Camp — Rest in a cleared room. Restores HP/MP. Once per floor.", "bright_green"),
+            ("  [Q] Quit — Leave the dungeon and return to the surface.", "bright_green"),
+            ("  [B] Back — Return to the floor map from a room.", "bright_green"),
+            ("  [M] Map  — View the full floor map at any time.", "bright_green"),
+            ("", "white"),
+            ("A few important tips:", "gray"),
+            ("  • Floors within ±10 levels of yours are accessible.", "white"),
+            ("  • Floor 25, 40, 55, 70, 85, 95, 100 have Old God bosses.", "white"),
+            ("    You cannot leave these floors until you fight them.", "white"),
+            ("  • Floors 15, 30, 45, 60, 80, 99 hold ancient Seals to collect.", "white"),
+            ("  • Use /health anytime to see your full status and active buffs.", "white"),
+            ("  • Use /gear to inspect your equipped items and their bonuses.", "white"),
+            ("", "white"),
+            ("That's everything. Now go find glory — or a gruesome death!", "bright_yellow"),
+        });
+
+        term.WriteLine("Tutorial complete. The dungeon awaits!", "bright_green");
+        await Task.Delay(1500);
     }
 
     /// <summary>
@@ -647,10 +864,10 @@ public class DungeonLocation : BaseLocation
         // Remove any existing companion entries (in case of re-entry)
         teammates.RemoveAll(t => t.IsCompanion);
 
-        // Add companions to teammates list
+        // Add companions to teammates list (with defensive CompanionId dedup)
         foreach (var companion in companionCharacters)
         {
-            if (companion.IsAlive)
+            if (companion.IsAlive && !teammates.Any(t => t.CompanionId == companion.CompanionId))
             {
                 teammates.Add(companion);
             }
@@ -882,6 +1099,41 @@ public class DungeonLocation : BaseLocation
             .Select(n => n.ID)
             .ToList();
         GameEngine.Instance?.SetDungeonPartyNPCs(npcIds);
+    }
+
+    /// <summary>
+    /// Remove duplicate entries from the teammates list.
+    /// Uses NPC ID for NPCs, CompanionId for companions, and DisplayName for others.
+    /// </summary>
+    private void DeduplicateTeammates()
+    {
+        var seen = new HashSet<string>();
+        int removed = 0;
+
+        for (int i = teammates.Count - 1; i >= 0; i--)
+        {
+            var t = teammates[i];
+            string key;
+
+            if (t is NPC npc)
+                key = $"npc:{npc.ID}";
+            else if (t.IsCompanion && t.CompanionId.HasValue)
+                key = $"comp:{t.CompanionId.Value}";
+            else
+                key = $"name:{t.DisplayName}";
+
+            if (!seen.Add(key))
+            {
+                teammates.RemoveAt(i);
+                removed++;
+            }
+        }
+
+        if (removed > 0)
+        {
+            DebugLogger.Instance.Log(DebugLogger.LogLevel.Warning, "DUNGEON",
+                $"Removed {removed} duplicate teammate(s) from party list");
+        }
     }
 
     /// <summary>
@@ -8545,6 +8797,9 @@ public class DungeonLocation : BaseLocation
     {
         var player = GetCurrentPlayer();
 
+        // Defensive deduplication — remove any duplicate entries that slipped in
+        DeduplicateTeammates();
+
         terminal.ClearScreen();
         WriteBoxHeader(Loc.Get("dungeon.party_management"), "bright_cyan", 51);
         terminal.WriteLine("");
@@ -8894,7 +9149,11 @@ public class DungeonLocation : BaseLocation
                 terminal.WriteLine(Loc.Get("dungeon.paid_fee", fee));
             }
 
-            teammates.Add(npc);
+            // Defensive duplicate check by NPC ID before adding
+            if (!teammates.Any(t => t is NPC existingNpc && existingNpc.ID == npc.ID))
+            {
+                teammates.Add(npc);
+            }
 
             // Move NPC to dungeon
             npc.UpdateLocation("Dungeon");

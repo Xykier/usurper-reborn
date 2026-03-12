@@ -4137,6 +4137,9 @@ toResurrect.IsDead = false;
         var selectedPartner = partners[partnerIdx - 1].npc;
         await ManageCharacterEquipment(selectedPartner);
 
+        // Sync equipment changes to canonical NPC in ActiveNPCs (handles orphaned references)
+        CombatEngine.SyncNPCTeammateToActiveNPCs(selectedPartner);
+
         // Auto-save after equipment changes to persist NPC equipment state
         await SaveSystem.Instance.AutoSave(currentPlayer);
     }

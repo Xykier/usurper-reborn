@@ -54,7 +54,7 @@ namespace UsurperRemake.Systems
         /// <summary>
         /// Update heartbeat and current location (called every 30s).
         /// </summary>
-        Task UpdateHeartbeat(string username, string location);
+        Task<bool> UpdateHeartbeat(string username, string location);
 
         /// <summary>
         /// Update display name in online_players (called when character loads with custom Name2).

@@ -1475,6 +1475,8 @@ namespace UsurperRemake.Systems
                     RecruitedDay = c.RecruitedDay,
                     DeathType = c.DeathType,
                     History = c.History.ToList(),
+                    HealingPotions = c.HealingPotions,
+                    ManaPotions = c.ManaPotions,
                     Level = c.Level,
                     Experience = c.Experience,
                     BaseStatsHP = c.BaseStats.HP,
@@ -1575,6 +1577,8 @@ namespace UsurperRemake.Systems
                     companion.RecruitedDay = save.RecruitedDay;
                     companion.DeathType = save.DeathType;
                     companion.History = save.History?.ToList() ?? new List<CompanionEvent>();
+                    companion.HealingPotions = save.HealingPotions;
+                    companion.ManaPotions = save.ManaPotions;
 
                     // Restore level and experience
                     companion.Level = save.Level > 0 ? save.Level : Math.Max(1, companion.RecruitLevel + 5);
@@ -1996,20 +2000,33 @@ namespace UsurperRemake.Systems
         {
             int level = companion.Level;
 
-            // Pick a weapon based on combat role
-            var weaponHandedness = companion.CombatRole switch
+            // Pick a weapon type based on combat role/class
+            var preferredWeaponType = companion.CombatRole switch
             {
-                CombatRole.Tank => WeaponHandedness.OneHanded, // tank uses shield
-                CombatRole.Damage => WeaponHandedness.OneHanded, // dual-wield or dagger
-                _ => WeaponHandedness.OneHanded
+                CombatRole.Tank => WeaponType.Sword,        // Aldric (Warrior) - swords
+                CombatRole.Damage => WeaponType.Dagger,     // Vex (Assassin) - daggers for backstab
+                CombatRole.Healer => WeaponType.Mace,       // Mira (Cleric) - maces
+                CombatRole.Hybrid => WeaponType.Sword,      // Lyris (Paladin) - swords
+                CombatRole.Bard => WeaponType.Instrument,   // Melodia (Bard) - instruments for songs
+                _ => WeaponType.Sword
             };
 
-            var weapons = EquipmentDatabase.GetShopWeapons(weaponHandedness);
+            // Get weapons of the correct type
+            var weapons = EquipmentDatabase.GetShopWeaponsByType(preferredWeaponType);
             var bestWeapon = weapons
-                .Where(w => w.MinLevel <= level)
-                .OrderByDescending(w => w.MinLevel)
-                .ThenByDescending(w => w.WeaponPower)
+                .Where(w => w.Value <= level * 1000 + 500) // level-appropriate by value
+                .OrderByDescending(w => w.WeaponPower)
                 .FirstOrDefault();
+
+            // Fallback to any one-handed weapon if preferred type not available
+            if (bestWeapon == null)
+            {
+                var allWeapons = EquipmentDatabase.GetShopWeapons(WeaponHandedness.OneHanded);
+                bestWeapon = allWeapons
+                    .Where(w => w.Value <= level * 1000 + 500)
+                    .OrderByDescending(w => w.WeaponPower)
+                    .FirstOrDefault();
+            }
 
             if (bestWeapon != null)
             {
@@ -2466,6 +2483,8 @@ namespace UsurperRemake.Systems
         public int RecruitedDay { get; set; }
         public DeathType? DeathType { get; set; }
         public List<CompanionEvent> History { get; set; } = new();
+        public int HealingPotions { get; set; }
+        public int ManaPotions { get; set; }
 
         // Level and experience
         public int Level { get; set; }

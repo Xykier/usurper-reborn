@@ -142,15 +142,13 @@ public partial class MagicShopLocation : BaseLocation
         WriteSRMenuOption("E", Loc.Get("magic_shop.enchant"));
         WriteSRMenuOption("W", Loc.Get("magic_shop.remove_enchant"));
         WriteSRMenuOption("C", Loc.Get("magic_shop.curse_removal"));
-        WriteSRMenuOption("F", Loc.Get("magic_shop.forge"));
         terminal.WriteLine("");
 
-        // Potions and Scrolls
+        // Potions
         terminal.SetColor("cyan");
         terminal.WriteLine(Loc.Get("magic_shop.potions"));
         WriteSRMenuOption("H", Loc.Get("magic_shop.healing_potions"));
         WriteSRMenuOption("M", Loc.Get("magic_shop.mana_potions"));
-        WriteSRMenuOption("D", Loc.Get("magic_shop.reset_scroll"));
         terminal.WriteLine("");
 
         // Arcane Arts
@@ -198,12 +196,12 @@ public partial class MagicShopLocation : BaseLocation
         // Potions & Scrolls
         terminal.SetColor("cyan");
         terminal.WriteLine($" {Loc.Get("magic_shop.bbs_potions_scrolls")}");
-        ShowBBSMenuRow(("H", "bright_yellow", Loc.Get("magic_shop.bbs_healing_pots")), ("M", "bright_yellow", Loc.Get("magic_shop.bbs_mana_pots")), ("D", "bright_yellow", Loc.Get("magic_shop.bbs_dungeon_reset")));
+        ShowBBSMenuRow(("H", "bright_yellow", Loc.Get("magic_shop.bbs_healing_pots")), ("M", "bright_yellow", Loc.Get("magic_shop.bbs_mana_pots")));
 
         // Enchanting & Arcane
         terminal.SetColor("cyan");
         terminal.WriteLine($" {Loc.Get("magic_shop.bbs_enchanting_arcane")}");
-        ShowBBSMenuRow(("E", "bright_yellow", Loc.Get("magic_shop.bbs_enchant")), ("W", "bright_yellow", Loc.Get("magic_shop.bbs_remove_ench")), ("C", "bright_yellow", Loc.Get("magic_shop.bbs_curse_removal")), ("F", "bright_yellow", Loc.Get("magic_shop.bbs_forge")));
+        ShowBBSMenuRow(("E", "bright_yellow", Loc.Get("magic_shop.bbs_enchant")), ("W", "bright_yellow", Loc.Get("magic_shop.bbs_remove_ench")), ("C", "bright_yellow", Loc.Get("magic_shop.bbs_curse_removal")));
         ShowBBSMenuRow(("V", "bright_yellow", Loc.Get("magic_shop.bbs_love_spells")), ("K", "bright_yellow", Loc.Get("magic_shop.bbs_dark_arts")), ("Y", "bright_yellow", Loc.Get("magic_shop.bbs_study")), ("G", "bright_yellow", Loc.Get("magic_shop.bbs_scry")));
 
         // Talk & Return
@@ -643,34 +641,106 @@ public partial class MagicShopLocation : BaseLocation
         DisplayMessage(Loc.Get("magic_shop.curse_intro_3"), "cyan");
         DisplayMessage("");
 
-        // Find cursed items in inventory
+        // Find cursed items in player inventory
         var cursedItems = player.Inventory.Where(i => i.IsCursed).ToList();
 
-        if (cursedItems.Count == 0)
+        // Find cursed equipment on companions and NPC teammates
+        var cursedTeamGear = new List<(string ownerName, EquipmentSlot slot, Equipment equip)>();
+
+        // Check active companions
+        if (CompanionSystem.Instance != null)
+        {
+            foreach (var companion in CompanionSystem.Instance.GetActiveCompanions())
+            {
+                foreach (var kvp in companion.EquippedItems)
+                {
+                    var equip = EquipmentDatabase.GetById(kvp.Value);
+                    if (equip != null && equip.IsCursed)
+                        cursedTeamGear.Add((companion.Name, kvp.Key, equip));
+                }
+            }
+        }
+
+        // Check NPC teammates (recruited NPCs in player's dungeon party)
+        if (NPCSpawnSystem.Instance != null)
+        {
+            foreach (var npc in NPCSpawnSystem.Instance.ActiveNPCs)
+            {
+                if (!npc.IsDead && !string.IsNullOrEmpty(npc.Team) &&
+                    !string.IsNullOrEmpty(currentPlayer.Team) && npc.Team == currentPlayer.Team)
+                {
+                    foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
+                    {
+                        if (slot == EquipmentSlot.None) continue;
+                        var equip = npc.GetEquipment(slot);
+                        if (equip != null && equip.IsCursed)
+                            cursedTeamGear.Add((npc.DisplayName, slot, equip));
+                    }
+                }
+            }
+        }
+
+        if (cursedItems.Count == 0 && cursedTeamGear.Count == 0)
         {
             DisplayMessage(Loc.Get("magic_shop.no_cursed_items"), "gray");
             DisplayMessage(Loc.Get("magic_shop.curse_fortunate"), "cyan");
             return;
         }
 
-        DisplayMessage(Loc.Get("magic_shop.cursed_items_list"), "darkred");
-        for (int i = 0; i < cursedItems.Count; i++)
-        {
-            var item = cursedItems[i];
-            long removalCost = CalculateCurseRemovalCost(item, player);
-            DisplayMessage(Loc.Get("magic_shop.cursed_item_entry", $"{i + 1}", item.Name, $"{removalCost:N0}"), "red");
+        int totalEntries = cursedItems.Count + cursedTeamGear.Count;
 
-            // Show the curse's nature
-            DisplayCurseDetails(item);
+        // List player's cursed items
+        if (cursedItems.Count > 0)
+        {
+            DisplayMessage(Loc.Get("magic_shop.cursed_items_list"), "darkred");
+            for (int i = 0; i < cursedItems.Count; i++)
+            {
+                var item = cursedItems[i];
+                long removalCost = CalculateCurseRemovalCost(item, player);
+                DisplayMessage(Loc.Get("magic_shop.cursed_item_entry", $"{i + 1}", item.Name, $"{removalCost:N0}"), "red");
+                DisplayCurseDetails(item);
+            }
+        }
+
+        // List team members' cursed equipment
+        if (cursedTeamGear.Count > 0)
+        {
+            DisplayMessage("");
+            DisplayMessage("Cursed gear found on your team members:", "darkred");
+            for (int i = 0; i < cursedTeamGear.Count; i++)
+            {
+                var (ownerName, slot, equip) = cursedTeamGear[i];
+                long removalCost = CalculateEquipmentCurseRemovalCost(equip);
+                int displayNum = cursedItems.Count + i + 1;
+                DisplayMessage($"  {displayNum}. {equip.Name} ({ownerName}'s {slot.GetDisplayName()}) — {removalCost:N0} gold", "red");
+                DisplayEquipmentCurseDetails(equip);
+            }
         }
 
         DisplayMessage("");
         var input = await terminal.GetInput(Loc.Get("magic_shop.uncurse_prompt"));
 
-        if (!int.TryParse(input, out int itemIndex) || itemIndex <= 0 || itemIndex > cursedItems.Count)
+        if (!int.TryParse(input, out int itemIndex) || itemIndex <= 0 || itemIndex > totalEntries)
             return;
 
-        var targetItem = cursedItems[itemIndex - 1];
+        // Determine if this is a player item or team gear
+        if (itemIndex <= cursedItems.Count)
+        {
+            // Player item — existing logic
+            var targetItem = cursedItems[itemIndex - 1];
+            await RemoveCurseFromPlayerItem(player, targetItem);
+        }
+        else
+        {
+            // Team member equipment
+            int teamIdx = itemIndex - cursedItems.Count - 1;
+            var (ownerName, slot, targetEquip) = cursedTeamGear[teamIdx];
+            await RemoveCurseFromTeamEquipment(player, ownerName, slot, targetEquip);
+        }
+    }
+
+    private async Task RemoveCurseFromPlayerItem(Character player, Item targetItem)
+    {
         long cost = CalculateCurseRemovalCost(targetItem, player);
         var (curseKingTax, curseCityTax, curseTotalWithTax) = CityControlSystem.CalculateTaxedPrice(cost);
 
@@ -765,6 +835,104 @@ public partial class MagicShopLocation : BaseLocation
                 DisplayMessage("'Perhaps it was not cursed, but merely... homesick.'", "magenta");
             }
         }
+    }
+
+    private async Task RemoveCurseFromTeamEquipment(Character player, string ownerName, EquipmentSlot slot, Equipment targetEquip)
+    {
+        long cost = CalculateEquipmentCurseRemovalCost(targetEquip);
+        var (curseKingTax, curseCityTax, curseTotalWithTax) = CityControlSystem.CalculateTaxedPrice(cost);
+
+        if (player.Gold < curseTotalWithTax)
+        {
+            DisplayMessage("");
+            DisplayMessage(Loc.Get("magic_shop.curse_no_gold"), "cyan");
+            DisplayMessage(Loc.Get("magic_shop.curse_remains"), "red");
+            return;
+        }
+
+        DisplayMessage("");
+        CityControlSystem.Instance.DisplayTaxBreakdown(terminal, Loc.Get("magic_shop.curse_removal"), cost);
+        var confirm = await terminal.GetInput($"Remove curse from {ownerName}'s {targetEquip.Name} for {curseTotalWithTax:N0} gold? (Y/N) ");
+
+        if (confirm.ToUpper() == "Y")
+        {
+            player.Gold -= curseTotalWithTax;
+            CityControlSystem.Instance.ProcessSaleTax(cost);
+
+            // Dramatic curse removal scene
+            DisplayMessage("");
+            DisplayMessage($"{_ownerName} places {ownerName}'s {targetEquip.Name} on the altar...", "gray");
+            DisplayMessage(Loc.Get("magic_shop.curse_scene_2"), "gray");
+            await Task.Delay(500);
+            DisplayMessage(Loc.Get("magic_shop.curse_scene_3"), "magenta");
+            await Task.Delay(500);
+            DisplayMessage(Loc.Get("magic_shop.curse_scene_4"), "white");
+            await Task.Delay(300);
+            DisplayMessage(Loc.Get("magic_shop.curse_scene_5"), "dark_yellow");
+            DisplayMessage("");
+
+            // Remove the curse from equipment
+            targetEquip.IsCursed = false;
+
+            // Reverse curse stat penalties (adapted for Equipment properties)
+            int penalty = Math.Max(5, Math.Max(targetEquip.WeaponPower, targetEquip.ArmorClass) / 10);
+            targetEquip.StrengthBonus += penalty / 2;
+            targetEquip.DexterityBonus += penalty / 3;
+            targetEquip.WisdomBonus += penalty / 3;
+            targetEquip.MaxHPBonus += penalty * 2;
+
+            // Purification penalty: 20% power loss
+            const float purificationPenalty = 0.80f;
+
+            if (targetEquip.WeaponPower > 0)
+                targetEquip.WeaponPower = (int)(targetEquip.WeaponPower / 1.25f * purificationPenalty);
+            if (targetEquip.ArmorClass > 0)
+                targetEquip.ArmorClass = (int)(targetEquip.ArmorClass / 1.25f * purificationPenalty);
+            if (targetEquip.ShieldBonus > 0)
+                targetEquip.ShieldBonus = (int)(targetEquip.ShieldBonus / 1.25f * purificationPenalty);
+
+            // Value partially restored
+            targetEquip.Value = (long)(targetEquip.Value * 1.6);
+
+            // Clean up name
+            if (targetEquip.Name.StartsWith("Cursed "))
+                targetEquip.Name = "Purified " + targetEquip.Name.Substring(7);
+
+            // Fix any negative magic resistance
+            if (targetEquip.MagicResistance < 0)
+                targetEquip.MagicResistance = Math.Abs(targetEquip.MagicResistance) / 2;
+
+            DisplayMessage($"The curse on {ownerName}'s {targetEquip.Name} has been lifted!", "bright_green");
+            DisplayMessage(Loc.Get("magic_shop.curse_aftermath_1"), "cyan");
+            DisplayMessage(Loc.Get("magic_shop.curse_aftermath_2"), "cyan");
+            DisplayMessage($"{ownerName} looks visibly relieved.", "cyan");
+
+            player.Statistics?.RecordGoldSpent(curseTotalWithTax);
+            player.Statistics?.RecordMagicShopPurchase(curseTotalWithTax);
+        }
+    }
+
+    private long CalculateEquipmentCurseRemovalCost(Equipment equip)
+    {
+        long baseCost = equip.Value * 2;
+        int cursePower = 0;
+        if (equip.StrengthBonus < 0) cursePower += Math.Abs(equip.StrengthBonus) * 100;
+        if (equip.DefenceBonus < 0) cursePower += Math.Abs(equip.DefenceBonus) * 100;
+        if (equip.DexterityBonus < 0) cursePower += Math.Abs(equip.DexterityBonus) * 100;
+        if (equip.WisdomBonus < 0) cursePower += Math.Abs(equip.WisdomBonus) * 100;
+        baseCost += cursePower;
+        return Math.Max(500, baseCost);
+    }
+
+    private void DisplayEquipmentCurseDetails(Equipment equip)
+    {
+        var negatives = new List<string>();
+        if (equip.StrengthBonus < 0) negatives.Add($"Str{equip.StrengthBonus}");
+        if (equip.DefenceBonus < 0) negatives.Add($"Def{equip.DefenceBonus}");
+        if (equip.DexterityBonus < 0) negatives.Add($"Dex{equip.DexterityBonus}");
+        if (equip.WisdomBonus < 0) negatives.Add($"Wis{equip.WisdomBonus}");
+        if (negatives.Count > 0)
+            DisplayMessage($"     Curse effect: {string.Join(", ", negatives)}", "darkred");
     }
 
     private long CalculateCurseRemovalCost(Item item, Character player)

@@ -278,6 +278,19 @@ public static class EquipmentDatabase
     }
 
     /// <summary>
+    /// Get shop-generated weapons by weapon type (for companion equipment, etc.)
+    /// </summary>
+    public static List<Equipment> GetShopWeaponsByType(WeaponType weaponType)
+    {
+        EnsureInitialized();
+        return _allEquipment.Values
+            .Where(e => e.WeaponType == weaponType && IsShopGenerated(e.Id))
+            .OrderBy(e => e.MinLevel)
+            .ThenBy(e => e.Value)
+            .ToList();
+    }
+
+    /// <summary>
     /// Get shop-generated armor by slot (for armor shop display)
     /// </summary>
     public static List<Equipment> GetShopArmor(EquipmentSlot slot)
@@ -1050,10 +1063,10 @@ public static class EquipmentDatabase
         AddEquipment(Equipment.CreateArmor(id++, "Cloth Mask", EquipmentSlot.Face, ArmorType.Cloth, 1, 20));
         AddEquipment(Equipment.CreateArmor(id++, "Leather Mask", EquipmentSlot.Face, ArmorType.Leather, 2, 60));
         AddEquipment(Equipment.CreateArmor(id++, "Thief's Mask", EquipmentSlot.Face, ArmorType.Leather, 3, 1000, EquipmentRarity.Rare).WithDexterity(3).WithCritChance(3));
-        AddEquipment(Equipment.CreateArmor(id++, "Mage's Cowl", EquipmentSlot.Face, ArmorType.Cloth, 4, 3000, EquipmentRarity.Rare).WithMaxMana(25).WithIntelligence(3));
+        AddEquipment(Equipment.CreateArmor(id++, "Mage's Cowl", EquipmentSlot.Face, ArmorType.Cloth, 4, 3000, EquipmentRarity.Rare).WithMaxMana(25).WithIntelligence(3).WithDefence(1));
         AddEquipment(Equipment.CreateArmor(id++, "Shadow Mask", EquipmentSlot.Face, ArmorType.Magic, 6, 15000, EquipmentRarity.Epic).WithDexterity(5).WithCritChance(8).RequiresEvilAlignment());
         AddEquipment(Equipment.CreateArmor(id++, "Assassin's Veil", EquipmentSlot.Face, ArmorType.Magic, 8, 35000, EquipmentRarity.Legendary).WithDexterity(8).WithCritChance(12).WithCritDamage(20));
-        AddEquipment(Equipment.CreateArmor(id++, "Archmage Cowl", EquipmentSlot.Face, ArmorType.Magic, 10, 60000, EquipmentRarity.Legendary).WithMaxMana(80).WithIntelligence(8).WithWisdom(6));
+        AddEquipment(Equipment.CreateArmor(id++, "Archmage Cowl", EquipmentSlot.Face, ArmorType.Magic, 10, 60000, EquipmentRarity.Legendary).WithMaxMana(80).WithIntelligence(8).WithWisdom(6).WithDefence(2));
         AddEquipment(Equipment.CreateArmor(id++, "Nightstalker Mask", EquipmentSlot.Face, ArmorType.Magic, 12, 100000, EquipmentRarity.Legendary).WithDexterity(12).WithCritChance(15).WithCritDamage(30).RequiresEvilAlignment());
 
         // ===========================================
@@ -1075,7 +1088,7 @@ public static class EquipmentDatabase
         // ===========================================
         // ARTIFACT (Ultimate face armor)
         // ===========================================
-        AddEquipment(Equipment.CreateArmor(id++, "Mask of the Ancients", EquipmentSlot.Face, ArmorType.Artifact, 22, 200000, EquipmentRarity.Artifact).WithIntelligence(10).WithWisdom(10).WithMaxMana(80).AsUnique());
+        AddEquipment(Equipment.CreateArmor(id++, "Mask of the Ancients", EquipmentSlot.Face, ArmorType.Artifact, 22, 200000, EquipmentRarity.Artifact).WithIntelligence(10).WithWisdom(10).WithMaxMana(80).WithDefence(3).AsUnique());
         AddEquipment(Equipment.CreateArmor(id++, "Titan's Visage", EquipmentSlot.Face, ArmorType.Artifact, 24, 280000, EquipmentRarity.Artifact).WithStrength(14).WithConstitution(8).WithMaxHP(80));
         AddEquipment(Equipment.CreateArmor(id++, "Visage of Judgment", EquipmentSlot.Face, ArmorType.Artifact, 26, 380000, EquipmentRarity.Artifact).WithStrength(10).WithWisdom(12).WithMagicResist(25).RequiresGoodAlignment().AsUnique());
         AddEquipment(Equipment.CreateArmor(id++, "Mask of Oblivion", EquipmentSlot.Face, ArmorType.Artifact, 26, 400000, EquipmentRarity.Artifact).WithStrength(14).WithLifeSteal(10).WithCritDamage(40).RequiresEvilAlignment().AsUnique());
@@ -1102,10 +1115,10 @@ public static class EquipmentDatabase
         // ===========================================
         // MAGE CLOAKS
         // ===========================================
-        AddEquipment(Equipment.CreateArmor(id++, "Mage's Robe", EquipmentSlot.Cloak, ArmorType.Cloth, 4, 1500, EquipmentRarity.Rare).WithMaxMana(30).WithIntelligence(3));
-        AddEquipment(Equipment.CreateArmor(id++, "Arcane Cloak", EquipmentSlot.Cloak, ArmorType.Magic, 7, 8000, EquipmentRarity.Epic).WithMaxMana(60).WithIntelligence(5));
-        AddEquipment(Equipment.CreateArmor(id++, "Archmage Robes", EquipmentSlot.Cloak, ArmorType.Magic, 10, 50000, EquipmentRarity.Legendary).WithMaxMana(100).WithIntelligence(8).WithWisdom(5));
-        AddEquipment(Equipment.CreateArmor(id++, "Robes of the Grand Sorcerer", EquipmentSlot.Cloak, ArmorType.Magic, 14, 120000, EquipmentRarity.Legendary).WithMaxMana(150).WithIntelligence(12).WithWisdom(8).WithMagicResist(15));
+        AddEquipment(Equipment.CreateArmor(id++, "Mage's Robe", EquipmentSlot.Cloak, ArmorType.Cloth, 4, 1500, EquipmentRarity.Rare).WithMaxMana(30).WithIntelligence(3).WithDefence(1));
+        AddEquipment(Equipment.CreateArmor(id++, "Arcane Cloak", EquipmentSlot.Cloak, ArmorType.Magic, 7, 8000, EquipmentRarity.Epic).WithMaxMana(60).WithIntelligence(5).WithDefence(2));
+        AddEquipment(Equipment.CreateArmor(id++, "Archmage Robes", EquipmentSlot.Cloak, ArmorType.Magic, 10, 50000, EquipmentRarity.Legendary).WithMaxMana(100).WithIntelligence(8).WithWisdom(5).WithDefence(3));
+        AddEquipment(Equipment.CreateArmor(id++, "Robes of the Grand Sorcerer", EquipmentSlot.Cloak, ArmorType.Magic, 14, 120000, EquipmentRarity.Legendary).WithMaxMana(150).WithIntelligence(12).WithWisdom(8).WithMagicResist(15).WithDefence(4));
 
         // ===========================================
         // ROGUE CLOAKS
@@ -1136,9 +1149,9 @@ public static class EquipmentDatabase
         // ===========================================
         AddEquipment(Equipment.CreateArmor(id++, "Divine Mantle", EquipmentSlot.Cloak, ArmorType.Artifact, 20, 180000, EquipmentRarity.Artifact).WithWisdom(12).WithMagicResist(35).WithMaxHP(70).RequiresGoodAlignment().AsUnique());
         AddEquipment(Equipment.CreateArmor(id++, "Cloak of Damnation", EquipmentSlot.Cloak, ArmorType.Artifact, 20, 200000, EquipmentRarity.Artifact).WithStrength(14).WithLifeSteal(12).WithMaxHP(60).RequiresEvilAlignment().AsUnique());
-        AddEquipment(Equipment.CreateArmor(id++, "Cloak of the Cosmos", EquipmentSlot.Cloak, ArmorType.Artifact, 22, 350000, EquipmentRarity.Artifact).WithIntelligence(14).WithWisdom(14).WithMaxMana(200).WithMagicResist(40).AsUnique());
+        AddEquipment(Equipment.CreateArmor(id++, "Cloak of the Cosmos", EquipmentSlot.Cloak, ArmorType.Artifact, 22, 350000, EquipmentRarity.Artifact).WithIntelligence(14).WithWisdom(14).WithMaxMana(200).WithMagicResist(40).WithDefence(5).AsUnique());
         AddEquipment(Equipment.CreateArmor(id++, "Titan's Mantle", EquipmentSlot.Cloak, ArmorType.Artifact, 24, 450000, EquipmentRarity.Artifact).WithStrength(16).WithConstitution(12).WithMaxHP(120).WithMagicResist(30));
-        AddEquipment(Equipment.CreateArmor(id++, "Cloak of Eternity", EquipmentSlot.Cloak, ArmorType.Artifact, 28, 700000, EquipmentRarity.Artifact).WithStrength(12).WithIntelligence(12).WithWisdom(12).WithMaxHP(100).WithMaxMana(100).WithMagicResist(45).AsUnique());
+        AddEquipment(Equipment.CreateArmor(id++, "Cloak of Eternity", EquipmentSlot.Cloak, ArmorType.Artifact, 28, 700000, EquipmentRarity.Artifact).WithStrength(12).WithIntelligence(12).WithWisdom(12).WithMaxHP(100).WithMaxMana(100).WithMagicResist(45).WithDefence(4).AsUnique());
     }
 
     #endregion
@@ -1158,30 +1171,30 @@ public static class EquipmentDatabase
 
         // SILVER/BRONZE TIER (Levels 10-25)
         AddEquipment(Equipment.CreateAccessory(id++, "Bronze Medallion", EquipmentSlot.Neck, 250, EquipmentRarity.Uncommon).WithStrength(2));
-        AddEquipment(Equipment.CreateAccessory(id++, "Silver Amulet", EquipmentSlot.Neck, 400, EquipmentRarity.Uncommon).WithWisdom(2).WithMaxMana(15));
+        AddEquipment(Equipment.CreateAccessory(id++, "Silver Amulet", EquipmentSlot.Neck, 400, EquipmentRarity.Uncommon).WithWisdom(2).WithMaxMana(15).WithDefence(1));
         AddEquipment(Equipment.CreateAccessory(id++, "Jade Pendant", EquipmentSlot.Neck, 600, EquipmentRarity.Uncommon).WithAgility(2).WithDexterity(1));
         AddEquipment(Equipment.CreateAccessory(id++, "Gold Amulet", EquipmentSlot.Neck, 900, EquipmentRarity.Uncommon).WithCharisma(3).WithMaxHP(15));
         AddEquipment(Equipment.CreateAccessory(id++, "Onyx Necklace", EquipmentSlot.Neck, 1200, EquipmentRarity.Uncommon).WithStrength(3).WithDefence(1));
 
         // ENCHANTED TIER (Levels 25-45)
         AddEquipment(Equipment.CreateAccessory(id++, "Amulet of Strength", EquipmentSlot.Neck, 2000, EquipmentRarity.Rare).WithStrength(4));
-        AddEquipment(Equipment.CreateAccessory(id++, "Amulet of Wisdom", EquipmentSlot.Neck, 2000, EquipmentRarity.Rare).WithWisdom(4).WithMaxMana(30));
+        AddEquipment(Equipment.CreateAccessory(id++, "Amulet of Wisdom", EquipmentSlot.Neck, 2000, EquipmentRarity.Rare).WithWisdom(4).WithMaxMana(30).WithDefence(1));
         AddEquipment(Equipment.CreateAccessory(id++, "Pendant of Protection", EquipmentSlot.Neck, 2500, EquipmentRarity.Rare).WithDefence(3).WithMagicResist(8));
         AddEquipment(Equipment.CreateAccessory(id++, "Assassin's Choker", EquipmentSlot.Neck, 3000, EquipmentRarity.Rare).WithDexterity(4).WithCritChance(3));
-        AddEquipment(Equipment.CreateAccessory(id++, "Holy Symbol", EquipmentSlot.Neck, 4000, EquipmentRarity.Rare).WithWisdom(5).WithMaxMana(40).RequiresGoodAlignment());
+        AddEquipment(Equipment.CreateAccessory(id++, "Holy Symbol", EquipmentSlot.Neck, 4000, EquipmentRarity.Rare).WithWisdom(5).WithMaxMana(40).WithDefence(2).RequiresGoodAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Dark Medallion", EquipmentSlot.Neck, 4500, EquipmentRarity.Rare).WithStrength(5).WithLifeSteal(2).RequiresEvilAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Berserker's Torc", EquipmentSlot.Neck, 5500, EquipmentRarity.Rare).WithStrength(6).WithMaxHP(25));
 
         // EPIC TIER (Levels 45-65)
-        AddEquipment(Equipment.CreateAccessory(id++, "Crystal Necklace", EquipmentSlot.Neck, 8000, EquipmentRarity.Epic).WithMaxMana(60).WithIntelligence(4));
+        AddEquipment(Equipment.CreateAccessory(id++, "Crystal Necklace", EquipmentSlot.Neck, 8000, EquipmentRarity.Epic).WithMaxMana(60).WithIntelligence(4).WithDefence(2));
         AddEquipment(Equipment.CreateAccessory(id++, "Bloodstone Amulet", EquipmentSlot.Neck, 12000, EquipmentRarity.Epic).WithStrength(6).WithLifeSteal(3));
         AddEquipment(Equipment.CreateAccessory(id++, "Amulet of the Dragon", EquipmentSlot.Neck, 16000, EquipmentRarity.Epic).WithMagicResist(18).WithMaxHP(40));
         AddEquipment(Equipment.CreateAccessory(id++, "Necklace of Vitality", EquipmentSlot.Neck, 22000, EquipmentRarity.Epic).WithConstitution(6).WithMaxHP(60));
         AddEquipment(Equipment.CreateAccessory(id++, "Scarab of the Sands", EquipmentSlot.Neck, 30000, EquipmentRarity.Epic).WithAgility(6).WithDexterity(4).WithMagicResist(12));
-        AddEquipment(Equipment.CreateAccessory(id++, "Amulet of the Archmage", EquipmentSlot.Neck, 40000, EquipmentRarity.Epic).WithMaxMana(100).WithIntelligence(7).WithWisdom(5));
+        AddEquipment(Equipment.CreateAccessory(id++, "Amulet of the Archmage", EquipmentSlot.Neck, 40000, EquipmentRarity.Epic).WithMaxMana(100).WithIntelligence(7).WithWisdom(5).WithDefence(3));
 
         // LEGENDARY TIER (Levels 65-85)
-        AddEquipment(Equipment.CreateAccessory(id++, "Celestial Pendant", EquipmentSlot.Neck, 60000, EquipmentRarity.Legendary).WithWisdom(9).WithMagicResist(22).RequiresGoodAlignment());
+        AddEquipment(Equipment.CreateAccessory(id++, "Celestial Pendant", EquipmentSlot.Neck, 60000, EquipmentRarity.Legendary).WithWisdom(9).WithMagicResist(22).WithDefence(3).RequiresGoodAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Amulet of Shadows", EquipmentSlot.Neck, 70000, EquipmentRarity.Legendary).WithDexterity(9).WithCritChance(12).RequiresEvilAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Titan's Pendant", EquipmentSlot.Neck, 90000, EquipmentRarity.Legendary).WithStrength(10).WithMaxHP(70));
         AddEquipment(Equipment.CreateAccessory(id++, "Phoenix Amulet", EquipmentSlot.Neck, 120000, EquipmentRarity.Legendary).WithConstitution(8).WithMaxHP(80).WithMagicResist(18));
@@ -1189,9 +1202,9 @@ public static class EquipmentDatabase
         AddEquipment(Equipment.CreateAccessory(id++, "Amulet of Power", EquipmentSlot.Neck, 220000, EquipmentRarity.Legendary).WithStrength(10).WithIntelligence(8).WithWisdom(8).AsUnique());
 
         // ARTIFACT TIER (Levels 85-100 - Ultimate accessories)
-        AddEquipment(Equipment.CreateAccessory(id++, "Divine Amulet", EquipmentSlot.Neck, 350000, EquipmentRarity.Artifact).WithWisdom(14).WithMagicResist(35).WithMaxHP(100).RequiresGoodAlignment().AsUnique());
+        AddEquipment(Equipment.CreateAccessory(id++, "Divine Amulet", EquipmentSlot.Neck, 350000, EquipmentRarity.Artifact).WithWisdom(14).WithMagicResist(35).WithMaxHP(100).WithDefence(4).RequiresGoodAlignment().AsUnique());
         AddEquipment(Equipment.CreateAccessory(id++, "Amulet of the Void", EquipmentSlot.Neck, 400000, EquipmentRarity.Artifact).WithStrength(14).WithLifeSteal(12).WithMagicResist(30).RequiresEvilAlignment().AsUnique());
-        AddEquipment(Equipment.CreateAccessory(id++, "Stormcaller's Torc", EquipmentSlot.Neck, 500000, EquipmentRarity.Artifact).WithIntelligence(14).WithMaxMana(150).WithMagicResist(35).AsUnique());
+        AddEquipment(Equipment.CreateAccessory(id++, "Stormcaller's Torc", EquipmentSlot.Neck, 500000, EquipmentRarity.Artifact).WithIntelligence(14).WithMaxMana(150).WithMagicResist(35).WithDefence(4).AsUnique());
         AddEquipment(Equipment.CreateAccessory(id++, "Heart of the Mountain", EquipmentSlot.Neck, 650000, EquipmentRarity.Artifact).WithStrength(12).WithConstitution(14).WithMaxHP(150).WithDefence(8).AsUnique());
         AddEquipment(Equipment.CreateAccessory(id++, "Amulet of Eternity", EquipmentSlot.Neck, 850000, EquipmentRarity.Artifact).WithStrength(12).WithConstitution(12).WithWisdom(12).WithMaxHP(120).WithMaxMana(120).AsUnique());
     }
@@ -1216,40 +1229,40 @@ public static class EquipmentDatabase
         AddEquipment(Equipment.CreateAccessory(id++, "Jade Ring", EquipmentSlot.LFinger, 500, EquipmentRarity.Uncommon).WithAgility(2));
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Dexterity", EquipmentSlot.LFinger, 800, EquipmentRarity.Uncommon).WithDexterity(3));
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Strength", EquipmentSlot.LFinger, 800, EquipmentRarity.Uncommon).WithStrength(3));
-        AddEquipment(Equipment.CreateAccessory(id++, "Mana Ring", EquipmentSlot.LFinger, 1200, EquipmentRarity.Uncommon).WithMaxMana(25));
+        AddEquipment(Equipment.CreateAccessory(id++, "Mana Ring", EquipmentSlot.LFinger, 1200, EquipmentRarity.Uncommon).WithMaxMana(25).WithDefence(1));
         AddEquipment(Equipment.CreateAccessory(id++, "Onyx Ring", EquipmentSlot.LFinger, 1600, EquipmentRarity.Uncommon).WithStrength(3).WithDefence(1));
 
         // ENCHANTED TIER (Levels 25-45)
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Protection", EquipmentSlot.LFinger, 2500, EquipmentRarity.Rare).WithDefence(3).WithMagicResist(6));
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Vitality", EquipmentSlot.LFinger, 3000, EquipmentRarity.Rare).WithMaxHP(30).WithConstitution(3));
         AddEquipment(Equipment.CreateAccessory(id++, "Thief's Band", EquipmentSlot.LFinger, 3500, EquipmentRarity.Rare).WithDexterity(4).WithCritChance(3));
-        AddEquipment(Equipment.CreateAccessory(id++, "Sage's Ring", EquipmentSlot.LFinger, 4000, EquipmentRarity.Rare).WithIntelligence(4).WithWisdom(4));
-        AddEquipment(Equipment.CreateAccessory(id++, "Blessed Band", EquipmentSlot.LFinger, 5000, EquipmentRarity.Rare).WithWisdom(5).WithMaxMana(35).RequiresGoodAlignment());
+        AddEquipment(Equipment.CreateAccessory(id++, "Sage's Ring", EquipmentSlot.LFinger, 4000, EquipmentRarity.Rare).WithIntelligence(4).WithWisdom(4).WithDefence(1));
+        AddEquipment(Equipment.CreateAccessory(id++, "Blessed Band", EquipmentSlot.LFinger, 5000, EquipmentRarity.Rare).WithWisdom(5).WithMaxMana(35).WithDefence(1).RequiresGoodAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Cursed Ring", EquipmentSlot.LFinger, 5500, EquipmentRarity.Rare).WithStrength(5).WithLifeSteal(2).RequiresEvilAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Berserker's Ring", EquipmentSlot.LFinger, 6500, EquipmentRarity.Rare).WithStrength(6).WithCritDamage(5));
 
         // EPIC TIER (Levels 45-65)
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Shadows", EquipmentSlot.LFinger, 9000, EquipmentRarity.Epic).WithDexterity(6).WithCritChance(6));
         AddEquipment(Equipment.CreateAccessory(id++, "Warrior's Band", EquipmentSlot.LFinger, 12000, EquipmentRarity.Epic).WithStrength(6).WithMaxHP(35));
-        AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Archmage", EquipmentSlot.LFinger, 16000, EquipmentRarity.Epic).WithMaxMana(60).WithIntelligence(6));
+        AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Archmage", EquipmentSlot.LFinger, 16000, EquipmentRarity.Epic).WithMaxMana(60).WithIntelligence(6).WithDefence(2));
         AddEquipment(Equipment.CreateAccessory(id++, "Bloodstone Ring", EquipmentSlot.LFinger, 22000, EquipmentRarity.Epic).WithStrength(7).WithLifeSteal(4));
-        AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Elements", EquipmentSlot.LFinger, 30000, EquipmentRarity.Epic).WithMagicResist(20).WithMaxMana(50));
+        AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Elements", EquipmentSlot.LFinger, 30000, EquipmentRarity.Epic).WithMagicResist(20).WithMaxMana(50).WithDefence(2));
         AddEquipment(Equipment.CreateAccessory(id++, "Champion's Signet", EquipmentSlot.LFinger, 40000, EquipmentRarity.Epic).WithStrength(7).WithDexterity(5).WithMaxHP(45));
 
         // LEGENDARY TIER (Levels 65-85)
         AddEquipment(Equipment.CreateAccessory(id++, "Master's Ring", EquipmentSlot.LFinger, 55000, EquipmentRarity.Legendary).WithStrength(7).WithDexterity(7).WithWisdom(7));
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Power", EquipmentSlot.LFinger, 75000, EquipmentRarity.Legendary).WithStrength(9).WithMaxHP(55));
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Dragon", EquipmentSlot.LFinger, 100000, EquipmentRarity.Legendary).WithMagicResist(22).WithMaxHP(65));
-        AddEquipment(Equipment.CreateAccessory(id++, "Celestial Band", EquipmentSlot.LFinger, 130000, EquipmentRarity.Legendary).WithWisdom(10).WithMagicResist(20).RequiresGoodAlignment());
+        AddEquipment(Equipment.CreateAccessory(id++, "Celestial Band", EquipmentSlot.LFinger, 130000, EquipmentRarity.Legendary).WithWisdom(10).WithMagicResist(20).WithDefence(3).RequiresGoodAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Darkness", EquipmentSlot.LFinger, 140000, EquipmentRarity.Legendary).WithStrength(10).WithLifeSteal(7).RequiresEvilAlignment());
         AddEquipment(Equipment.CreateAccessory(id++, "Phoenix Ring", EquipmentSlot.LFinger, 180000, EquipmentRarity.Legendary).WithConstitution(10).WithMaxHP(80).WithMagicResist(15));
         AddEquipment(Equipment.CreateAccessory(id++, "Serpent's Coil", EquipmentSlot.LFinger, 240000, EquipmentRarity.Legendary).WithDexterity(12).WithAgility(8).WithCritChance(12));
 
         // ARTIFACT TIER (Levels 85-100 - Ultimate rings)
         AddEquipment(Equipment.CreateAccessory(id++, "Titan's Band", EquipmentSlot.LFinger, 350000, EquipmentRarity.Artifact).WithStrength(12).WithConstitution(10).WithMaxHP(100).AsUnique());
-        AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Arcane", EquipmentSlot.LFinger, 420000, EquipmentRarity.Artifact).WithIntelligence(14).WithMaxMana(150).WithMagicResist(30).AsUnique());
+        AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Arcane", EquipmentSlot.LFinger, 420000, EquipmentRarity.Artifact).WithIntelligence(14).WithMaxMana(150).WithMagicResist(30).WithDefence(4).AsUnique());
         AddEquipment(Equipment.CreateAccessory(id++, "Shadowlord's Signet", EquipmentSlot.LFinger, 500000, EquipmentRarity.Artifact).WithDexterity(14).WithCritChance(18).WithCritDamage(25).RequiresEvilAlignment().AsUnique());
-        AddEquipment(Equipment.CreateAccessory(id++, "Divine Seal", EquipmentSlot.LFinger, 520000, EquipmentRarity.Artifact).WithWisdom(14).WithMaxMana(120).WithMagicResist(35).RequiresGoodAlignment().AsUnique());
+        AddEquipment(Equipment.CreateAccessory(id++, "Divine Seal", EquipmentSlot.LFinger, 520000, EquipmentRarity.Artifact).WithWisdom(14).WithMaxMana(120).WithMagicResist(35).WithDefence(4).RequiresGoodAlignment().AsUnique());
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of the Gods", EquipmentSlot.LFinger, 700000, EquipmentRarity.Artifact).WithStrength(10).WithDexterity(10).WithWisdom(10).WithIntelligence(10).AsUnique());
         AddEquipment(Equipment.CreateAccessory(id++, "Ring of Eternity", EquipmentSlot.LFinger, 900000, EquipmentRarity.Artifact).WithStrength(14).WithConstitution(14).WithMaxHP(120).WithMaxMana(80).WithLifeSteal(8).AsUnique());
     }

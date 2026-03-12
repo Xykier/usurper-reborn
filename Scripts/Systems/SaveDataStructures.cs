@@ -143,7 +143,10 @@ namespace UsurperRemake.Systems
         public int RomanceLevel { get; set; }
         public bool PersonalQuestStarted { get; set; }
         public bool PersonalQuestCompleted { get; set; }
+        public bool PersonalQuestSuccess { get; set; }
         public int RecruitedDay { get; set; }
+        public int HealingPotions { get; set; }
+        public int ManaPotions { get; set; }
 
         // Level and experience
         public int Level { get; set; }
@@ -207,6 +210,9 @@ namespace UsurperRemake.Systems
         public long BankGold { get; set; }
         public bool BankGuard { get; set; }
         public long BankWage { get; set; }
+        public long BankLoan { get; set; }
+        public long BankInterest { get; set; }
+        public int BankRobberyAttempts { get; set; }
 
         // Attributes
         public long Strength { get; set; }

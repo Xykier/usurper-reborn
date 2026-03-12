@@ -348,10 +348,8 @@ public class CharacterCreationSystem
             // Allow reuse of the player's own account name (e.g., NG+ reroll keeping same name)
             if (DoorMode.IsOnlineMode)
             {
-                var ownAccount = DoorMode.GetPlayerName()?.ToLowerInvariant();
-                var existingNames = SaveSystem.Instance.GetAllPlayerNames();
-                if (existingNames.Any(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(n, ownAccount, StringComparison.OrdinalIgnoreCase)))
+                var ownAccount = DoorMode.GetPlayerName() ?? "";
+                if (SaveSystem.Instance.IsDisplayNameTaken(name, ownAccount))
                 {
                     terminal.WriteLine(Loc.Get("creation.name_taken"), "red");
                     continue;
