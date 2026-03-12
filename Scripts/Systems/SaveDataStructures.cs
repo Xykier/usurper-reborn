@@ -571,6 +571,21 @@ namespace UsurperRemake.Systems
         public Dictionary<int, int>? DrugTolerance { get; set; }
         public bool SafeHouseResting { get; set; }
 
+        // Daily Login Streak (v0.52.0)
+        public int LoginStreak { get; set; }
+        public int LongestLoginStreak { get; set; }
+        public string LastLoginDate { get; set; } = "";
+
+        // Blood Moon Event (v0.52.0)
+        public int BloodMoonDay { get; set; }
+        public bool IsBloodMoon { get; set; }
+
+        // Weekly Power Rankings (v0.52.0)
+        public int WeeklyRank { get; set; }
+        public int PreviousWeeklyRank { get; set; }
+        public string RivalName { get; set; } = "";
+        public int RivalLevel { get; set; }
+
         // Recurring Duelist Rival
         public DuelistData? RecurringDuelist { get; set; }
 

@@ -2331,6 +2331,35 @@ public partial class GameEngine
             // Gold audit snapshot on login
             DebugLogger.Instance.LogInfo("GOLD_LOGIN", $"{currentPlayer.Name} Lv{currentPlayer.Level} LOGIN gold={currentPlayer.Gold:N0} bank={currentPlayer.BankGold:N0} totalEarned={currentPlayer.Statistics?.TotalGoldEarned ?? 0:N0} totalWealth={currentPlayer.Gold + currentPlayer.BankGold:N0}");
 
+            // Process daily login streak rewards
+            await ProcessLoginStreak(currentPlayer);
+
+            // Show weekly rank change on login
+            if (currentPlayer.WeeklyRank > 0 && currentPlayer.PreviousWeeklyRank > 0)
+            {
+                int change = currentPlayer.PreviousWeeklyRank - currentPlayer.WeeklyRank; // positive = moved up
+                if (change != 0)
+                {
+                    terminal.WriteLine("");
+                    if (change > 0)
+                    {
+                        terminal.SetColor("bright_green");
+                        terminal.WriteLine($"  You moved up {change} rank{(change != 1 ? "s" : "")}! Now #{currentPlayer.WeeklyRank}");
+                    }
+                    else
+                    {
+                        terminal.SetColor("yellow");
+                        terminal.WriteLine($"  You dropped {Math.Abs(change)} rank{(Math.Abs(change) != 1 ? "s" : "")}. Now #{currentPlayer.WeeklyRank}");
+                    }
+                }
+                if (!string.IsNullOrEmpty(currentPlayer.RivalName))
+                {
+                    terminal.SetColor("cyan");
+                    terminal.WriteLine($"  Your rival {currentPlayer.RivalName} is Level {currentPlayer.RivalLevel}.");
+                }
+                terminal.WriteLine("");
+            }
+
             // Load daily system state
             if (dailyManager != null)
             {
@@ -2648,6 +2677,181 @@ public partial class GameEngine
             UsurperRemake.Systems.DebugLogger.Instance.LogError("CRASH", $"Failed to load save {fileName}:\n{ex}");
             UsurperRemake.Systems.DebugLogger.Instance.Flush();
             await Task.Delay(3000);
+        }
+    }
+
+    /// <summary>
+    /// Process daily login streak — increment or reset streak, display reward screen, apply rewards.
+    /// Called once per calendar day during LoadSaveByFileName, after all player data is restored.
+    /// </summary>
+    private async Task ProcessLoginStreak(Character player)
+    {
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string yesterday = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd");
+
+        if (player.LastLoginDate == today)
+            return; // Already logged in today
+
+        if (player.LastLoginDate == yesterday)
+        {
+            // Consecutive day — increment streak
+            player.LoginStreak++;
+        }
+        else if (string.IsNullOrEmpty(player.LastLoginDate))
+        {
+            // First ever login
+            player.LoginStreak = 1;
+        }
+        else
+        {
+            // Missed a day — reset streak, show message
+            if (player.LoginStreak > 1)
+            {
+                terminal.WriteLine("");
+                terminal.SetColor("yellow");
+                terminal.WriteLine($"  Your {player.LoginStreak}-day login streak has ended!");
+                terminal.WriteLine("");
+            }
+            player.LoginStreak = 1;
+        }
+
+        player.LastLoginDate = today;
+        if (player.LoginStreak > player.LongestLoginStreak)
+            player.LongestLoginStreak = player.LoginStreak;
+
+        // Calculate and apply rewards
+        long goldReward = 0;
+        int potionsReward = 0;
+        int herbsReward = 0;
+        string specialMessage = "";
+        string achievementId = "";
+
+        int streak = player.LoginStreak;
+
+        if (streak >= 100)
+        {
+            goldReward = 1000;
+            specialMessage = $"Day {streak} streak! Here's your daily loyalty bonus.";
+        }
+        else if (streak == 90)
+        {
+            goldReward = 50000;
+            achievementId = "legendary_devotion";
+            specialMessage = "90 days! Your legendary devotion is unmatched!";
+        }
+        else if (streak == 60)
+        {
+            goldReward = 25000;
+            specialMessage = "60 days! Your dedication is truly remarkable!";
+        }
+        else if (streak == 30)
+        {
+            goldReward = 10000;
+            achievementId = "devoted_champion";
+            specialMessage = "30 days! You are a Devoted Champion!";
+        }
+        else if (streak == 14)
+        {
+            goldReward = 5000;
+            herbsReward = 5;
+            specialMessage = "Two weeks straight! Here's a rare herb collection!";
+        }
+        else if (streak == 7)
+        {
+            goldReward = 2500;
+            achievementId = "dedicated_adventurer";
+            specialMessage = "One full week! You're a Dedicated Adventurer!";
+        }
+        else if (streak == 3)
+        {
+            goldReward = 1000;
+            potionsReward = 3;
+            specialMessage = "Three days running! Have some supplies!";
+        }
+        else if (streak == 1)
+        {
+            goldReward = 500;
+            specialMessage = "Welcome back! Start a new streak!";
+        }
+        else if (streak == 2)
+        {
+            goldReward = 500;
+            specialMessage = "Two days in a row! Keep it going!";
+        }
+        else
+        {
+            // Days between milestones
+            goldReward = 500;
+        }
+
+        // Display the streak reward
+        terminal.WriteLine("");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.WriteLine("╔══════════════════════════════════════════╗", "bright_yellow");
+            terminal.WriteLine("║         DAILY LOGIN STREAK               ║", "bright_yellow");
+            terminal.WriteLine("╚══════════════════════════════════════════╝", "bright_yellow");
+        }
+        else
+        {
+            terminal.WriteLine("--- DAILY LOGIN STREAK ---", "bright_yellow");
+        }
+        terminal.WriteLine("");
+        terminal.SetColor("bright_green");
+        terminal.WriteLine($"  Day {streak} streak! (Best: {player.LongestLoginStreak})");
+
+        if (!string.IsNullOrEmpty(specialMessage))
+        {
+            terminal.SetColor("cyan");
+            terminal.WriteLine($"  {specialMessage}");
+        }
+
+        terminal.WriteLine("");
+
+        // Apply gold
+        if (goldReward > 0)
+        {
+            player.Gold += goldReward;
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine($"  +{goldReward:N0} gold", "bright_yellow");
+        }
+
+        // Apply potions
+        if (potionsReward > 0)
+        {
+            player.Healing = Math.Min(player.Healing + potionsReward, 99);
+            terminal.WriteLine($"  +{potionsReward} healing potions", "bright_green");
+        }
+
+        // Apply herbs (one of each type)
+        if (herbsReward > 0)
+        {
+            player.HerbHealing = Math.Min(player.HerbHealing + herbsReward, 99);
+            player.HerbIronbark = Math.Min(player.HerbIronbark + herbsReward, 99);
+            player.HerbFirebloom = Math.Min(player.HerbFirebloom + herbsReward, 99);
+            player.HerbSwiftthistle = Math.Min(player.HerbSwiftthistle + herbsReward, 99);
+            player.HerbStarbloom = Math.Min(player.HerbStarbloom + herbsReward, 99);
+            terminal.WriteLine($"  +{herbsReward} of each herb type", "green");
+        }
+
+        terminal.WriteLine("");
+
+        // Next milestone hint
+        int nextMilestone = streak < 3 ? 3 : streak < 7 ? 7 : streak < 14 ? 14 : streak < 30 ? 30 : streak < 60 ? 60 : streak < 90 ? 90 : 0;
+        if (nextMilestone > 0)
+        {
+            int daysToNext = nextMilestone - streak;
+            terminal.SetColor("gray");
+            terminal.WriteLine($"  Next milestone: Day {nextMilestone} ({daysToNext} day{(daysToNext != 1 ? "s" : "")} away)");
+        }
+        terminal.WriteLine("");
+
+        await terminal.PressAnyKey();
+
+        // Unlock achievements
+        if (!string.IsNullOrEmpty(achievementId))
+        {
+            AchievementSystem.TryUnlock(player, achievementId);
         }
     }
 
@@ -3326,6 +3530,44 @@ public partial class GameEngine
         if (currentPlayer.Statistics.TotalMonstersKilled == 0)
         {
             HintSystem.Instance.TryShowHint(HintSystem.HINT_GETTING_STARTED, terminal, currentPlayer.HintsShown);
+            await terminal.PressAnyKey();
+        }
+
+        // Captain Aldric's Mission — opening guided quest for new characters
+        if (!isNgPlus && currentPlayer.Statistics.TotalMonstersKilled == 0)
+        {
+            terminal.ClearScreen();
+            terminal.WriteLine("");
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  A weathered soldier steps from the shadows, blocking your path.");
+            terminal.WriteLine("");
+            terminal.SetColor("white");
+            terminal.WriteLine("  \"Hold there, newcomer. I'm Captain Aldric of the Town Guard.\"");
+            terminal.WriteLine("");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  He studies you with a practiced eye, then nods slowly.");
+            terminal.WriteLine("");
+            terminal.SetColor("white");
+            terminal.WriteLine("  \"We've lost contact with our scouts in the dungeon below.");
+            terminal.WriteLine("  I need someone to go down there and report back. Nothing fancy —");
+            terminal.WriteLine("  just enter the dungeon, deal with whatever you find, and look");
+            terminal.WriteLine("  for any treasure the scouts may have left behind.\"");
+            terminal.WriteLine("");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("  He hands you a worn mission scroll.");
+            terminal.WriteLine("");
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  === QUEST RECEIVED: Captain Aldric's Mission ===");
+            terminal.SetColor("gray");
+            terminal.WriteLine("    1. Enter the dungeon");
+            terminal.WriteLine("    2. Defeat a monster");
+            terminal.WriteLine("    3. Find a treasure cache");
+            terminal.WriteLine("    4. Report back to Main Street");
+            terminal.WriteLine("");
+            terminal.SetColor("white");
+            terminal.WriteLine("  \"Come find me on Main Street when you're done. Good luck.\"");
+            terminal.WriteLine("");
+            currentPlayer.HintsShown.Add("aldric_quest_active");
             await terminal.PressAnyKey();
         }
 
@@ -4125,6 +4367,21 @@ public partial class GameEngine
         player.DrugTolerance = playerData.DrugTolerance ?? new Dictionary<int, int>();
         // SafeHouseResting is cleared on login — player is no longer hiding
         player.SafeHouseResting = false;
+
+        // Restore Daily Login Streak (v0.52.0)
+        player.LoginStreak = playerData.LoginStreak;
+        player.LongestLoginStreak = playerData.LongestLoginStreak;
+        player.LastLoginDate = playerData.LastLoginDate ?? "";
+
+        // Restore Blood Moon Event (v0.52.0)
+        player.BloodMoonDay = playerData.BloodMoonDay;
+        player.IsBloodMoon = playerData.IsBloodMoon;
+
+        // Restore Weekly Power Rankings (v0.52.0)
+        player.WeeklyRank = playerData.WeeklyRank;
+        player.PreviousWeeklyRank = playerData.PreviousWeeklyRank;
+        player.RivalName = playerData.RivalName ?? "";
+        player.RivalLevel = playerData.RivalLevel;
 
         // Restore Recurring Duelist Rival
         if (playerData.RecurringDuelist != null)

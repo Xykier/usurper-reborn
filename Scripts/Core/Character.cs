@@ -602,6 +602,21 @@ public class Character
     public Dictionary<int, int> DrugTolerance { get; set; } = new(); // DrugType(int) -> tolerance level
     public bool SafeHouseResting { get; set; } = false;        // Shadows members resting here are hidden from PvP
 
+    // Daily Login Streak (v0.52.0)
+    public int LoginStreak { get; set; } = 0;                  // Current consecutive login days
+    public int LongestLoginStreak { get; set; } = 0;           // All-time best streak
+    public string LastLoginDate { get; set; } = "";            // ISO date string of last login (yyyy-MM-dd)
+
+    // Blood Moon Event (v0.52.0)
+    public int BloodMoonDay { get; set; } = 0;                 // Current game day counter for blood moon cycle
+    public bool IsBloodMoon { get; set; } = false;             // Whether blood moon is currently active
+
+    // Weekly Power Rankings (v0.52.0)
+    public int WeeklyRank { get; set; } = 0;                   // Current week's rank (0 = unranked)
+    public int PreviousWeeklyRank { get; set; } = 0;           // Last week's rank
+    public string RivalName { get; set; } = "";                // Auto-assigned rival display name
+    public int RivalLevel { get; set; } = 0;                   // Rival's level at last check
+
     // Weapon configuration detection
     public bool IsDualWielding =>
         EquippedItems.TryGetValue(EquipmentSlot.MainHand, out var mainId) && mainId > 0 &&

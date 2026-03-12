@@ -725,6 +725,10 @@ public static class SpellSystem
         // Include proficiency bonus from training
         double scaledHealing = baseHealing * levelMultiplier * wisdomBonus * variance * proficiencyMult;
 
+        // Cleric Divine Grace: +25% healing from spells
+        if (caster.Class == CharacterClass.Cleric)
+            scaledHealing *= (1.0 + GameConfig.ClericDivineGraceBonus);
+
         return Math.Max(1, (int)scaledHealing);
     }
     

@@ -95,6 +95,10 @@ public class MudServer
         var groupSystem = new GroupSystem();
         Console.Error.WriteLine("[MUD] Group system initialized");
 
+        // Initialize the guild system for persistent guilds
+        var guildSystem = new UsurperRemake.Systems.GuildSystem(_databasePath);
+        Console.Error.WriteLine("[MUD] Guild system initialized");
+
         // Start the world simulator as an in-process background task
         // This replaces the separate usurper-world.service process
         var worldSimService = new WorldSimService(

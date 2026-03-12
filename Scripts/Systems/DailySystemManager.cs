@@ -1,5 +1,6 @@
 using UsurperRemake.Utils;
 using UsurperRemake.Systems;
+using UsurperRemake.Server;
 using UsurperRemake.BBS;
 using System;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ public class DailySystemManager
     public static DailySystemManager Instance => instance ??= new DailySystemManager();
     
     private DateTime lastResetTime;
+    private static DateTime _lastBloodMoonBroadcast = DateTime.MinValue;
     private DateTime gameStartTime;
     private int currentDay = 1;
     private DailyCycleMode currentMode = DailyCycleMode.Endless;
@@ -346,6 +348,73 @@ public class DailySystemManager
         // Reset fatigue on full sleep (v0.49.1)
         player.Fatigue = 0;
 
+        // Weekly rankings update (every Monday) — only in online mode
+        // Must use Eastern time for day-of-week check since daily reset fires at 7 PM Eastern
+        if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
+        {
+            try
+            {
+                var eastern = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+                var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, eastern);
+                if (nowEastern.DayOfWeek == DayOfWeek.Monday)
+                {
+                    UpdateWeeklyRankings(player);
+                }
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                // Fallback for Linux where TZ ID may differ
+                try
+                {
+                    var eastern = TimeZoneInfo.FindSystemTimeZoneById("US/Eastern");
+                    var nowEastern = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, eastern);
+                    if (nowEastern.DayOfWeek == DayOfWeek.Monday)
+                    {
+                        UpdateWeeklyRankings(player);
+                    }
+                }
+                catch { /* If TZ lookup fails entirely, skip weekly update this cycle */ }
+            }
+        }
+
+        // Blood Moon cycle check (v0.52.0)
+        player.BloodMoonDay++;
+        if (player.BloodMoonDay >= GameConfig.BloodMoonCycleDays)
+        {
+            player.BloodMoonDay = 0;
+            player.IsBloodMoon = true;
+            terminal?.WriteLine("", "white");
+            if (GameConfig.ScreenReaderMode)
+            {
+                terminal?.WriteLine("  [BLOOD MOON RISING]", "bright_red");
+            }
+            else
+            {
+                terminal?.WriteLine("  ★ BLOOD MOON RISING! ★", "bright_red");
+            }
+            terminal?.WriteLine("  The sky turns crimson... Monsters grow fierce!", "red");
+            terminal?.WriteLine("  Monsters: +50% power | XP: x2 | Gold: x3", "red");
+            terminal?.WriteLine("", "white");
+            // Broadcast to online players (once per reset boundary, not per player)
+            if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
+            {
+                var now = DateTime.UtcNow;
+                if ((now - _lastBloodMoonBroadcast).TotalMinutes > 30)
+                {
+                    _lastBloodMoonBroadcast = now;
+                    try { UsurperRemake.Server.MudServer.Instance?.BroadcastToAll("\r\n\x1b[1;31m  ★ BLOOD MOON RISING! Monsters are fiercer but rewards are greater! ★\x1b[0m\r\n"); }
+                    catch { }
+                }
+            }
+        }
+        else if (player.IsBloodMoon)
+        {
+            // Blood moon ends after 1 day
+            player.IsBloodMoon = false;
+            terminal?.WriteLine("  The Blood Moon fades... The world returns to normal.", "gray");
+            terminal?.WriteLine("", "white");
+        }
+
         // Reset companion daily flags
         CompanionSystem.Instance?.ResetDailyFlags();
 
@@ -367,7 +436,65 @@ public class DailySystemManager
         // Process bank maintenance
         BankLocation.ProcessDailyMaintenance(player);
     }
-    
+
+    /// <summary>
+    /// Update weekly power rankings for the player (online mode, Mondays only).
+    /// Uses a simple level-based rank estimate since we can't easily query all players from here.
+    /// </summary>
+    private void UpdateWeeklyRankings(Character player)
+    {
+        try
+        {
+            player.PreviousWeeklyRank = player.WeeklyRank;
+
+            // In single-player, rank is always 1
+            if (!DoorMode.IsOnlineMode)
+            {
+                player.WeeklyRank = 1;
+                return;
+            }
+
+            // In online mode, use a score-based estimated rank
+            // Higher level = lower rank number (rank 1 is best)
+            player.WeeklyRank = Math.Max(1, 101 - player.Level);
+
+            // Assign a rival from online players closest in level
+            var server = MudServer.Instance;
+            if (server != null)
+            {
+                string? bestRival = null;
+                int bestRivalLevel = 0;
+                int smallestGap = int.MaxValue;
+                string playerKey = (player.Name1 ?? player.Name2 ?? "").ToLowerInvariant();
+
+                foreach (var kvp in server.ActiveSessions)
+                {
+                    if (string.Equals(kvp.Key, playerKey, StringComparison.OrdinalIgnoreCase)) continue;
+                    var otherPlayer = kvp.Value?.Context?.Engine?.CurrentPlayer;
+                    if (otherPlayer == null) continue;
+
+                    int gap = Math.Abs(otherPlayer.Level - player.Level);
+                    if (gap < smallestGap)
+                    {
+                        smallestGap = gap;
+                        bestRival = otherPlayer.Name2 ?? otherPlayer.Name1 ?? kvp.Key;
+                        bestRivalLevel = otherPlayer.Level;
+                    }
+                }
+
+                if (bestRival != null)
+                {
+                    player.RivalName = bestRival;
+                    player.RivalLevel = bestRivalLevel;
+                }
+            }
+        }
+        catch
+        {
+            // Ranking is optional — never crash for it
+        }
+    }
+
     /// <summary>
     /// Process mode-specific reset logic
     /// </summary>

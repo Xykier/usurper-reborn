@@ -231,6 +231,41 @@ public class DungeonLocation : BaseLocation
             await RunDungeonTutorial(player, term);
         }
 
+        // Captain Aldric's Mission — dungeon entry objective
+        if (player.HintsShown.Contains("aldric_quest_active") && !player.HintsShown.Contains("quest_scout_enter_dungeon"))
+        {
+            player.HintsShown.Add("quest_scout_enter_dungeon");
+            term.WriteLine("");
+            term.SetColor("bright_green");
+            term.WriteLine("  You've entered the dungeon! Captain Aldric will be pleased.");
+            term.SetColor("yellow");
+            term.WriteLine("  [Quest Updated: Enter the dungeon - COMPLETE]");
+            term.SetColor("white");
+            term.WriteLine("");
+        }
+
+        // Floor 5 Guardian - one-time mini-boss for new players (v0.52.0)
+        if (currentDungeonLevel == 5 && !player.HintsShown.Contains("floor5_guardian_defeated"))
+        {
+            await ShowFloor5Guardian(player, term);
+            // If the player died, don't continue into the dungeon
+            if (player.HP <= 0) return;
+        }
+
+        // Show NG+ world modifiers on dungeon entry (v0.52.0)
+        int ngCycle = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+        if (ngCycle >= 2)
+        {
+            term.SetColor("bright_magenta");
+            term.WriteLine("");
+            term.WriteLine("  Active NG+ Modifiers:");
+            if (ngCycle >= 2) term.WriteLine("    Empowered Monsters (+20% stats, +50% gold)");
+            if (ngCycle >= 3) term.WriteLine("    Ancient Magic (+30% stats)");
+            if (ngCycle >= 4) term.WriteLine("    The Convergence (+50% stats, +100% gold)");
+            term.SetColor("white");
+            term.WriteLine("");
+        }
+
         // Mark NPC teammates as engaged so the world sim won't kill them
         foreach (var mate in teammates)
         {
@@ -458,6 +493,77 @@ public class DungeonLocation : BaseLocation
 
         term.WriteLine("Tutorial complete. The dungeon awaits!", "bright_green");
         await Task.Delay(1500);
+    }
+
+    /// <summary>
+    /// Floor 5 Dungeon Guardian — a one-time mini-boss encounter for new players.
+    /// Gives an early boss-fight milestone before the deeper dungeon challenges.
+    /// If the player flees, the guardian will appear again on next visit.
+    /// </summary>
+    private async Task ShowFloor5Guardian(Character player, TerminalEmulator term)
+    {
+        term.ClearScreen();
+        term.WriteLine("");
+        term.SetColor("bright_red");
+        term.WriteLine("  A massive figure blocks the passage ahead!");
+        term.WriteLine("");
+        term.SetColor("yellow");
+        term.WriteLine("  The Dungeon Guardian rises from the shadows,");
+        term.WriteLine("  an ancient sentinel that tests all who seek");
+        term.WriteLine("  to venture deeper into the dungeon.");
+        term.WriteLine("");
+        term.SetColor("gray");
+        term.WriteLine("  \"None shall pass without proving their worth!\"");
+        term.WriteLine("");
+        await term.PressAnyKey();
+
+        // Generate the guardian as a mini-boss scaled for floor 5
+        var guardian = MonsterGenerator.GenerateMonster(5, isBoss: false, isMiniBoss: true);
+        guardian.Name = "Dungeon Guardian";
+        guardian.MonsterColor = "bright_red";
+        guardian.CanSpeak = true;
+        guardian.Phrase = "You are not yet worthy!";
+
+        // Run full combat using the same pattern as room combat
+        var combatEngine = new CombatEngine(terminal);
+        var combatResult = await combatEngine.PlayerVsMonsters(player, new List<Monster> { guardian }, teammates);
+
+        if (combatResult.Outcome == CombatOutcome.Victory)
+        {
+            // Mark as defeated so the guardian won't appear again
+            player.HintsShown.Add("floor5_guardian_defeated");
+
+            term.WriteLine("");
+            term.SetColor("bright_green");
+            term.WriteLine("  The Dungeon Guardian falls!");
+            term.WriteLine("");
+            term.SetColor("cyan");
+            term.WriteLine("  \"You have proven worthy, adventurer.\"");
+            term.WriteLine("  \"The deeper floors await...\"");
+            term.WriteLine("");
+
+            // Bonus gold reward
+            long bonusGold = 1000;
+            player.Gold += bonusGold;
+            player.Statistics.RecordGoldChange(player.Gold);
+            term.SetColor("bright_yellow");
+            term.WriteLine($"  The Guardian drops a pouch of {bonusGold:N0} gold!");
+            term.WriteLine("");
+
+            await term.PressAnyKey();
+
+            // Unlock achievement
+            AchievementSystem.TryUnlock(player, "guardian_slayer");
+        }
+        else if (combatResult.ShouldReturnToTemple)
+        {
+            // Player died and was resurrected — exit dungeon
+            term.SetColor("yellow");
+            term.WriteLine(Loc.Get("dungeon.awaken_temple"));
+            await Task.Delay(2000);
+            return;
+        }
+        // If fled, they'll encounter the guardian again next time (no flag set)
     }
 
     /// <summary>
@@ -1981,6 +2087,14 @@ public class DungeonLocation : BaseLocation
 
         terminal.WriteLine("");
 
+        // Blood Moon atmosphere (v0.52.0)
+        if (currentPlayer != null && currentPlayer.IsBloodMoon)
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine("  [Blood Moon] A crimson glow bathes everything in eerie red light.");
+            terminal.WriteLine("");
+        }
+
         // Room description
         terminal.SetColor("white");
         terminal.WriteLine(room.Description);
@@ -2047,6 +2161,13 @@ public class DungeonLocation : BaseLocation
         terminal.Write($" {currentFloor.Theme}");
         terminal.SetColor("gray");
         terminal.WriteLine($" | {room.Description}");
+
+        // Blood Moon atmosphere (v0.52.0)
+        if (player != null && player.IsBloodMoon)
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine("  [Blood Moon] Crimson glow. Monsters +50% | XP x2 | Gold x3");
+        }
 
         // Lines 3-6: Room contents (compact, 1 line each)
         if (room.HasMonsters && !room.IsCleared)
@@ -4763,6 +4884,25 @@ public class DungeonLocation : BaseLocation
             player.Healing = Math.Min(player.MaxPotions, player.Healing + potions);
             terminal.SetColor("green");
             terminal.WriteLine(Loc.Get("dungeon.treasure_potions", potions));
+        }
+
+        // Captain Aldric's Mission — treasure objective
+        if (player.HintsShown.Contains("aldric_quest_active") && !player.HintsShown.Contains("quest_scout_find_treasure"))
+        {
+            player.HintsShown.Add("quest_scout_find_treasure");
+            terminal.WriteLine("");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("  A treasure cache! This is exactly what Aldric described.");
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  [Quest Updated: Find a treasure cache - COMPLETE]");
+
+            // Check if all dungeon objectives are done
+            if (player.HintsShown.Contains("quest_scout_enter_dungeon") && player.HintsShown.Contains("quest_scout_kill_monster"))
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("  All objectives complete! Return to Main Street to report to Aldric.");
+            }
+            terminal.SetColor("white");
         }
 
         // Auto-save after finding treasure

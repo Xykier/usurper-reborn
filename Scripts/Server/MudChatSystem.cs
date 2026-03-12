@@ -20,7 +20,8 @@ namespace UsurperRemake.Server;
 /// </summary>
 public static class MudChatSystem
 {
-    private static readonly string[] ChatCommands = { "say", "s", "shout", "tell", "t", "emote", "me", "gossip", "gos" };
+    private static readonly string[] ChatCommands = { "say", "s", "shout", "tell", "t", "emote", "me", "gossip", "gos",
+        "guild", "gcreate", "ginvite", "gleave", "gkick", "ginfo", "gc", "gbank" };
 
     /// <summary>
     /// Try to process a slash command as a MUD chat command.
@@ -124,6 +125,24 @@ public static class MudChatSystem
 
             case "disband":
                 return HandleDisbandGroup(username, terminal);
+
+            // Guild commands (v0.52.0)
+            case "guild":
+                return HandleGuildInfo(username, terminal);
+            case "gcreate":
+                return HandleGuildCreate(username, args, terminal);
+            case "ginvite":
+                return HandleGuildInvite(username, args, terminal);
+            case "gleave":
+                return HandleGuildLeave(username, terminal);
+            case "gkick":
+                return HandleGuildKick(username, args, terminal);
+            case "ginfo":
+                return HandleGuildLookup(username, args, terminal);
+            case "gc":
+                return HandleGuildChat(username, args, terminal);
+            case "gbank":
+                return HandleGuildBank(username, args, terminal);
 
             default:
                 return false; // Not a MUD chat command
@@ -517,6 +536,28 @@ public static class MudChatSystem
             return true;
         }
 
+        // Check for pending guild invite
+        var guildSystem = Systems.GuildSystem.Instance;
+        if (guildSystem != null)
+        {
+            var guildInvite = guildSystem.GetPendingInvite(username);
+            if (guildInvite != null)
+            {
+                var error = guildSystem.AcceptInvite(username);
+                if (error != null)
+                {
+                    terminal.SetColor("red");
+                    terminal.WriteLine($"  {error}");
+                }
+                else
+                {
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine($"  You joined the guild [{guildInvite.GuildName}]!");
+                }
+                return true;
+            }
+        }
+
         // Check for pending spectate request
         if (session.PendingSpectateRequest != null)
         {
@@ -557,6 +598,20 @@ public static class MudChatSystem
             terminal.SetColor("yellow");
             terminal.WriteLine($"  You denied {GetSessionDisplayName(invite.Inviter, invite.Inviter.Username)}'s group invite.");
             return true;
+        }
+
+        // Check for pending guild invite
+        var guildSystemDeny = Systems.GuildSystem.Instance;
+        if (guildSystemDeny != null)
+        {
+            var guildInvite = guildSystemDeny.GetPendingInvite(username);
+            if (guildInvite != null)
+            {
+                guildSystemDeny.DeclineInvite(username);
+                terminal.SetColor("yellow");
+                terminal.WriteLine($"  You declined the guild invite from {guildInvite.InviterName}.");
+                return true;
+            }
         }
 
         // Check for pending spectate request
@@ -950,6 +1005,340 @@ public static class MudChatSystem
         groupSystem.DisbandGroup(username, "leader disbanded the group");
         terminal.SetColor("bright_green");
         terminal.WriteLine("  Your group has been disbanded.");
+        return true;
+    }
+
+    // ============ GUILD COMMANDS (v0.52.0) ============
+
+    private static bool HandleGuildInfo(string username, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        var guildName = guild.GetPlayerGuild(username);
+        if (guildName == null)
+        {
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  You are not in a guild.");
+            terminal.WriteLine("  /gcreate <name> — create a guild (10,000 gold)");
+            terminal.WriteLine("  /ginfo <name>   — look up a guild");
+            return true;
+        }
+
+        var info = guild.GetGuildInfo(guildName);
+        if (info == null) { terminal.WriteLine("  Guild not found.", "red"); return true; }
+
+        terminal.SetColor("bright_yellow");
+        terminal.WriteLine($"  Guild: {info.DisplayName}");
+        if (!string.IsNullOrEmpty(info.Motto))
+            terminal.WriteLine($"  Motto: \"{info.Motto}\"");
+        terminal.SetColor("cyan");
+        terminal.WriteLine($"  Leader: {info.LeaderUsername} | Members: {info.MemberCount}/{Systems.GuildSystem.MaxGuildMembers}");
+        terminal.WriteLine($"  Bank: {info.BankGold:N0} gold");
+        double bonus = Math.Min(info.MemberCount * Systems.GuildSystem.GuildXPBonusPerMember, Systems.GuildSystem.MaxGuildXPBonus) * 100;
+        terminal.WriteLine($"  Guild XP Bonus: +{bonus:F0}%");
+        terminal.SetColor("gray");
+        terminal.WriteLine("  Members:");
+        foreach (var m in info.Members)
+        {
+            string rankTag = m.Rank == "Leader" ? " [Leader]" : "";
+            terminal.WriteLine($"    {m.DisplayName}{rankTag}");
+        }
+        return true;
+    }
+
+    private static bool HandleGuildCreate(string username, string args, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            terminal.WriteLine("  Usage: /gcreate <guild name>", "yellow");
+            return true;
+        }
+
+        // Check gold
+        var session = MudServer.Instance?.ActiveSessions.TryGetValue(username.ToLowerInvariant(), out var s) == true ? s : null;
+        var player = session?.Context?.Engine?.CurrentPlayer;
+        if (player == null) { terminal.WriteLine("  Cannot access your character.", "red"); return true; }
+
+        if (player.Gold < Systems.GuildSystem.GuildCreationCost)
+        {
+            terminal.WriteLine($"  Creating a guild costs {Systems.GuildSystem.GuildCreationCost:N0} gold. You have {player.Gold:N0}.", "yellow");
+            return true;
+        }
+
+        string guildName = args.Trim();
+        var error = guild.CreateGuild(username, guildName, guildName);
+        if (error != null)
+        {
+            terminal.WriteLine($"  {error}", "red");
+            return true;
+        }
+
+        player.Gold -= Systems.GuildSystem.GuildCreationCost;
+        _ = Systems.SaveSystem.Instance.AutoSave(player);
+        terminal.SetColor("bright_green");
+        terminal.WriteLine($"  Guild '{guildName}' created! You are the guild leader.");
+        terminal.WriteLine("  Use /ginvite <player> to recruit members.");
+
+        // Broadcast
+        try { MudServer.Instance?.BroadcastToAll($"\r\n\x1b[1;33m  {GetChatDisplayName(username)} has founded the guild [{guildName}]!\x1b[0m\r\n", excludeUsername: username); }
+        catch { }
+
+        return true;
+    }
+
+    private static bool HandleGuildInvite(string username, string args, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        var guildName = guild.GetPlayerGuild(username);
+        if (guildName == null) { terminal.WriteLine("  You are not in a guild.", "yellow"); return true; }
+
+        if (!guild.IsGuildLeader(username, guildName))
+        {
+            terminal.WriteLine("  Only the guild leader can invite members.", "yellow");
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            terminal.WriteLine("  Usage: /ginvite <player>", "yellow");
+            return true;
+        }
+
+        string target = args.Trim();
+        var targetSession = MudServer.Instance?.ActiveSessions.TryGetValue(target.ToLowerInvariant(), out var ts) == true ? ts : null;
+        if (targetSession == null)
+        {
+            terminal.WriteLine($"  Player '{target}' is not online.", "yellow");
+            return true;
+        }
+
+        // Check if target is already in a guild
+        if (guild.GetPlayerGuild(target.ToLowerInvariant()) != null)
+        {
+            terminal.WriteLine($"  {target} is already in a guild.", "yellow");
+            return true;
+        }
+
+        guild.SendInvite(target, guildName, GetChatDisplayName(username));
+
+        // Notify target
+        try
+        {
+            targetSession.Context?.Terminal?.SetColor("bright_yellow");
+            targetSession.Context?.Terminal?.WriteLine($"\r\n  {GetChatDisplayName(username)} has invited you to guild [{guildName}]!");
+            targetSession.Context?.Terminal?.WriteLine("  Type /accept to join or /deny to decline.\r\n");
+        }
+        catch { }
+
+        terminal.SetColor("bright_green");
+        terminal.WriteLine($"  Guild invite sent to {target}.");
+        return true;
+    }
+
+    private static bool HandleGuildLeave(string username, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        var guildName = guild.GetPlayerGuild(username);
+        if (guildName == null) { terminal.WriteLine("  You are not in a guild.", "yellow"); return true; }
+
+        // Broadcast to guild before leaving
+        var online = guild.GetOnlineGuildMembers(guildName);
+        string displayName = GetChatDisplayName(username);
+
+        var error = guild.RemoveMember(username);
+        if (error != null) { terminal.WriteLine($"  {error}", "red"); return true; }
+
+        terminal.SetColor("bright_green");
+        terminal.WriteLine($"  You have left the guild.");
+
+        // Notify remaining online members
+        foreach (var member in online)
+        {
+            if (string.Equals(member, username, StringComparison.OrdinalIgnoreCase)) continue;
+            var memberSession = MudServer.Instance?.ActiveSessions.TryGetValue(member.ToLowerInvariant(), out var ms) == true ? ms : null;
+            try
+            {
+                memberSession?.Context?.Terminal?.SetColor("yellow");
+                memberSession?.Context?.Terminal?.WriteLine($"\r\n  {displayName} has left the guild.\r\n");
+            }
+            catch { }
+        }
+        return true;
+    }
+
+    private static bool HandleGuildKick(string username, string args, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        var guildName = guild.GetPlayerGuild(username);
+        if (guildName == null) { terminal.WriteLine("  You are not in a guild.", "yellow"); return true; }
+
+        if (!guild.IsGuildLeader(username, guildName))
+        {
+            terminal.WriteLine("  Only the guild leader can kick members.", "yellow");
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            terminal.WriteLine("  Usage: /gkick <player>", "yellow");
+            return true;
+        }
+
+        string target = args.Trim();
+        if (string.Equals(target, username, StringComparison.OrdinalIgnoreCase))
+        {
+            terminal.WriteLine("  You can't kick yourself. Use /gleave instead.", "yellow");
+            return true;
+        }
+
+        var targetGuild = guild.GetPlayerGuild(target);
+        if (!string.Equals(targetGuild, guildName, StringComparison.OrdinalIgnoreCase))
+        {
+            terminal.WriteLine($"  {target} is not in your guild.", "yellow");
+            return true;
+        }
+
+        var error = guild.RemoveMember(target);
+        if (error != null) { terminal.WriteLine($"  {error}", "red"); return true; }
+
+        terminal.SetColor("bright_green");
+        terminal.WriteLine($"  {target} has been kicked from the guild.");
+
+        // Notify kicked player
+        var targetSession = MudServer.Instance?.ActiveSessions.TryGetValue(target.ToLowerInvariant(), out var ts) == true ? ts : null;
+        try
+        {
+            targetSession?.Context?.Terminal?.SetColor("bright_red");
+            targetSession?.Context?.Terminal?.WriteLine($"\r\n  You have been kicked from guild [{guildName}] by {GetChatDisplayName(username)}.\r\n");
+        }
+        catch { }
+
+        return true;
+    }
+
+    private static bool HandleGuildLookup(string username, string args, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            terminal.WriteLine("  Usage: /ginfo <guild name>", "yellow");
+            return true;
+        }
+
+        var info = guild.GetGuildInfo(args.Trim());
+        if (info == null)
+        {
+            terminal.WriteLine($"  Guild '{args.Trim()}' not found.", "yellow");
+            return true;
+        }
+
+        terminal.SetColor("bright_yellow");
+        terminal.WriteLine($"  Guild: {info.DisplayName}");
+        if (!string.IsNullOrEmpty(info.Motto))
+            terminal.WriteLine($"  Motto: \"{info.Motto}\"");
+        terminal.SetColor("cyan");
+        terminal.WriteLine($"  Leader: {info.LeaderUsername} | Members: {info.MemberCount}/{Systems.GuildSystem.MaxGuildMembers}");
+        terminal.SetColor("gray");
+        foreach (var m in info.Members)
+        {
+            string rankTag = m.Rank == "Leader" ? " [Leader]" : "";
+            terminal.WriteLine($"    {m.DisplayName}{rankTag}");
+        }
+        return true;
+    }
+
+    private static bool HandleGuildChat(string username, string args, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        var guildName = guild.GetPlayerGuild(username);
+        if (guildName == null) { terminal.WriteLine("  You are not in a guild.", "yellow"); return true; }
+
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            terminal.WriteLine("  Usage: /gc <message>", "yellow");
+            return true;
+        }
+
+        string displayName = GetChatDisplayName(username);
+        var online = guild.GetOnlineGuildMembers(guildName);
+
+        foreach (var member in online)
+        {
+            if (string.Equals(member, username, StringComparison.OrdinalIgnoreCase)) continue;
+            var memberSession = MudServer.Instance?.ActiveSessions.TryGetValue(member.ToLowerInvariant(), out var ms) == true ? ms : null;
+            try
+            {
+                memberSession?.Context?.Terminal?.SetColor("bright_green");
+                memberSession?.Context?.Terminal?.WriteLine($"\r\n  [Guild] {displayName}: {args}\r\n");
+            }
+            catch { }
+        }
+
+        terminal.WriteLine($"  [Guild] You: {args}", "bright_green");
+        return true;
+    }
+
+    private static bool HandleGuildBank(string username, string args, TerminalEmulator terminal)
+    {
+        var guild = Systems.GuildSystem.Instance;
+        if (guild == null) { terminal.WriteLine("  Guild system is not available.", "yellow"); return true; }
+
+        var guildName = guild.GetPlayerGuild(username);
+        if (guildName == null) { terminal.WriteLine("  You are not in a guild.", "yellow"); return true; }
+
+        if (string.IsNullOrWhiteSpace(args) || !long.TryParse(args.Trim(), out long amount) || amount <= 0)
+        {
+            terminal.WriteLine("  Usage: /gbank <amount> — deposit gold into guild bank", "yellow");
+            return true;
+        }
+
+        var session = MudServer.Instance?.ActiveSessions.TryGetValue(username.ToLowerInvariant(), out var s) == true ? s : null;
+        var player = session?.Context?.Engine?.CurrentPlayer;
+        if (player == null) { terminal.WriteLine("  Cannot access your character.", "red"); return true; }
+
+        if (player.Gold < amount)
+        {
+            terminal.WriteLine($"  You only have {player.Gold:N0} gold.", "yellow");
+            return true;
+        }
+
+        var error = guild.DepositGold(username, amount);
+        if (error != null) { terminal.WriteLine($"  {error}", "red"); return true; }
+
+        player.Gold -= amount;
+        _ = Systems.SaveSystem.Instance.AutoSave(player);
+        terminal.SetColor("bright_green");
+        terminal.WriteLine($"  Deposited {amount:N0} gold into the guild bank.");
+
+        // Notify guild
+        var online = guild.GetOnlineGuildMembers(guildName);
+        string displayName = GetChatDisplayName(username);
+        foreach (var member in online)
+        {
+            if (string.Equals(member, username, StringComparison.OrdinalIgnoreCase)) continue;
+            var memberSession = MudServer.Instance?.ActiveSessions.TryGetValue(member.ToLowerInvariant(), out var ms) == true ? ms : null;
+            try
+            {
+                memberSession?.Context?.Terminal?.SetColor("cyan");
+                memberSession?.Context?.Terminal?.WriteLine($"\r\n  {displayName} deposited {amount:N0} gold into the guild bank.\r\n");
+            }
+            catch { }
+        }
+
         return true;
     }
 }

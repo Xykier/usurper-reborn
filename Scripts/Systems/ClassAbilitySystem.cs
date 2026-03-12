@@ -524,6 +524,19 @@ public static class ClassAbilitySystem
             BaseHealing = 90,
             AvailableToClasses = new[] { CharacterClass.Cleric }
         },
+        ["circle_of_healing"] = new ClassAbility
+        {
+            Id = "circle_of_healing",
+            Name = "Circle of Healing",
+            Description = "A radiant prayer that heals you and all nearby allies.",
+            LevelRequired = 40,
+            StaminaCost = 50,
+            Cooldown = 5,
+            Type = AbilityType.Heal,
+            BaseHealing = 75,
+            SpecialEffect = "party_heal_divine",
+            AvailableToClasses = new[] { CharacterClass.Cleric }
+        },
         ["divine_aegis"] = new ClassAbility
         {
             Id = "divine_aegis",
@@ -536,6 +549,21 @@ public static class ClassAbilitySystem
             BaseHealing = 60,
             DefenseBonus = 50,
             Duration = 4,
+            AvailableToClasses = new[] { CharacterClass.Cleric }
+        },
+        ["beacon_of_light"] = new ClassAbility
+        {
+            Id = "beacon_of_light",
+            Name = "Beacon of Light",
+            Description = "Become a beacon of divine light, shielding and slowly healing all allies.",
+            LevelRequired = 52,
+            StaminaCost = 55,
+            Cooldown = 6,
+            Type = AbilityType.Buff,
+            BaseHealing = 40,
+            DefenseBonus = 30,
+            Duration = 3,
+            SpecialEffect = "party_beacon",
             AvailableToClasses = new[] { CharacterClass.Cleric }
         },
         ["wrath_of_heaven"] = new ClassAbility
@@ -563,6 +591,19 @@ public static class ClassAbilitySystem
             BaseHealing = 160,
             DefenseBonus = 30,
             Duration = 2,
+            AvailableToClasses = new[] { CharacterClass.Cleric }
+        },
+        ["holy_covenant"] = new ClassAbility
+        {
+            Id = "holy_covenant",
+            Name = "Holy Covenant",
+            Description = "Invoke a sacred covenant that heals all allies and cleanses their afflictions.",
+            LevelRequired = 72,
+            StaminaCost = 70,
+            Cooldown = 6,
+            Type = AbilityType.Heal,
+            BaseHealing = 130,
+            SpecialEffect = "party_heal_cleanse",
             AvailableToClasses = new[] { CharacterClass.Cleric }
         },
         ["divine_intervention"] = new ClassAbility
@@ -2199,6 +2240,8 @@ public static class ClassAbilitySystem
             double healingMultiplier = 1.0;
             if (user.Class == CharacterClass.Alchemist)
                 healingMultiplier += GameConfig.AlchemistPotionMasteryBonus; // Potion Mastery: +50% healing
+            if (user.Class == CharacterClass.Cleric)
+                healingMultiplier += GameConfig.ClericDivineGraceBonus; // Divine Grace: +25% healing
             result.Healing = (int)(ability.BaseHealing * totalScale * healingMultiplier * (0.9 + random.NextDouble() * 0.2));
         }
 

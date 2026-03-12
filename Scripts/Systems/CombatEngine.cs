@@ -3729,6 +3729,12 @@ public partial class CombatEngine
         // Apply difficulty modifier to monster damage
         monsterAttack = DifficultySystem.ApplyMonsterDamageMultiplier(monsterAttack);
 
+        // Blood Moon monster buff (v0.52.0)
+        if (player.IsBloodMoon)
+        {
+            monsterAttack = (long)(monsterAttack * GameConfig.BloodMoonMonsterBuff);
+        }
+
         // Show critical hit message
         if (monsterRoll.IsCriticalSuccess)
         {
@@ -4990,11 +4996,25 @@ public partial class CombatEngine
         long expReward = WorldEventSystem.Instance.GetAdjustedXP(baseExpReward);
         long goldReward = WorldEventSystem.Instance.GetAdjustedGold(baseGoldReward);
 
+        // Blood Moon multipliers (v0.52.0)
+        if (result.Player.IsBloodMoon)
+        {
+            expReward = (long)(expReward * GameConfig.BloodMoonXPMultiplier);
+            goldReward = (long)(goldReward * GameConfig.BloodMoonGoldMultiplier);
+        }
+
         // Apply difficulty modifiers (per-character difficulty + server-wide SysOp multiplier)
         float xpMult = DifficultySystem.GetExperienceMultiplier(DifficultySystem.CurrentDifficulty) * GameConfig.XPMultiplier;
         float goldMult = DifficultySystem.GetGoldMultiplier(DifficultySystem.CurrentDifficulty) * GameConfig.GoldMultiplier;
         expReward = (long)(expReward * xpMult);
         goldReward = (long)(goldReward * goldMult);
+
+        // NG+ cycle gold modifier (v0.52.0)
+        int ngCycle = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+        if (ngCycle >= 2)
+        {
+            goldReward = (long)(goldReward * GameConfig.GetNGPlusGoldMultiplier(ngCycle));
+        }
 
         // Spouse XP bonus - 10% if married and spouse is alive
         long spouseBonus = 0;
@@ -5085,6 +5105,14 @@ public partial class CombatEngine
                 expReward += (long)(expReward * victoryBoons.XPPercent);
             if (victoryBoons.GoldPercent > 0)
                 goldReward += (long)(goldReward * victoryBoons.GoldPercent);
+        }
+
+        // Guild XP bonus (v0.52.0) — 2% per member, max 10%
+        if (UsurperRemake.BBS.DoorMode.IsOnlineMode && GuildSystem.Instance != null)
+        {
+            double guildMult = GuildSystem.Instance.GetGuildXPMultiplier(result.Player.Name1 ?? "");
+            if (guildMult > 1.0)
+                expReward = (long)(expReward * guildMult);
         }
 
         // Fatigue XP penalty — Exhausted tier only (single-player only)
@@ -5234,6 +5262,30 @@ public partial class CombatEngine
         if (isFirstKill)
         {
             await ShowFirstKillBonus(result.Player, terminal);
+        }
+
+        // Captain Aldric's Mission — first kill objective
+        if (isFirstKill && result.Player.HintsShown.Contains("aldric_quest_active") && !result.Player.HintsShown.Contains("quest_scout_kill_monster"))
+        {
+            result.Player.HintsShown.Add("quest_scout_kill_monster");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("  First blood! Aldric was right \u2014 you have potential.");
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  [Quest Updated: Defeat a monster - COMPLETE]");
+
+            // Check if all dungeon objectives are done
+            if (result.Player.HintsShown.Contains("quest_scout_enter_dungeon") && result.Player.HintsShown.Contains("quest_scout_find_treasure"))
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("  All objectives complete! Return to Main Street to report to Aldric.");
+            }
+            terminal.SetColor("white");
+        }
+
+        // Boss Kill Summary — paste-able combat story for sharing (v0.52.0)
+        if (isBoss)
+        {
+            await ShowBossKillSummary(result, playerXP, goldReward);
         }
 
         // Offer weapon pickup
@@ -5680,6 +5732,99 @@ public partial class CombatEngine
                         tm.RemoveStatus(StatusEffect.Cursed); tm.RemoveStatus(StatusEffect.Weakened);
                         if (tm is Character c) { c.Plague = false; c.Smallpox = false; c.Measles = false; c.Leprosy = false; }
                         terminal.WriteLine($"  {tm.DisplayName} is fully restored! (+{tmHeal} HP, all ailments cured)", "bright_green");
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Apply Cleric party effects (heals, buffs, cleanses) to all living teammates.
+    /// </summary>
+    private void ApplyClericPartyEffect(Character cleric, ClassAbilityResult abilityResult, CombatResult result, string effectType)
+    {
+        var teammates = result.Teammates?.Where(t => t.IsAlive).ToList();
+
+        switch (effectType)
+        {
+            case "party_heal_divine":
+            {
+                // Self heal (full, with Divine Grace)
+                int selfHeal = (int)Math.Min(abilityResult.Healing, cleric.MaxHP - cleric.HP);
+                if (selfHeal > 0)
+                {
+                    cleric.HP += selfHeal;
+                    terminal.WriteLine($"  You are bathed in divine light! (+{selfHeal} HP)", "bright_green");
+                }
+                // Teammates get 75%
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        long tmHeal = Math.Min((long)(abilityResult.Healing * 0.75), tm.MaxHP - tm.HP);
+                        if (tmHeal > 0)
+                        {
+                            tm.HP += tmHeal;
+                            terminal.WriteLine($"  {tm.DisplayName} is healed by divine light! (+{tmHeal} HP)", "bright_green");
+                        }
+                    }
+                }
+                break;
+            }
+            case "party_beacon":
+            {
+                // Self defense buff + heal
+                int selfHeal = (int)Math.Min(abilityResult.Healing, cleric.MaxHP - cleric.HP);
+                if (selfHeal > 0)
+                {
+                    cleric.HP += selfHeal;
+                }
+                cleric.TempDefenseBonus += abilityResult.DefenseBonus;
+                cleric.TempDefenseBonusDuration = Math.Max(cleric.TempDefenseBonusDuration, abilityResult.Duration);
+                terminal.WriteLine($"  You radiate divine light! (+{selfHeal} HP, +{abilityResult.DefenseBonus} DEF for {abilityResult.Duration} rounds)", "bright_yellow");
+                // Teammates get full defense buff + 75% heal
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        long tmHeal = Math.Min((long)(abilityResult.Healing * 0.75), tm.MaxHP - tm.HP);
+                        if (tmHeal > 0) { tm.HP += tmHeal; }
+                        tm.TempDefenseBonus += abilityResult.DefenseBonus;
+                        tm.TempDefenseBonusDuration = Math.Max(tm.TempDefenseBonusDuration, abilityResult.Duration);
+                        terminal.WriteLine($"  {tm.DisplayName} is shielded by the beacon! (+{tmHeal} HP, +{abilityResult.DefenseBonus} DEF)", "yellow");
+                    }
+                }
+                break;
+            }
+            case "party_heal_cleanse":
+            {
+                // Self heal + full cleanse
+                int selfHeal = (int)Math.Min(abilityResult.Healing, cleric.MaxHP - cleric.HP);
+                if (selfHeal > 0)
+                {
+                    cleric.HP += selfHeal;
+                    terminal.WriteLine($"  The holy covenant restores you! (+{selfHeal} HP)", "bright_green");
+                }
+                cleric.Poison = 0; cleric.PoisonTurns = 0; cleric.RemoveStatus(StatusEffect.Poisoned);
+                cleric.RemoveStatus(StatusEffect.Bleeding); cleric.RemoveStatus(StatusEffect.Burning);
+                cleric.RemoveStatus(StatusEffect.Cursed); cleric.RemoveStatus(StatusEffect.Weakened);
+                cleric.RemoveStatus(StatusEffect.Stunned); cleric.RemoveStatus(StatusEffect.Frozen);
+                cleric.Plague = false; cleric.Smallpox = false; cleric.Measles = false; cleric.Leprosy = false;
+                terminal.WriteLine("  All your afflictions are cleansed!", "bright_cyan");
+                // Teammates get 75% heal + full cleanse
+                if (teammates != null)
+                {
+                    foreach (var tm in teammates)
+                    {
+                        long tmHeal = Math.Min((long)(abilityResult.Healing * 0.75), tm.MaxHP - tm.HP);
+                        if (tmHeal > 0) { tm.HP += tmHeal; }
+                        tm.Poison = 0; tm.PoisonTurns = 0; tm.RemoveStatus(StatusEffect.Poisoned);
+                        tm.RemoveStatus(StatusEffect.Bleeding); tm.RemoveStatus(StatusEffect.Burning);
+                        tm.RemoveStatus(StatusEffect.Cursed); tm.RemoveStatus(StatusEffect.Weakened);
+                        tm.RemoveStatus(StatusEffect.Stunned); tm.RemoveStatus(StatusEffect.Frozen);
+                        if (tm is Character c) { c.Plague = false; c.Smallpox = false; c.Measles = false; c.Leprosy = false; }
+                        terminal.WriteLine($"  {tm.DisplayName} is restored and cleansed! (+{tmHeal} HP)", "bright_green");
                     }
                 }
                 break;
@@ -10398,6 +10543,24 @@ public partial class CombatEngine
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_remedy");
                 break;
 
+            case "party_heal_divine":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("A circle of divine light radiates from your prayer!");
+                ApplyClericPartyEffect(player, abilityResult, result, "party_heal_divine");
+                break;
+
+            case "party_beacon":
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("You become a beacon of holy light, shielding all allies!");
+                ApplyClericPartyEffect(player, abilityResult, result, "party_beacon");
+                break;
+
+            case "party_heal_cleanse":
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("A sacred covenant purifies and heals the entire party!");
+                ApplyClericPartyEffect(player, abilityResult, result, "party_heal_cleanse");
+                break;
+
             case "aoe_corrode":
                 // Apply IsCorroded to all living monsters (multi-monster version)
                 foreach (var corrodeTarget in monsters.Where(m => m.IsAlive))
@@ -14062,11 +14225,25 @@ public partial class CombatEngine
         long adjustedExp = WorldEventSystem.Instance.GetAdjustedXP(totalExp);
         long adjustedGold = WorldEventSystem.Instance.GetAdjustedGold(totalGold);
 
+        // Blood Moon multipliers (v0.52.0)
+        if (result.Player.IsBloodMoon)
+        {
+            adjustedExp = (long)(adjustedExp * GameConfig.BloodMoonXPMultiplier);
+            adjustedGold = (long)(adjustedGold * GameConfig.BloodMoonGoldMultiplier);
+        }
+
         // Apply difficulty modifiers (per-character difficulty + server-wide SysOp multiplier)
         float xpMult = DifficultySystem.GetExperienceMultiplier(DifficultySystem.CurrentDifficulty) * GameConfig.XPMultiplier;
         float goldMult = DifficultySystem.GetGoldMultiplier(DifficultySystem.CurrentDifficulty) * GameConfig.GoldMultiplier;
         adjustedExp = (long)(adjustedExp * xpMult);
         adjustedGold = (long)(adjustedGold * goldMult);
+
+        // NG+ cycle gold modifier (v0.52.0)
+        int ngCycleMulti = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+        if (ngCycleMulti >= 2)
+        {
+            adjustedGold = (long)(adjustedGold * GameConfig.GetNGPlusGoldMultiplier(ngCycleMulti));
+        }
 
         // Apply child XP bonus
         float childXPMult = FamilySystem.Instance?.GetChildXPMultiplier(result.Player) ?? 1.0f;
@@ -14134,6 +14311,14 @@ public partial class CombatEngine
         if (result.Player.CycleExpMultiplier > 1.0f)
         {
             adjustedExp = (long)(adjustedExp * result.Player.CycleExpMultiplier);
+        }
+
+        // Guild XP bonus (v0.52.0) — multi-monster path
+        if (UsurperRemake.BBS.DoorMode.IsOnlineMode && GuildSystem.Instance != null)
+        {
+            double guildMultMM = GuildSystem.Instance.GetGuildXPMultiplier(result.Player.Name1 ?? "");
+            if (guildMultMM > 1.0)
+                adjustedExp = (long)(adjustedExp * guildMultMM);
         }
 
         // Fatigue XP penalty — Exhausted tier only (single-player only)
@@ -14241,6 +14426,33 @@ public partial class CombatEngine
         if (isFirstKillMulti)
         {
             await ShowFirstKillBonus(result.Player, terminal);
+        }
+
+        // Captain Aldric's Mission — first kill objective (multi-monster path)
+        if (isFirstKillMulti && result.Player.HintsShown.Contains("aldric_quest_active") && !result.Player.HintsShown.Contains("quest_scout_kill_monster"))
+        {
+            result.Player.HintsShown.Add("quest_scout_kill_monster");
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine("  First blood! Aldric was right \u2014 you have potential.");
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  [Quest Updated: Defeat a monster - COMPLETE]");
+
+            if (result.Player.HintsShown.Contains("quest_scout_enter_dungeon") && result.Player.HintsShown.Contains("quest_scout_find_treasure"))
+            {
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("  All objectives complete! Return to Main Street to report to Aldric.");
+            }
+            terminal.SetColor("white");
+        }
+
+        // Boss Kill Summary for multi-monster combat (v0.52.0)
+        if (result.DefeatedMonsters.Any(m => m.IsBoss))
+        {
+            var bossMonster = result.DefeatedMonsters.First(m => m.IsBoss);
+            var originalMonster = result.Monster;
+            result.Monster = bossMonster;
+            await ShowBossKillSummary(result, playerXPmm, adjustedGold);
+            result.Monster = originalMonster;
         }
 
         terminal.WriteLine("");
@@ -14372,6 +14584,144 @@ public partial class CombatEngine
     }
 
     /// <summary>
+    /// Display a paste-able boss kill summary after defeating a boss monster.
+    /// Includes combat stats and a shareable narrative line.
+    /// </summary>
+    private async Task ShowBossKillSummary(CombatResult result, long xpGained, long goldGained)
+    {
+        var player = result.Player;
+        var monster = result.Monster;
+        string playerName = player.DisplayName ?? player.Name2 ?? player.Name1 ?? "Hero";
+        string className = player.Class.ToString();
+        int rounds = Math.Max(1, result.CurrentRound);
+
+        // Count companion blocks/assists
+        int teammateCount = result.Teammates?.Count(t => t != null && t.IsAlive) ?? 0;
+
+        // Build the summary lines
+        terminal.WriteLine("");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  ╔══════════════════════════════════════════════════╗");
+            terminal.WriteLine("  ║              BOSS KILL SUMMARY                   ║");
+            terminal.WriteLine("  ╠══════════════════════════════════════════════════╣");
+        }
+        else
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  --- BOSS KILL SUMMARY ---");
+        }
+
+        terminal.SetColor("bright_green");
+        string summaryLine = $"  {playerName} the Lv{player.Level} {className} defeated {monster.Name}";
+        terminal.WriteLine(summaryLine);
+        terminal.SetColor("cyan");
+        terminal.WriteLine($"  in {rounds} round{(rounds != 1 ? "s" : "")}, dealing {result.TotalDamageDealt:N0} total damage.");
+
+        if (teammateCount > 0)
+        {
+            string companions = string.Join(", ", result.Teammates!
+                .Where(t => t != null && t.IsAlive)
+                .Select(t => t.Name2 ?? t.Name1 ?? "Ally")
+                .Take(4));
+            terminal.SetColor("gray");
+            terminal.WriteLine($"  Fought alongside: {companions}");
+        }
+
+        terminal.SetColor("yellow");
+        terminal.WriteLine($"  Earned {xpGained:N0} XP and {goldGained:N0} gold.");
+
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  ╚══════════════════════════════════════════════════╝");
+        }
+
+        // Generate the one-line shareable version
+        terminal.WriteLine("");
+        terminal.SetColor("gray");
+        string shareLine = teammateCount > 0
+            ? $"{playerName} the {className} (Lv{player.Level}) defeated {monster.Name} in {rounds} rounds with {teammateCount} allies! [{result.TotalDamageDealt:N0} dmg] #UsurperReborn"
+            : $"{playerName} the {className} (Lv{player.Level}) defeated {monster.Name} in {rounds} rounds! [{result.TotalDamageDealt:N0} dmg] #UsurperReborn";
+        terminal.WriteLine($"  Share: {shareLine}");
+        terminal.WriteLine("");
+
+        await terminal.PressAnyKey();
+    }
+
+    /// <summary>
+    /// Display a paste-able death narrative after the player dies.
+    /// Creates a roguelike-style "tombstone" summary of the character's journey.
+    /// </summary>
+    private async Task ShowDeathSummary(CombatResult result)
+    {
+        var player = result.Player;
+        string playerName = player.DisplayName ?? player.Name2 ?? player.Name1 ?? "Hero";
+        string className = player.Class.ToString();
+        string killerName = result.Monster?.Name ?? "the unknown";
+        int deepestFloor = player.Statistics?.DeepestDungeonLevel ?? 1;
+        long totalKills = player.MKills;
+
+        terminal.WriteLine("");
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine("  ╔══════════════════════════════════════════════════╗");
+            terminal.WriteLine("  ║                DEATH STORY                       ║");
+            terminal.WriteLine("  ╠══════════════════════════════════════════════════╣");
+        }
+        else
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine("  --- DEATH STORY ---");
+        }
+
+        terminal.SetColor("bright_red");
+        terminal.WriteLine($"  {playerName} the Lv{player.Level} {className}");
+        terminal.SetColor("gray");
+        terminal.WriteLine($"  fell on Floor {result.Monster?.Level ?? deepestFloor} to {killerName}.");
+        terminal.WriteLine("");
+        terminal.SetColor("cyan");
+        terminal.WriteLine($"  They explored {deepestFloor} floors and slew {totalKills:N0} monsters.");
+
+        if (player.Statistics != null)
+        {
+            long totalDamage = player.Statistics.TotalDamageDealt;
+            if (totalDamage > 0)
+                terminal.WriteLine($"  Total damage dealt across all battles: {totalDamage:N0}");
+        }
+
+        if (result.Teammates != null && result.Teammates.Count > 0)
+        {
+            string companions = string.Join(", ", result.Teammates
+                .Where(t => t != null && t.IsAlive)
+                .Select(t => t.Name2 ?? t.Name1 ?? "Ally")
+                .Take(4));
+            if (!string.IsNullOrEmpty(companions))
+            {
+                terminal.SetColor("gray");
+                terminal.WriteLine($"  Their companions: {companions}");
+            }
+        }
+
+        if (!GameConfig.ScreenReaderMode)
+        {
+            terminal.SetColor("red");
+            terminal.WriteLine("  ╚══════════════════════════════════════════════════╝");
+        }
+
+        // Shareable line
+        terminal.WriteLine("");
+        terminal.SetColor("gray");
+        string shareLine = $"{playerName} the {className} (Lv{player.Level}) fell to {killerName} after slaying {totalKills:N0} monsters and reaching Floor {deepestFloor}. #UsurperReborn";
+        terminal.WriteLine($"  Share: {shareLine}");
+        terminal.WriteLine("");
+
+        await terminal.PressAnyKey();
+    }
+
+    /// <summary>
     /// Handle partial victory (player escaped but defeated some monsters)
     /// </summary>
     private async Task HandlePartialVictory(CombatResult result, bool offerMonkEncounter)
@@ -14398,11 +14748,25 @@ public partial class CombatEngine
         long adjustedExp = WorldEventSystem.Instance.GetAdjustedXP(totalExp);
         long adjustedGold = WorldEventSystem.Instance.GetAdjustedGold(totalGold);
 
+        // Blood Moon multipliers (v0.52.0)
+        if (result.Player.IsBloodMoon)
+        {
+            adjustedExp = (long)(adjustedExp * GameConfig.BloodMoonXPMultiplier);
+            adjustedGold = (long)(adjustedGold * GameConfig.BloodMoonGoldMultiplier);
+        }
+
         // Apply difficulty modifiers (per-character difficulty + server-wide SysOp multiplier)
         float xpMult = DifficultySystem.GetExperienceMultiplier(DifficultySystem.CurrentDifficulty) * GameConfig.XPMultiplier;
         float goldMult = DifficultySystem.GetGoldMultiplier(DifficultySystem.CurrentDifficulty) * GameConfig.GoldMultiplier;
         adjustedExp = (long)(adjustedExp * xpMult);
         adjustedGold = (long)(adjustedGold * goldMult);
+
+        // NG+ cycle gold modifier (v0.52.0)
+        int ngCycleFled = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+        if (ngCycleFled >= 2)
+        {
+            adjustedGold = (long)(adjustedGold * GameConfig.GetNGPlusGoldMultiplier(ngCycleFled));
+        }
 
         // Apply child XP bonus
         float childXPMult = FamilySystem.Instance?.GetChildXPMultiplier(result.Player) ?? 1.0f;
@@ -14453,6 +14817,14 @@ public partial class CombatEngine
         if (result.Player.CycleExpMultiplier > 1.0f)
         {
             adjustedExp = (long)(adjustedExp * result.Player.CycleExpMultiplier);
+        }
+
+        // Guild XP bonus (v0.52.0) — berserker/special multi-monster path
+        if (UsurperRemake.BBS.DoorMode.IsOnlineMode && GuildSystem.Instance != null)
+        {
+            double guildMultPV = GuildSystem.Instance.GetGuildXPMultiplier(result.Player.Name1 ?? "");
+            if (guildMultPV > 1.0)
+                adjustedExp = (long)(adjustedExp * guildMultPV);
         }
 
         // Auto-reset XP distribution when fighting solo — prevents 0% XP trap
@@ -14557,6 +14929,9 @@ public partial class CombatEngine
             terminal.WriteLine("");
             await Task.Delay(GetCombatDelay(1500));
         }
+
+        // Death Story — paste-able narrative for sharing (v0.52.0)
+        await ShowDeathSummary(result);
 
         result.Player.HP = 0;
         result.Player.MDefeats++;
@@ -15914,6 +16289,24 @@ public partial class CombatEngine
                 terminal.SetColor("bright_green");
                 terminal.WriteLine("The Grand Remedy flows through the party — all wounds close!");
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_remedy");
+                break;
+
+            case "party_heal_divine":
+                terminal.SetColor("bright_green");
+                terminal.WriteLine("A circle of divine light radiates from your prayer!");
+                ApplyClericPartyEffect(player, abilityResult, result, "party_heal_divine");
+                break;
+
+            case "party_beacon":
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine("You become a beacon of holy light, shielding all allies!");
+                ApplyClericPartyEffect(player, abilityResult, result, "party_beacon");
+                break;
+
+            case "party_heal_cleanse":
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine("A sacred covenant purifies and heals the entire party!");
+                ApplyClericPartyEffect(player, abilityResult, result, "party_heal_cleanse");
                 break;
 
             case "aoe_corrode":

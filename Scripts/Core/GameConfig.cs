@@ -9,8 +9,8 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.51.2";
-    public const string VersionName = "Babel";
+    public const string Version = "0.52.0";
+    public const string VersionName = "The Hook";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
     // From Pascal global_maxXX constants
@@ -558,6 +558,40 @@ public static partial class GameConfig
     public const float DeathXPLossTier2 = 0.10f;               // 10% XP loss at levels 4-5
     public const float DeathGoldLossTier2 = 0.30f;             // 30% gold loss at levels 4-5
 
+    // NG+ World Modifiers (v0.52.0) — cumulative difficulty/reward scaling per cycle
+    public const double NGPlusCycle2MonsterBuff = 1.20;  // +20% monster stats
+    public const double NGPlusCycle2GoldBuff = 1.50;     // +50% gold
+    public const double NGPlusCycle3MonsterBuff = 1.30;  // +30% monster stats
+    public const double NGPlusCycle4MonsterBuff = 1.50;  // +50% monster stats
+    public const double NGPlusCycle4GoldBuff = 2.00;     // +100% gold
+
+    /// <summary>
+    /// Get the cumulative monster stat multiplier for the current NG+ cycle.
+    /// Cycle 2: +20%, Cycle 3: +30% (stacks), Cycle 4+: +50% (stacks with all).
+    /// </summary>
+    public static double GetNGPlusMonsterMultiplier(int cycle)
+    {
+        if (cycle < 2) return 1.0;
+        double mult = 1.0;
+        if (cycle >= 2) mult *= NGPlusCycle2MonsterBuff;  // +20%
+        if (cycle >= 3) mult *= NGPlusCycle3MonsterBuff;  // +30%
+        if (cycle >= 4) mult *= NGPlusCycle4MonsterBuff;  // +50%
+        return mult;
+    }
+
+    /// <summary>
+    /// Get the cumulative gold reward multiplier for the current NG+ cycle.
+    /// Cycle 2: +50%, Cycle 4+: +100% (stacks).
+    /// </summary>
+    public static double GetNGPlusGoldMultiplier(int cycle)
+    {
+        if (cycle < 2) return 1.0;
+        double mult = 1.0;
+        if (cycle >= 2) mult *= NGPlusCycle2GoldBuff;     // +50%
+        if (cycle >= 4) mult *= NGPlusCycle4GoldBuff;      // +100%
+        return mult;
+    }
+
     // God Slayer Buff (v0.49.3) — temporary power boost after Old God encounter
     public const int GodSlayerBuffDuration = 20;         // Number of combats the buff lasts
     public const float GodSlayerDamageBonus = 0.20f;     // +20% damage while active
@@ -766,6 +800,8 @@ public static partial class GameConfig
     public const float AlchemistPotionMasteryBonus = 0.50f;  // Alchemist: +50% healing from potions and herbs
     // Magician Arcane Mastery
     public const float MagicianArcaneSpellBonus = 1.15f;     // Magician: +15% spell damage (Arcane Mastery passive)
+    // Cleric Divine Grace
+    public const float ClericDivineGraceBonus = 0.25f;       // Cleric: +25% healing from abilities and spells
     // Jester Trickster's Luck
     public const int JesterTrickstersLuckChance = 20;        // Jester: 20% chance per attack to proc random bonus
     public const float JesterLuckBonusDamage = 0.50f;        // +50% bonus damage on lucky proc
@@ -1619,6 +1655,12 @@ Voidreaver   - Void consumer. Extreme glass cannon. Requires Usurper ending.
     public const int BirthdayLoveGift = 500;              // Love/charisma gift amount
     public const int BirthdayChildGift = 1;               // Adoption gift
     
+    // Blood Moon Event (v0.52.0)
+    public const int BloodMoonCycleDays = 30;              // Every 30 in-game days
+    public const double BloodMoonMonsterBuff = 1.5;        // Monsters 50% stronger
+    public const double BloodMoonXPMultiplier = 2.0;       // 2x XP
+    public const double BloodMoonGoldMultiplier = 3.0;     // 3x gold
+
     // Random Event Chances (Pascal random event system)
     public const float DailyEventChance = 0.15f;          // 15% chance for daily random event
     public const float WeeklyEventChance = 1.0f;          // 100% chance for weekly events

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UsurperRemake.Systems;
 
 /// <summary>
 /// Enhanced monster generation system
@@ -76,6 +77,18 @@ public static class MonsterGenerator
         foreach (var ability in tier.SpecialAbilities)
         {
             monster.SpecialAbilities.Add(ability);
+        }
+
+        // NG+ cycle monster buff (v0.52.0) — monsters get stronger each cycle
+        int cycle = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+        if (cycle >= 2)
+        {
+            double monsterMult = GameConfig.GetNGPlusMonsterMultiplier(cycle);
+            monster.MaxHP = (long)(monster.MaxHP * monsterMult);
+            monster.HP = monster.MaxHP;
+            monster.Strength = (long)(monster.Strength * monsterMult);
+            monster.Defence = (int)(monster.Defence * monsterMult);
+            monster.Punch = (long)(monster.Punch * monsterMult);
         }
 
         return monster;
@@ -455,6 +468,18 @@ public static class MonsterGenerator
                 foreach (var ability in tier.SpecialAbilities)
                 {
                     monster.SpecialAbilities.Add(ability);
+                }
+
+                // NG+ cycle monster buff (v0.52.0) — same scaling as GenerateMonster()
+                int cycle = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+                if (cycle >= 2)
+                {
+                    double monsterMult = GameConfig.GetNGPlusMonsterMultiplier(cycle);
+                    monster.MaxHP = (long)(monster.MaxHP * monsterMult);
+                    monster.HP = monster.MaxHP;
+                    monster.Strength = (long)(monster.Strength * monsterMult);
+                    monster.Defence = (int)(monster.Defence * monsterMult);
+                    monster.Punch = (long)(monster.Punch * monsterMult);
                 }
 
                 monsters.Add(monster);

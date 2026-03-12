@@ -1307,8 +1307,19 @@ public abstract class BaseLocation
                 }
             }
         }
+
+        // Blood Moon indicator (v0.52.0)
+        if (currentPlayer != null && currentPlayer.IsBloodMoon)
+        {
+            terminal.SetColor("bright_red");
+            if (GameConfig.ScreenReaderMode)
+                terminal.WriteLine("  [BLOOD MOON] Monsters +50%, XP x2, Gold x3");
+            else
+                terminal.WriteLine("  ★ BLOOD MOON ★  Monsters +50% | XP x2 | Gold x3");
+        }
+
         terminal.WriteLine("");
-        
+
         // Location description
         terminal.SetColor("white");
         terminal.WriteLine(Description);
@@ -2559,6 +2570,14 @@ public abstract class BaseLocation
             WriteOnlineCmd("/emote <action>", Loc.Get("base.help_emote"));
             WriteOnlineCmd("/who", Loc.Get("base.help_who"));
             WriteOnlineCmd("/gossip <msg>", Loc.Get("base.help_gossip"));
+            WriteOnlineCmd("/guild", "View your guild info");
+            WriteOnlineCmd("/gcreate <name>", "Create a guild (10,000g)");
+            WriteOnlineCmd("/ginvite <player>", "Invite player to guild");
+            WriteOnlineCmd("/gleave", "Leave your guild");
+            WriteOnlineCmd("/gkick <player>", "Kick member (leader)");
+            WriteOnlineCmd("/gc <msg>", "Guild chat");
+            WriteOnlineCmd("/gbank <amount>", "Deposit gold to guild");
+            WriteOnlineCmd("/ginfo <guild>", "Look up any guild");
         }
 
         terminal.SetColor("bright_cyan");
@@ -2610,6 +2629,14 @@ public abstract class BaseLocation
             terminal.WriteLine($"/emote <action> {Loc.Get("base.help_emote")}");
             terminal.WriteLine($"/who {Loc.Get("base.help_who")}");
             terminal.WriteLine($"/gossip <msg> {Loc.Get("base.help_gossip")}");
+            terminal.WriteLine($"/guild - View your guild info");
+            terminal.WriteLine($"/gcreate <name> - Create a guild (10,000g)");
+            terminal.WriteLine($"/ginvite <player> - Invite player to guild");
+            terminal.WriteLine($"/gleave - Leave your guild");
+            terminal.WriteLine($"/gkick <player> - Kick member (leader)");
+            terminal.WriteLine($"/gc <msg> - Guild chat");
+            terminal.WriteLine($"/gbank <amount> - Deposit gold to guild");
+            terminal.WriteLine($"/ginfo <guild> - Look up any guild");
         }
 
         terminal.WriteLine("");
@@ -2830,6 +2857,18 @@ public abstract class BaseLocation
             };
             terminal.SetColor(fameColor);
             terminal.WriteLine($"{fameLabel} ({currentPlayer.Fame})");
+        }
+
+        // Weekly Power Rankings display
+        if (currentPlayer != null && !string.IsNullOrEmpty(currentPlayer.RivalName))
+        {
+            terminal.SetColor("cyan");
+            terminal.WriteLine($"  Rival: {currentPlayer.RivalName} (Lv {currentPlayer.RivalLevel})");
+        }
+        if (currentPlayer != null && currentPlayer.WeeklyRank > 0)
+        {
+            terminal.SetColor("cyan");
+            terminal.WriteLine($"  Weekly Rank: #{currentPlayer.WeeklyRank}");
         }
 
         terminal.WriteLine("");
@@ -4760,7 +4799,8 @@ public abstract class BaseLocation
             || currentPlayer.LoversBlissCombats > 0 || currentPlayer.DivineBlessingCombats > 0
             || currentPlayer.Class == CharacterClass.Alchemist
             || currentPlayer.Class == CharacterClass.Magician
-            || currentPlayer.Class == CharacterClass.Jester;
+            || currentPlayer.Class == CharacterClass.Jester
+            || currentPlayer.Class == CharacterClass.Cleric;
         if (hasAnyBuff)
         {
             terminal.SetColor("bright_cyan");
@@ -4779,6 +4819,11 @@ public abstract class BaseLocation
             {
                 terminal.SetColor("bright_magenta");
                 terminal.WriteLine(Loc.Get("base.buff_tricksters_luck", GameConfig.JesterTrickstersLuckChance));
+            }
+            if (currentPlayer.Class == CharacterClass.Cleric)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"  - Divine Grace: +{(int)(GameConfig.ClericDivineGraceBonus * 100)}% healing from abilities and spells");
             }
             if (currentPlayer.HasGodSlayerBuff)
             {
@@ -4854,6 +4899,19 @@ public abstract class BaseLocation
             };
             terminal.SetColor("dark_magenta");
             terminal.WriteLine(Loc.Get("base.stat_awakening", awakeningLabel, awakeningLevel));
+            terminal.SetColor("white");
+            terminal.WriteLine("");
+        }
+
+        // NG+ World Modifiers (v0.52.0)
+        int ngCycle = StoryProgressionSystem.Instance?.CurrentCycle ?? 1;
+        if (ngCycle >= 2)
+        {
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine($"  NG+ Cycle: {ngCycle}");
+            if (ngCycle >= 2) terminal.WriteLine("    - Empowered Monsters");
+            if (ngCycle >= 3) terminal.WriteLine("    - Ancient Magic");
+            if (ngCycle >= 4) terminal.WriteLine("    - The Convergence");
             terminal.SetColor("white");
             terminal.WriteLine("");
         }

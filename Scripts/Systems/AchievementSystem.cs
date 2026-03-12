@@ -175,6 +175,18 @@ public static class AchievementSystem
         // First kills
         Register(new Achievement
         {
+            Id = "first_steps",
+            Name = "First Steps",
+            Description = "Complete Captain Aldric's scouting mission",
+            Category = AchievementCategory.Combat,
+            Tier = AchievementTier.Bronze,
+            PointValue = 10,
+            GoldReward = 500,
+            UnlockMessage = "Captain Aldric nods approvingly. You've proven yourself, recruit."
+        });
+
+        Register(new Achievement
+        {
             Id = "first_blood",
             Name = "First Blood",
             Description = "Defeat your first monster",
@@ -183,6 +195,19 @@ public static class AchievementSystem
             PointValue = 5,
             GoldReward = 50,
             UnlockMessage = "Your journey as a warrior begins!"
+        });
+
+        Register(new Achievement
+        {
+            Id = "guardian_slayer",
+            Name = "Guardian Slayer",
+            Description = "Defeat the Dungeon Guardian on Floor 5",
+            Category = AchievementCategory.Combat,
+            Tier = AchievementTier.Bronze,
+            PointValue = 15,
+            GoldReward = 500,
+            ExperienceReward = 500,
+            UnlockMessage = "The Guardian acknowledges your worth!"
         });
 
         Register(new Achievement
@@ -983,6 +1008,47 @@ public static class AchievementSystem
             GoldReward = 10000,
             UnlockMessage = "You were the realm's greatest champion!"
         });
+
+        // ============ LOGIN STREAK ACHIEVEMENTS ============
+
+        Register(new Achievement
+        {
+            Id = "dedicated_adventurer",
+            Name = "Dedicated Adventurer",
+            Description = "Login for 7 consecutive days",
+            Category = AchievementCategory.Social,
+            Tier = AchievementTier.Bronze,
+            PointValue = 25,
+            GoldReward = 500,
+            ExperienceReward = 200,
+            UnlockMessage = "Your daily dedication has been recognized!"
+        });
+
+        Register(new Achievement
+        {
+            Id = "devoted_champion",
+            Name = "Devoted Champion",
+            Description = "Login for 30 consecutive days",
+            Category = AchievementCategory.Social,
+            Tier = AchievementTier.Gold,
+            PointValue = 75,
+            GoldReward = 2000,
+            ExperienceReward = 1000,
+            UnlockMessage = "A full month of unwavering commitment!"
+        });
+
+        Register(new Achievement
+        {
+            Id = "legendary_devotion",
+            Name = "Legendary Devotion",
+            Description = "Login for 90 consecutive days",
+            Category = AchievementCategory.Social,
+            Tier = AchievementTier.Platinum,
+            PointValue = 200,
+            GoldReward = 5000,
+            ExperienceReward = 5000,
+            UnlockMessage = "Your legendary devotion echoes through the ages!"
+        });
     }
 
     /// <summary>
@@ -1058,6 +1124,35 @@ public static class AchievementSystem
                 var displayName = player.Name2 ?? player.Name1;
                 _ = OnlineStateManager.Instance!.AddNews(
                     $"{displayName} unlocked \"{achievement.Name}\"!", "quest");
+            }
+
+            // Broadcast notable achievements to all online players (v0.52.0)
+            if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
+            {
+                try
+                {
+                    // Only broadcast achievements that are noteworthy
+                    bool isNotable = achievement.Tier >= AchievementTier.Gold
+                        || achievement.ExperienceReward >= 500
+                        || achievementId.Contains("legendary")
+                        || achievementId.Contains("champion")
+                        || achievementId.Contains("devotion")
+                        || achievementId.Contains("world_boss")
+                        || achievementId.Contains("god_slayer")
+                        || achievementId.Contains("immortal");
+
+                    if (isNotable)
+                    {
+                        var broadcastName = player.Name2 ?? player.Name1 ?? "Someone";
+                        string achMsg = GameConfig.ScreenReaderMode
+                            ? $"\r\n  [Achievement] {broadcastName} has earned [{achievement.Name}]!\r\n"
+                            : $"\r\n\x1b[1;33m  ★ {broadcastName} has earned [{achievement.Name}]!\x1b[0m\r\n";
+                        UsurperRemake.Server.MudServer.Instance?.BroadcastToAll(
+                            achMsg,
+                            excludeUsername: player.Name1 ?? player.Name2);
+                    }
+                }
+                catch { /* broadcast is optional */ }
             }
 
             return true;

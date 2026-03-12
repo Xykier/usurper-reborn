@@ -135,6 +135,42 @@ public class MainStreetLocation : BaseLocation
         // Status line
         ShowStatusLine();
 
+        // Captain Aldric's Mission — quest completion when returning with all objectives done
+        if (currentPlayer.HintsShown.Contains("aldric_quest_active")
+            && currentPlayer.HintsShown.Contains("quest_scout_enter_dungeon")
+            && currentPlayer.HintsShown.Contains("quest_scout_kill_monster")
+            && currentPlayer.HintsShown.Contains("quest_scout_find_treasure")
+            && !currentPlayer.HintsShown.Contains("quest_scout_return"))
+        {
+            currentPlayer.HintsShown.Add("quest_scout_return");
+            currentPlayer.HintsShown.Remove("aldric_quest_active");
+
+            terminal.WriteLine("");
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  Captain Aldric strides toward you, a rare smile crossing his face.");
+            terminal.WriteLine("");
+            terminal.SetColor("white");
+            terminal.WriteLine("  \"You made it back in one piece. That's more than I can say for");
+            terminal.WriteLine("  my last scouts. Let me see what you found...\"");
+            terminal.WriteLine("");
+            terminal.SetColor("gray");
+            terminal.WriteLine("  He reviews your report and nods approvingly.");
+            terminal.WriteLine("");
+            terminal.SetColor("white");
+            terminal.WriteLine("  \"Good work, recruit. The dungeon is dangerous, but you've shown");
+            terminal.WriteLine("  you can handle yourself down there. Here — you've earned this.\"");
+            terminal.WriteLine("");
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("  === QUEST COMPLETE: Captain Aldric's Mission ===");
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  Reward: 500 gold");
+            currentPlayer.Gold += 500;
+            terminal.SetColor("white");
+            terminal.WriteLine("");
+
+            AchievementSystem.TryUnlock(currentPlayer, "first_steps");
+        }
+
         // Show dungeon guidance for brand-new players, or generic navigation hint otherwise
         if (currentPlayer.Level == 1 && currentPlayer.MKills == 0)
         {
@@ -276,6 +312,30 @@ public class MainStreetLocation : BaseLocation
 
         // Line 4: blank
         terminal.WriteLine("");
+
+        // Captain Aldric's Mission — quest completion (BBS path)
+        if (currentPlayer.HintsShown.Contains("aldric_quest_active")
+            && currentPlayer.HintsShown.Contains("quest_scout_enter_dungeon")
+            && currentPlayer.HintsShown.Contains("quest_scout_kill_monster")
+            && currentPlayer.HintsShown.Contains("quest_scout_find_treasure")
+            && !currentPlayer.HintsShown.Contains("quest_scout_return"))
+        {
+            currentPlayer.HintsShown.Add("quest_scout_return");
+            currentPlayer.HintsShown.Remove("aldric_quest_active");
+
+            terminal.SetColor("bright_yellow");
+            terminal.WriteLine("  Captain Aldric strides toward you, a rare smile crossing his face.");
+            terminal.SetColor("white");
+            terminal.WriteLine("  \"Good work, recruit. You've earned this.\"");
+            terminal.SetColor("bright_green");
+            terminal.WriteLine("  === QUEST COMPLETE: Captain Aldric's Mission ===");
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  Reward: 500 gold");
+            currentPlayer.Gold += 500;
+            terminal.WriteLine("");
+
+            AchievementSystem.TryUnlock(currentPlayer, "first_steps");
+        }
 
         // Menu rows — progressive disclosure based on player level
         int tier = GetMenuTier();
@@ -1847,6 +1907,7 @@ public class MainStreetLocation : BaseLocation
 
                 terminal.SetColor("gray");
                 terminal.WriteLine($"\n  {Loc.Get("main_street.quit_home_sleep")}");
+                await ShowTomorrowForecast();
                 throw new LocationExitException(GameLocation.NoWhere);
             }
 
@@ -1884,6 +1945,7 @@ public class MainStreetLocation : BaseLocation
                 ? $"\n  {Loc.Get("main_street.quit_street_sleep")}"
                 : $"\n  {Loc.Get("main_street.quit_dormitory_sleep")}");
 
+            await ShowTomorrowForecast();
             throw new LocationExitException(GameLocation.NoWhere);
         }
 
@@ -1963,6 +2025,9 @@ public class MainStreetLocation : BaseLocation
             terminal.WriteLine("");
         }
 
+        // Tomorrow's Forecast
+        await ShowTomorrowForecast();
+
         terminal.SetColor("yellow");
         terminal.WriteLine($"  {Loc.Get("main_street.saving_progress")}");
 
@@ -1995,7 +2060,63 @@ public class MainStreetLocation : BaseLocation
         // Signal game should quit
         throw new LocationExitException(GameLocation.NoWhere);
     }
-    
+
+    private async Task ShowTomorrowForecast()
+    {
+        if (currentPlayer == null) return;
+
+        var forecasts = new List<string>();
+
+        // Context-sensitive forecasts based on player state
+        if (currentPlayer.Level < 10)
+        {
+            int nextFloor = Math.Min((currentPlayer.Statistics?.DeepestDungeonLevel ?? 1) + 2, 100);
+            forecasts.Add($"The dungeon depths call to you... Floor {nextFloor} holds new challenges.");
+        }
+
+        if (currentPlayer.HerbsGatheredToday > 0)
+            forecasts.Add("Your herb garden will have fresh herbs ready to gather.");
+
+        if (currentPlayer.Healing < 3)
+            forecasts.Add("Stock up on potions at the Healer before your next dungeon run.");
+
+        if (currentPlayer.Gold > 0 && currentPlayer.BankGold == 0 && currentPlayer.Gold >= 500)
+            forecasts.Add("Consider depositing your gold at the Bank for safekeeping.");
+
+        if (currentPlayer.Level >= 3 && currentPlayer.MKills > 0 && currentPlayer.MKills < 20)
+            forecasts.Add("The Quest Hall may have new bounties worth your time.");
+
+        // Generic forecasts (always available)
+        var genericForecasts = new List<string>
+        {
+            "Merchants are expecting a fresh shipment of goods.",
+            "Rumors of treasure on the dungeon's deeper floors spread through town.",
+            "The arena champion awaits a worthy challenger.",
+            "Strange sounds echo from the dungeon at night...",
+            "The townsfolk whisper about events unfolding in the realm.",
+            "New bounties may appear at the Quest Hall.",
+            "The wilderness holds secrets yet to be discovered.",
+        };
+
+        var random = new Random();
+        forecasts.Add(genericForecasts[random.Next(genericForecasts.Count)]);
+
+        // Pick up to 2 forecasts to display
+        var toShow = forecasts.OrderBy(_ => random.Next()).Take(2).ToList();
+
+        terminal.WriteLine("");
+        terminal.SetColor("cyan");
+        terminal.WriteLine("  Tomorrow's Forecast:");
+        terminal.SetColor("gray");
+        foreach (var forecast in toShow)
+        {
+            terminal.WriteLine($"    - {forecast}");
+        }
+        terminal.WriteLine("");
+
+        await Task.CompletedTask;
+    }
+
     // Helper methods
     private string GetTownName()
     {

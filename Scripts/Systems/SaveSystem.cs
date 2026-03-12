@@ -837,6 +837,21 @@ namespace UsurperRemake.Systems
                 DrugTolerance = player.DrugTolerance?.Count > 0 ? new Dictionary<int, int>(player.DrugTolerance) : null,
                 SafeHouseResting = player.SafeHouseResting,
 
+                // Daily Login Streak (v0.52.0)
+                LoginStreak = player.LoginStreak,
+                LongestLoginStreak = player.LongestLoginStreak,
+                LastLoginDate = player.LastLoginDate,
+
+                // Blood Moon Event (v0.52.0)
+                BloodMoonDay = player.BloodMoonDay,
+                IsBloodMoon = player.IsBloodMoon,
+
+                // Weekly Power Rankings (v0.52.0)
+                WeeklyRank = player.WeeklyRank,
+                PreviousWeeklyRank = player.PreviousWeeklyRank,
+                RivalName = player.RivalName,
+                RivalLevel = player.RivalLevel,
+
                 // Recurring Duelist Rival
                 RecurringDuelist = SerializeRecurringDuelist(player),
 
