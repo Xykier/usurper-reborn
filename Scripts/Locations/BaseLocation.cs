@@ -4800,7 +4800,9 @@ public abstract class BaseLocation
             || currentPlayer.Class == CharacterClass.Alchemist
             || currentPlayer.Class == CharacterClass.Magician
             || currentPlayer.Class == CharacterClass.Jester
-            || currentPlayer.Class == CharacterClass.Cleric;
+            || currentPlayer.Class == CharacterClass.Cleric
+            || currentPlayer.Class == CharacterClass.Tidesworn
+            || currentPlayer.Class == CharacterClass.Wavecaller;
         if (hasAnyBuff)
         {
             terminal.SetColor("bright_cyan");
@@ -4824,6 +4826,18 @@ public abstract class BaseLocation
             {
                 terminal.SetColor("bright_cyan");
                 terminal.WriteLine($"  - Divine Grace: +{(int)(GameConfig.ClericDivineGraceBonus * 100)}% healing from abilities and spells");
+            }
+            if (currentPlayer.Class == CharacterClass.Tidesworn)
+            {
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"  - Ocean's Blessing: +{(int)(GameConfig.TideswornOceansBlessingBonus * 100)}% healing from abilities and spells");
+                terminal.WriteLine($"  - Ocean's Resilience: Regen {(int)(GameConfig.TideswornOceansResiliencePercent * 100)}% max HP/round when below 50% HP");
+            }
+            if (currentPlayer.Class == CharacterClass.Wavecaller)
+            {
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine($"  - Harmonic Resonance: +{(int)(GameConfig.WavecallerHarmonicResonanceBonus * 100)}% healing from abilities and spells");
+                terminal.WriteLine($"  - Damage Reflection: {(int)(GameConfig.WavecallerReflectionPercent * 100)}% damage reflected when Harmonic Shield or Empathic Link active");
             }
             if (currentPlayer.HasGodSlayerBuff)
             {

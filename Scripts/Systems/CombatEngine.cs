@@ -2587,7 +2587,7 @@ public partial class CombatEngine
         // Base damage = primary stat + stat bonus + Level + WeapPow
         // Bard/Jester use CHA (performance-based combat), others use STR
         long attackPower;
-        if (attacker.Class == CharacterClass.Bard || attacker.Class == CharacterClass.Jester)
+        if (attacker.Class == CharacterClass.Bard || attacker.Class == CharacterClass.Jester || attacker.Class == CharacterClass.Wavecaller)
         {
             attackPower = attacker.Charisma;
             attackPower += attacker.Charisma / 4; // CHA bonus mirrors STR bonus formula
@@ -2644,6 +2644,17 @@ public partial class CombatEngine
         {
             // Apply Dexterity-based crit multiplier
             rollMultiplier = StatEffectsSystem.GetCriticalDamageMultiplier(attacker.Dexterity, attacker.GetEquipmentCritDamageBonus());
+        }
+
+        // Wavecaller Ocean's Voice: +20% bonus crit chance when buff active
+        if (!attackRoll.IsCriticalSuccess && !dexCrit && attacker.Class == CharacterClass.Wavecaller
+            && attacker.TempAttackBonus > 0 && attacker.TempAttackBonusDuration > 0)
+        {
+            if (random.Next(100) < (int)(GameConfig.WavecallerOceansVoiceCritBonus * 100))
+            {
+                rollMultiplier = StatEffectsSystem.GetCriticalDamageMultiplier(attacker.Dexterity, attacker.GetEquipmentCritDamageBonus());
+                terminal.WriteLine("Ocean's Voice resonates — CRITICAL HIT!", "bright_magenta");
+            }
         }
 
         attackPower = (long)(attackPower * rollMultiplier);
@@ -4074,6 +4085,21 @@ public partial class CombatEngine
             if (monster.HP <= 0)
             {
                 terminal.WriteLine(Loc.Get("combat.thorns_kill", monster.Name), "bright_yellow");
+                if (!result.DefeatedMonsters.Contains(monster))
+                    result.DefeatedMonsters.Add(monster);
+            }
+        }
+
+        // Wavecaller Reflecting status: reflect 15% of damage when Empathic Link or Harmonic Shield active
+        if (actualDamage > 0 && monster.IsAlive && player.HasStatus(StatusEffect.Reflecting))
+        {
+            long reflectDamage = Math.Max(1, (long)(actualDamage * GameConfig.WavecallerReflectionPercent));
+            monster.HP = Math.Max(0, monster.HP - reflectDamage);
+            terminal.SetColor("bright_magenta");
+            terminal.WriteLine($"Harmonic energy reflects {reflectDamage} damage back at {monster.Name}!");
+            if (monster.HP <= 0)
+            {
+                terminal.WriteLine($"The reflected energy destroys {monster.Name}!", "bright_white");
                 if (!result.DefeatedMonsters.Contains(monster))
                     result.DefeatedMonsters.Add(monster);
             }
@@ -9310,6 +9336,18 @@ public partial class CombatEngine
                             rollMult = StatEffectsSystem.GetCriticalDamageMultiplier(player.Dexterity, player.GetEquipmentCritDamageBonus());
                             terminal.WriteLine($"Precision strike!", "bright_yellow");
                         }
+
+                        // Wavecaller Ocean's Voice: +20% bonus crit chance when buff active
+                        if (!isCrit && !dexCrit && player.Class == CharacterClass.Wavecaller
+                            && player.TempAttackBonus > 0 && player.TempAttackBonusDuration > 0)
+                        {
+                            if (random.Next(100) < (int)(GameConfig.WavecallerOceansVoiceCritBonus * 100))
+                            {
+                                rollMult = StatEffectsSystem.GetCriticalDamageMultiplier(player.Dexterity, player.GetEquipmentCritDamageBonus());
+                                terminal.WriteLine("Ocean's Voice resonates — CRITICAL HIT!", "bright_magenta");
+                            }
+                        }
+
                         attackPower = (long)(attackPower * rollMult);
 
                         // Difficulty modifier
@@ -10021,6 +10059,12 @@ public partial class CombatEngine
 
             // Critical hit roll for abilities
             bool abilityCrit = StatEffectsSystem.RollCriticalHit(player);
+            // Wavecaller Ocean's Voice: +20% bonus crit chance when buff active
+            if (!abilityCrit && actualDamage > 0 && player.Class == CharacterClass.Wavecaller
+                && player.TempAttackBonus > 0 && player.TempAttackBonusDuration > 0)
+            {
+                abilityCrit = random.Next(100) < (int)(GameConfig.WavecallerOceansVoiceCritBonus * 100);
+            }
             if (abilityCrit && actualDamage > 0)
             {
                 float critMult = StatEffectsSystem.GetCriticalDamageMultiplier(player.Dexterity, player.GetEquipmentCritDamageBonus());
@@ -10824,7 +10868,7 @@ public partial class CombatEngine
             }
 
             case "oceans_embrace":
-                // Party heal 150 + cleanse debuffs
+                // Party heal 150 + cleanse debuffs + restore mana
                 player.HP = Math.Min(player.MaxHP, player.HP + abilityResult.Healing);
                 player.Poison = 0;
                 player.PoisonTurns = 0;
@@ -10838,6 +10882,14 @@ public partial class CombatEngine
                 player.RemoveStatus(StatusEffect.Exhausted);
                 terminal.SetColor("bright_cyan");
                 terminal.WriteLine(Loc.Get("combat.ability_oceans_embrace", abilityResult.Healing));
+                // Restore mana (25% of max)
+                if (player.MaxMana > 0)
+                {
+                    int manaRestored = (int)(player.MaxMana * 0.25);
+                    player.Mana = Math.Min(player.MaxMana, player.Mana + manaRestored);
+                    terminal.SetColor("bright_magenta");
+                    terminal.WriteLine($"The Ocean restores {manaRestored} mana. (Mana: {player.Mana}/{player.MaxMana})");
+                }
                 // Also heal companions
                 if (result?.Teammates != null)
                 {
@@ -15903,6 +15955,12 @@ public partial class CombatEngine
 
             // Critical hit roll for abilities (same as regular attacks)
             bool abilityCrit = StatEffectsSystem.RollCriticalHit(player);
+            // Wavecaller Ocean's Voice: +20% bonus crit chance when buff active
+            if (!abilityCrit && player.Class == CharacterClass.Wavecaller
+                && player.TempAttackBonus > 0 && player.TempAttackBonusDuration > 0)
+            {
+                abilityCrit = random.Next(100) < (int)(GameConfig.WavecallerOceansVoiceCritBonus * 100);
+            }
             if (abilityCrit)
             {
                 float critMult = StatEffectsSystem.GetCriticalDamageMultiplier(player.Dexterity, player.GetEquipmentCritDamageBonus());
@@ -16536,6 +16594,942 @@ public partial class CombatEngine
                     terminal.WriteLine($"Your thundering roar forces {monster.Name} to focus on you!");
                 }
                 break;
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // TIDESWORN PRESTIGE ABILITIES (single-monster)
+            // ═══════════════════════════════════════════════════════════════════════
+
+            case "undertow":
+                // -20% enemy damage for duration (apply Weakened)
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, abilityResult.Duration);
+                    terminal.SetColor("cyan");
+                    terminal.WriteLine(Loc.Get("combat.ability_undertow", monster.Name));
+                }
+                break;
+
+            case "riptide":
+                // Target's next attack reduced by 25% (apply Weakened)
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, 2);
+                    terminal.SetColor("cyan");
+                    terminal.WriteLine(Loc.Get("combat.ability_riptide", monster.Name));
+                }
+                break;
+
+            case "breakwater":
+                // +100 DEF already handled by DefenseBonus on ability
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_breakwater"));
+                break;
+
+            case "regen_20":
+                // 20 HP/round regen for duration
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Regenerating))
+                    player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                terminal.SetColor("bright_green");
+                terminal.WriteLine(Loc.Get("combat.ability_regen_20"));
+                break;
+
+            case "abyssal_anchor":
+                // +80 DEF (handled by ability) + enemies deal 20% less (Weakened)
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, abilityResult.Duration);
+                }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_abyssal_anchor"));
+                break;
+
+            case "sanctified_torrent":
+            {
+                // Holy water attack. 2x vs undead/demons. Heals 20% dealt.
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    bool isHoly = monster.FamilyName?.IndexOf("undead", StringComparison.OrdinalIgnoreCase) >= 0 || monster.FamilyName?.IndexOf("demon", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (isHoly) dmg *= 2;
+                    monster.HP -= dmg;
+                    terminal.SetColor(isHoly ? "bright_yellow" : "bright_cyan");
+                    terminal.WriteLine(Loc.Get(isHoly ? "combat.ability_sanctified_torrent_holy" : "combat.ability_sanctified_torrent", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                    int stHeal = (int)(dmg * 0.20);
+                    if (stHeal > 0)
+                    {
+                        player.HP = Math.Min(player.MaxHP, player.HP + stHeal);
+                        terminal.SetColor("bright_green");
+                        terminal.WriteLine(Loc.Get("combat.ability_sanctified_torrent_heal", stHeal));
+                    }
+                }
+                break;
+            }
+
+            case "oceans_embrace":
+                // Party heal 150 + cleanse debuffs + restore mana
+                player.HP = Math.Min(player.MaxHP, player.HP + abilityResult.Healing);
+                player.Poison = 0;
+                player.PoisonTurns = 0;
+                player.RemoveStatus(StatusEffect.Poisoned);
+                player.RemoveStatus(StatusEffect.Bleeding);
+                player.RemoveStatus(StatusEffect.Burning);
+                player.RemoveStatus(StatusEffect.Cursed);
+                player.RemoveStatus(StatusEffect.Weakened);
+                player.RemoveStatus(StatusEffect.Slow);
+                player.RemoveStatus(StatusEffect.Vulnerable);
+                player.RemoveStatus(StatusEffect.Exhausted);
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_oceans_embrace", abilityResult.Healing));
+                // Restore mana (25% of max)
+                if (player.MaxMana > 0)
+                {
+                    int manaRestored = (int)(player.MaxMana * 0.25);
+                    player.Mana = Math.Min(player.MaxMana, player.Mana + manaRestored);
+                    terminal.SetColor("bright_magenta");
+                    terminal.WriteLine($"The Ocean restores {manaRestored} mana. (Mana: {player.Mana}/{player.MaxMana})");
+                }
+                // Also heal companions
+                if (result?.Teammates != null)
+                {
+                    foreach (var tm in result.Teammates.Where(t => t.IsAlive))
+                    {
+                        tm.HP = Math.Min(tm.MaxHP, tm.HP + abilityResult.Healing);
+                        terminal.WriteLine(Loc.Get("combat.ability_oceans_embrace_ally", tm.Name, abilityResult.Healing), "cyan");
+                    }
+                }
+                break;
+
+            case "tidal_colossus":
+                // +60 ATK/DEF (handled) + stun immunity
+                player.HasStatusImmunity = true;
+                player.StatusImmunityDuration = abilityResult.Duration;
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_tidal_colossus"));
+                break;
+
+            case "eternal_vigil":
+                // Invulnerable for 2 rounds + force monster to attack you
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Invulnerable))
+                    player.ActiveStatuses[StatusEffect.Invulnerable] = abilityResult.Duration > 0 ? abilityResult.Duration : 2;
+                if (monster != null && monster.IsAlive)
+                {
+                    int vigilDur = abilityResult.Duration > 0 ? abilityResult.Duration : 2;
+                    monster.TauntedBy = player.DisplayName;
+                    monster.TauntRoundsLeft = vigilDur;
+                }
+                terminal.SetColor("bright_white");
+                terminal.WriteLine(Loc.Get("combat.ability_eternal_vigil"));
+                break;
+
+            case "wrath_deep":
+            {
+                // 350 damage. Instant kill <30% HP non-boss. 50% lifesteal.
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    bool instantKill = !monster.IsBoss && monster.HP < (int)(monster.MaxHP * 0.30);
+                    if (instantKill)
+                    {
+                        monster.HP = 0;
+                        terminal.SetColor("bright_cyan");
+                        terminal.WriteLine(Loc.Get("combat.ability_wrath_deep_kill", monster.Name.ToUpper()));
+                    }
+                    else
+                    {
+                        monster.HP -= dmg;
+                        terminal.SetColor("bright_cyan");
+                        terminal.WriteLine(Loc.Get("combat.ability_wrath_deep", monster.Name, dmg));
+                    }
+                    int wdHeal = (int)(dmg * 0.50);
+                    player.HP = Math.Min(player.MaxHP, player.HP + wdHeal);
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine(Loc.Get("combat.ability_wrath_deep_heal", wdHeal));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // WAVECALLER PRESTIGE ABILITIES (single-monster)
+            // ═══════════════════════════════════════════════════════════════════════
+
+            case "party_buff":
+                // +25 ATK to all allies (handled by AttackBonus for self)
+                if (result?.Teammates != null)
+                {
+                    foreach (var tm in result.Teammates.Where(t => t.IsAlive))
+                    {
+                        tm.TempAttackBonus += 25;
+                        tm.TempAttackBonusDuration = Math.Max(tm.TempAttackBonusDuration, abilityResult.Duration);
+                    }
+                }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_party_buff"));
+                break;
+
+            case "double_vs_debuffed":
+                // Double damage if target is debuffed
+                if (monster != null && monster.IsAlive)
+                {
+                    bool isDebuffed = monster.Poisoned || monster.Stunned || monster.Charmed || monster.Distracted ||
+                        monster.WeakenRounds > 0 || monster.IsSlowed || monster.IsMarked;
+                    int dvdDmg = abilityResult.Damage;
+                    if (isDebuffed) dvdDmg *= 2;
+                    monster.HP -= dvdDmg;
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine(Loc.Get(isDebuffed ? "combat.ability_double_vs_debuffed_resonance" : "combat.ability_double_vs_debuffed", monster.Name, dvdDmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+
+            case "empathic_link":
+                // +30 DEF to self (handled), damage sharing proxy
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Reflecting))
+                    player.ActiveStatuses[StatusEffect.Reflecting] = abilityResult.Duration;
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.ability_empathic_link"));
+                break;
+
+            case "crescendo_aoe":
+            {
+                // 120 AoE + 30 per ally in party (single-monster: hits monster)
+                int caAllyCount = result?.Teammates?.Count(t => t.IsAlive) ?? 0;
+                int caBonusDmg = caAllyCount * 30;
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage + caBonusDmg;
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine(Loc.Get("combat.ability_crescendo_aoe", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                if (caAllyCount > 0)
+                {
+                    terminal.SetColor("cyan");
+                    terminal.WriteLine(Loc.Get("combat.ability_crescendo_aoe_allies", caAllyCount, caBonusDmg));
+                }
+                break;
+            }
+
+            case "harmonic_shield":
+                // +40 DEF (handled) + 15% reflection to party
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Reflecting))
+                    player.ActiveStatuses[StatusEffect.Reflecting] = abilityResult.Duration;
+                if (result?.Teammates != null)
+                {
+                    foreach (var tm in result.Teammates.Where(t => t.IsAlive))
+                    {
+                        tm.TempDefenseBonus += 40;
+                        tm.TempDefenseBonusDuration = Math.Max(tm.TempDefenseBonusDuration, abilityResult.Duration);
+                    }
+                }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_harmonic_shield"));
+                break;
+
+            case "dissonant_wave":
+                // Enemy: weakened + vulnerable + 25% stun
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, abilityResult.Duration);
+                    monster.IsMarked = true;
+                    monster.MarkedDuration = Math.Max(monster.MarkedDuration, abilityResult.Duration);
+                    if (random.Next(100) < 25 && monster.StunImmunityRounds <= 0) monster.Stunned = true;
+                    terminal.SetColor("magenta");
+                    terminal.WriteLine(Loc.Get(monster.Stunned ? "combat.ability_dissonant_wave_stun" : "combat.ability_dissonant_wave", monster.Name));
+                }
+                break;
+
+            case "resonance_cascade":
+            {
+                // 100 damage (single-monster: no scaling bonus)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine(Loc.Get("combat.ability_resonance_cascade", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "tidal_harmony":
+                // Heal 200 all allies (handled for self by BaseHealing) + self ATK buff (handled)
+                if (result?.Teammates != null)
+                {
+                    foreach (var tm in result.Teammates.Where(t => t.IsAlive))
+                    {
+                        tm.HP = Math.Min(tm.MaxHP, tm.HP + 200);
+                        terminal.WriteLine(Loc.Get("combat.ability_tidal_harmony_ally", tm.Name), "cyan");
+                    }
+                }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_tidal_harmony"));
+                break;
+
+            case "oceans_voice":
+                // All allies: +50 ATK, +30 DEF (handled for self)
+                if (result?.Teammates != null)
+                {
+                    foreach (var tm in result.Teammates.Where(t => t.IsAlive))
+                    {
+                        tm.TempAttackBonus += 50;
+                        tm.TempAttackBonusDuration = Math.Max(tm.TempAttackBonusDuration, abilityResult.Duration);
+                        tm.TempDefenseBonus += 30;
+                        tm.TempDefenseBonusDuration = Math.Max(tm.TempDefenseBonusDuration, abilityResult.Duration);
+                    }
+                }
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine(Loc.Get("combat.ability_oceans_voice"));
+                break;
+
+            case "grand_finale":
+            {
+                // 300 + 50 per active buff, consumes buffs (single-monster: hits monster)
+                int gfBuffCount = player.ActiveStatuses.Count(kvp =>
+                    kvp.Key == StatusEffect.Blessed || kvp.Key == StatusEffect.Raging ||
+                    kvp.Key == StatusEffect.Haste || kvp.Key == StatusEffect.Regenerating ||
+                    kvp.Key == StatusEffect.Shielded || kvp.Key == StatusEffect.Empowered ||
+                    kvp.Key == StatusEffect.Protected || kvp.Key == StatusEffect.Stoneskin ||
+                    kvp.Key == StatusEffect.Reflecting);
+                int gfBonusDmg = gfBuffCount * 50;
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage + gfBonusDmg;
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_yellow");
+                    terminal.WriteLine(Loc.Get("combat.ability_grand_finale", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                // Consume buffs
+                var gfToRemove = player.ActiveStatuses.Keys.Where(k =>
+                    k == StatusEffect.Blessed || k == StatusEffect.Raging ||
+                    k == StatusEffect.Haste || k == StatusEffect.Regenerating ||
+                    k == StatusEffect.Shielded || k == StatusEffect.Empowered ||
+                    k == StatusEffect.Protected || k == StatusEffect.Stoneskin ||
+                    k == StatusEffect.Reflecting).ToList();
+                foreach (var key in gfToRemove) player.ActiveStatuses.Remove(key);
+                if (gfBuffCount > 0)
+                {
+                    terminal.SetColor("yellow");
+                    terminal.WriteLine(Loc.Get("combat.ability_grand_finale_buffs", gfBuffCount, gfBonusDmg));
+                }
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // CYCLEBREAKER PRESTIGE ABILITIES (single-monster)
+            // ═══════════════════════════════════════════════════════════════════════
+
+            case "temporal_feint":
+                // Auto-hit/crit next attack, dodge this round
+                player.DodgeNextAttack = true;
+                player.TempAttackBonus += 999;
+                player.TempAttackBonusDuration = 1;
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Hidden))
+                    player.ActiveStatuses[StatusEffect.Hidden] = 1;
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.ability_temporal_feint"));
+                break;
+
+            case "borrowed_power":
+            {
+                // +N per cycle to all stats (N = CurrentCycle, max 10)
+                int cbCycleBonus = Math.Min(10, StoryProgressionSystem.Instance?.CurrentCycle ?? 1);
+                player.TempAttackBonus += cbCycleBonus;
+                player.TempAttackBonusDuration = Math.Max(player.TempAttackBonusDuration, abilityResult.Duration);
+                player.TempDefenseBonus += cbCycleBonus;
+                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, abilityResult.Duration);
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.ability_borrowed_power", cbCycleBonus));
+                break;
+            }
+
+            case "echo_25":
+                // 25% chance to echo (deal damage again)
+                if (monster != null && monster.IsAlive)
+                {
+                    int echoDmg = abilityResult.Damage;
+                    monster.HP -= echoDmg;
+                    terminal.SetColor("magenta");
+                    terminal.WriteLine(Loc.Get("combat.ability_echo_25", monster.Name, echoDmg));
+                    if (random.Next(100) < 25)
+                    {
+                        monster.HP -= echoDmg;
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine(Loc.Get("combat.ability_echo_25_echo", echoDmg));
+                    }
+                }
+                break;
+
+            case "quantum_state":
+                // 50% dodge chance for duration (use Blur status)
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Blur))
+                    player.ActiveStatuses[StatusEffect.Blur] = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                player.DodgeNextAttack = true;
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.ability_quantum_state"));
+                break;
+
+            case "entropy_aoe":
+            {
+                // 140 damage + vulnerable (single-monster: hits monster)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    monster.IsMarked = true;
+                    monster.MarkedDuration = Math.Max(monster.MarkedDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                    terminal.SetColor("magenta");
+                    terminal.WriteLine(Loc.Get("combat.ability_entropy_aoe", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "timeline_split":
+                // Clone attacks for 50% damage for 3 rounds (use Haste as double attack proxy)
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Haste))
+                    player.ActiveStatuses[StatusEffect.Haste] = (abilityResult.Duration > 0 ? abilityResult.Duration : 3) + 1;
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.ability_timeline_split"));
+                break;
+
+            case "causality_loop":
+                // Enemy trapped in loop - confused + weakened
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.IsConfused = true;
+                    monster.ConfusedDuration = Math.Max(monster.ConfusedDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 3);
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 3);
+                    terminal.SetColor("bright_magenta");
+                    terminal.WriteLine(Loc.Get("combat.ability_causality_loop", monster.Name));
+                }
+                break;
+
+            case "chrono_surge":
+                // Double actions this round
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Haste))
+                    player.ActiveStatuses[StatusEffect.Haste] = 2;
+                terminal.SetColor("bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.ability_chrono_surge"));
+                break;
+
+            case "singularity":
+            {
+                // 200 damage, stunned enemies take 2x (single-monster: hits monster)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    if (monster.Stunned || monster.IsStunned) dmg *= 2;
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_magenta");
+                    terminal.WriteLine(Loc.Get(monster.Stunned ? "combat.ability_singularity_stun" : "combat.ability_singularity", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "temporal_prison":
+                // Target cannot act for 2 rounds (boss: 1)
+                if (monster != null && monster.IsAlive)
+                {
+                    if (monster.StunImmunityRounds > 0)
+                    {
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine(Loc.Get("combat.ability_temporal_prison_resist", monster.Name));
+                    }
+                    else
+                    {
+                        int tpDur = monster.IsBoss ? 1 : (abilityResult.Duration > 0 ? abilityResult.Duration : 2);
+                        monster.Stunned = true;
+                        monster.IsStunned = true;
+                        monster.StunDuration = Math.Max(monster.StunDuration, tpDur);
+                        terminal.SetColor("bright_magenta");
+                        terminal.WriteLine(Loc.Get("combat.ability_temporal_prison", monster.Name, tpDur));
+                    }
+                }
+                break;
+
+            case "cycles_end":
+            {
+                // 400 + 50 per cycle (max +250), ignore 50% defense
+                int ceCycleBonus = Math.Min(250, (StoryProgressionSystem.Instance?.CurrentCycle ?? 1) * 50);
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage + ceCycleBonus;
+                    dmg += (int)(monster.Defence * 0.25);
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_magenta");
+                    terminal.WriteLine(Loc.Get("combat.ability_cycles_end", monster.Name, dmg));
+                    if (ceCycleBonus > 0)
+                    {
+                        terminal.SetColor("magenta");
+                        terminal.WriteLine(Loc.Get("combat.ability_cycles_end_bonus", ceCycleBonus / 50, ceCycleBonus));
+                    }
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // ABYSSWARDEN PRESTIGE ABILITIES (single-monster)
+            // ═══════════════════════════════════════════════════════════════════════
+
+            case "shadow_harvest":
+            {
+                // +50% damage if target <50% HP, 25% lifesteal
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    if (monster.HP < monster.MaxHP / 2) dmg = (int)(dmg * 1.5);
+                    monster.HP -= dmg;
+                    int shHeal = (int)(dmg * 0.25);
+                    player.HP = Math.Min(player.MaxHP, player.HP + shHeal);
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_shadow_harvest", monster.Name, dmg, shHeal));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "corrupting_dot":
+                // Poison DoT + lifesteal
+                if (monster != null && monster.IsAlive)
+                {
+                    monster.Poisoned = true;
+                    monster.PoisonRounds = Math.Max(monster.PoisonRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 5);
+                    if (!player.ActiveStatuses.ContainsKey(StatusEffect.Lifesteal))
+                        player.ActiveStatuses[StatusEffect.Lifesteal] = abilityResult.Duration > 0 ? abilityResult.Duration : 5;
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_corrupting_dot", monster.Name));
+                }
+                break;
+
+            case "umbral_step":
+                // Guaranteed crit + evade all attacks
+                player.DodgeNextAttack = true;
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Hidden))
+                    player.ActiveStatuses[StatusEffect.Hidden] = 1;
+                terminal.SetColor("dark_red");
+                terminal.WriteLine(Loc.Get("combat.ability_umbral_step"));
+                break;
+
+            case "lifesteal_10":
+                // 10% lifesteal for duration
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Lifesteal))
+                    player.ActiveStatuses[StatusEffect.Lifesteal] = abilityResult.Duration > 0 ? abilityResult.Duration : 4;
+                terminal.SetColor("dark_red");
+                terminal.WriteLine(Loc.Get("combat.ability_lifesteal_10"));
+                break;
+
+            case "overflow_aoe":
+            {
+                // 200 single target. On kill, no overflow spread in single-monster.
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_overflow_aoe", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "soul_leech":
+            {
+                // 130 damage, 40% lifesteal (60% if target poisoned)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    bool slPoisoned = monster.Poisoned;
+                    float leechRate = slPoisoned ? 0.60f : 0.40f;
+                    int slHeal = (int)(dmg * leechRate);
+                    player.HP = Math.Min(player.MaxHP, player.HP + slHeal);
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get(slPoisoned ? "combat.ability_soul_leech_corrupt" : "combat.ability_soul_leech", monster.Name, dmg, slHeal));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "abyssal_eruption":
+            {
+                // 150 damage + corruption DoT (single-monster: hits monster)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    monster.Poisoned = true;
+                    monster.PoisonRounds = Math.Max(monster.PoisonRounds, 3);
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_abyssal_eruption", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "dark_pact":
+            {
+                // Sacrifice 20% max HP, +80 ATK (handled) + 25% lifesteal
+                int dpSacrifice = (int)(player.MaxHP * 0.20);
+                player.HP = Math.Max(1, player.HP - dpSacrifice);
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Lifesteal))
+                    player.ActiveStatuses[StatusEffect.Lifesteal] = abilityResult.Duration > 0 ? abilityResult.Duration : 4;
+                terminal.SetColor("dark_red");
+                terminal.WriteLine(Loc.Get("combat.ability_dark_pact", dpSacrifice));
+                break;
+            }
+
+            case "prison_wardens_command":
+                // -50% ATK/DEF to target (boss: half)
+                if (monster != null && monster.IsAlive)
+                {
+                    float pwMult = monster.IsBoss ? 0.25f : 0.50f;
+                    int pwAtkReduction = (int)(monster.Strength * pwMult);
+                    int pwDefReduction = (int)(monster.Defence * pwMult);
+                    monster.Strength = Math.Max(1, monster.Strength - pwAtkReduction);
+                    monster.Defence = Math.Max(0, monster.Defence - pwDefReduction);
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, abilityResult.Duration);
+                    monster.IsMarked = true;
+                    monster.MarkedDuration = Math.Max(monster.MarkedDuration, abilityResult.Duration);
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_prison_wardens_command", monster.Name, pwAtkReduction, pwDefReduction));
+                }
+                break;
+
+            case "consume_soul":
+            {
+                // 250 damage, on kill: +5 permanent ATK this combat
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    terminal.SetColor("dark_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_consume_soul", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                        player.TempAttackBonus += 5;
+                        player.TempAttackBonusDuration = 999;
+                        terminal.SetColor("bright_red");
+                        terminal.WriteLine(Loc.Get("combat.ability_consume_soul_bonus"));
+                    }
+                }
+                break;
+            }
+
+            case "abyss_unchained":
+            {
+                // 380 damage, heal to full, remove all debuffs (single-monster: hits monster)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_abyss_unchained", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                player.HP = player.MaxHP;
+                player.Poison = 0;
+                player.PoisonTurns = 0;
+                player.Blind = false;
+                player.RemoveStatus(StatusEffect.Poisoned);
+                player.RemoveStatus(StatusEffect.Bleeding);
+                player.RemoveStatus(StatusEffect.Cursed);
+                player.RemoveStatus(StatusEffect.Weakened);
+                player.RemoveStatus(StatusEffect.Slow);
+                player.RemoveStatus(StatusEffect.Vulnerable);
+                player.RemoveStatus(StatusEffect.Stunned);
+                player.RemoveStatus(StatusEffect.Confused);
+                player.RemoveStatus(StatusEffect.Charmed);
+                terminal.SetColor("bright_green");
+                terminal.WriteLine(Loc.Get("combat.ability_abyss_unchained_heal"));
+                break;
+            }
+
+            // ═══════════════════════════════════════════════════════════════════════
+            // VOIDREAVER PRESTIGE ABILITIES (single-monster)
+            // ═══════════════════════════════════════════════════════════════════════
+
+            case "lifesteal_30":
+            {
+                // 60 damage + 30% lifesteal
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    int lsHeal = (int)(dmg * 0.30);
+                    player.HP = Math.Min(player.MaxHP, player.HP + lsHeal);
+                    terminal.SetColor("red");
+                    terminal.WriteLine(Loc.Get("combat.ability_lifesteal_30", monster.Name, dmg, lsHeal));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "offer_flesh":
+            {
+                // Sacrifice 15% HP for +60 ATK (handled). Below 25% HP: doubles to +120.
+                int ofSacrifice = (int)(player.MaxHP * 0.15);
+                player.HP = Math.Max(1, player.HP - ofSacrifice);
+                bool ofDesperate = player.HP < (int)(player.MaxHP * 0.25);
+                if (ofDesperate)
+                {
+                    player.TempAttackBonus += 60;
+                    terminal.SetColor("bright_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_offer_flesh_desperate", ofSacrifice));
+                }
+                else
+                {
+                    terminal.SetColor("red");
+                    terminal.WriteLine(Loc.Get("combat.ability_offer_flesh", ofSacrifice));
+                }
+                break;
+            }
+
+            case "execute_reap":
+            {
+                // 100 damage, 3x vs <30% HP
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    bool canReap = monster.HP < (int)(monster.MaxHP * 0.30);
+                    if (canReap) dmg *= 3;
+                    monster.HP -= dmg;
+                    terminal.SetColor("red");
+                    terminal.WriteLine(Loc.Get(canReap ? "combat.ability_execute_reap_triple" : "combat.ability_execute_reap", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "damage_reflect_25":
+                // 25% damage reflection + 30 DEF (handled)
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Reflecting))
+                    player.ActiveStatuses[StatusEffect.Reflecting] = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                terminal.SetColor("dark_red");
+                terminal.WriteLine(Loc.Get("combat.ability_damage_reflect_25"));
+                break;
+
+            case "apotheosis":
+            {
+                // Burn 40% HP. 4 rounds: +100 ATK (handled), hit all, 20% lifesteal
+                int apoSacrifice = (int)(player.MaxHP * 0.40);
+                player.HP = Math.Max(1, player.HP - apoSacrifice);
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Lifesteal))
+                    player.ActiveStatuses[StatusEffect.Lifesteal] = abilityResult.Duration > 0 ? abilityResult.Duration : 4;
+                player.IsRaging = true;
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Raging))
+                    player.ActiveStatuses[StatusEffect.Raging] = abilityResult.Duration > 0 ? abilityResult.Duration : 4;
+                terminal.SetColor("bright_red");
+                terminal.WriteLine(Loc.Get("combat.ability_apotheosis", apoSacrifice));
+                terminal.WriteLine(Loc.Get("combat.ability_apotheosis_detail"), "red");
+                break;
+            }
+
+            case "devour":
+            {
+                // 160 damage, 50% lifesteal, double if player <30% HP
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    if (player.HP < (int)(player.MaxHP * 0.30)) dmg *= 2;
+                    monster.HP -= dmg;
+                    int dvHeal = (int)(dmg * 0.50);
+                    player.HP = Math.Min(player.MaxHP, player.HP + dvHeal);
+                    terminal.SetColor("red");
+                    terminal.WriteLine(Loc.Get("combat.ability_devour", monster.Name, dmg, dvHeal));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "entropic_blade":
+            {
+                // 180 damage, ignores defense, costs 10% HP
+                int ebHpCost = (int)(player.HP * 0.10);
+                player.HP = Math.Max(1, player.HP - ebHpCost);
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage + (int)(monster.Defence * 0.5);
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_entropic_blade", monster.Name, dmg, ebHpCost));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "blood_frenzy":
+            {
+                // Sacrifice 25% HP, double attack + 50 ATK (handled)
+                int bfSacrifice = (int)(player.MaxHP * 0.25);
+                player.HP = Math.Max(1, player.HP - bfSacrifice);
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Haste))
+                    player.ActiveStatuses[StatusEffect.Haste] = (abilityResult.Duration > 0 ? abilityResult.Duration : 3) + 1;
+                terminal.SetColor("bright_red");
+                terminal.WriteLine(Loc.Get("combat.ability_blood_frenzy", bfSacrifice));
+                break;
+            }
+
+            case "void_rupture":
+            {
+                // 220 damage (single-monster: no explosion chain)
+                if (monster != null && monster.IsAlive)
+                {
+                    int dmg = abilityResult.Damage;
+                    monster.HP -= dmg;
+                    terminal.SetColor("bright_red");
+                    terminal.WriteLine(Loc.Get("combat.ability_void_rupture", monster.Name, dmg));
+                    if (monster.HP <= 0)
+                    {
+                        monster.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                }
+                break;
+            }
+
+            case "deaths_embrace":
+                // Safety net: regen + dodge
+                if (!player.ActiveStatuses.ContainsKey(StatusEffect.Regenerating))
+                    player.ActiveStatuses[StatusEffect.Regenerating] = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                player.DodgeNextAttack = true;
+                terminal.SetColor("dark_red");
+                terminal.WriteLine(Loc.Get("combat.ability_deaths_embrace"));
+                terminal.WriteLine(Loc.Get("combat.ability_deaths_embrace_detail"), "red");
+                break;
+
+            case "annihilation":
+            {
+                // Costs 50% HP, 500 damage, instant kill <50% (non-boss)
+                int anHpCost = (int)(player.HP * 0.50);
+                player.HP = Math.Max(1, player.HP - anHpCost);
+                if (monster != null && monster.IsAlive)
+                {
+                    bool anInstantKill = !monster.IsBoss && monster.HP < (int)(monster.MaxHP * 0.50);
+                    if (anInstantKill)
+                    {
+                        monster.HP = 0;
+                        terminal.SetColor("bright_red");
+                        terminal.WriteLine(Loc.Get("combat.ability_annihilation_kill", monster.Name.ToUpper(), anHpCost));
+                        if (!result.DefeatedMonsters.Contains(monster))
+                            result.DefeatedMonsters.Add(monster);
+                    }
+                    else
+                    {
+                        int dmg = abilityResult.Damage;
+                        monster.HP -= dmg;
+                        terminal.SetColor("bright_red");
+                        terminal.WriteLine(Loc.Get("combat.ability_annihilation", monster.Name, dmg, anHpCost));
+                        if (monster.HP <= 0)
+                        {
+                            monster.HP = 0;
+                            if (!result.DefeatedMonsters.Contains(monster))
+                                result.DefeatedMonsters.Add(monster);
+                        }
+                    }
+                }
+                break;
+            }
         }
 
         await Task.CompletedTask;
@@ -16561,6 +17555,15 @@ public partial class CombatEngine
             player.Mana = Math.Min(player.MaxMana, player.Mana + manaRegen);
             terminal.SetColor("bright_magenta");
             terminal.WriteLine($"You recover {manaRegen} mana. (Mana: {player.Mana}/{player.MaxMana})");
+        }
+
+        // Tidesworn Ocean's Resilience: regen 2% max HP/round when below 50% HP
+        if (player.Class == CharacterClass.Tidesworn && player.HP < player.MaxHP / 2 && player.HP > 0)
+        {
+            int oceansRegen = Math.Max(1, (int)(player.MaxHP * GameConfig.TideswornOceansResiliencePercent));
+            player.HP = Math.Min(player.MaxHP, player.HP + oceansRegen);
+            terminal.SetColor("bright_cyan");
+            terminal.WriteLine($"Ocean's Resilience restores {oceansRegen} HP. (HP: {player.HP}/{player.MaxHP})");
         }
 
         // Equipment HP regeneration enchantment

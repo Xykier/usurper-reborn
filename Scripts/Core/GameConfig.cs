@@ -9,7 +9,7 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.52.1";
+    public const string Version = "0.52.2";
     public const string VersionName = "The Hook";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
@@ -817,6 +817,13 @@ public static partial class GameConfig
     public const float MagicianArcaneSpellBonus = 1.15f;     // Magician: +15% spell damage (Arcane Mastery passive)
     // Cleric Divine Grace
     public const float ClericDivineGraceBonus = 0.25f;       // Cleric: +25% healing from abilities and spells
+    // Tidesworn Ocean's Blessing
+    public const float TideswornOceansBlessingBonus = 0.25f;  // Tidesworn: +25% healing from abilities and spells
+    public const float TideswornOceansResiliencePercent = 0.02f; // Tidesworn: Regen 2% max HP/round when below 50% HP
+    // Wavecaller Harmonic Resonance
+    public const float WavecallerHarmonicResonanceBonus = 0.25f; // Wavecaller: +25% healing from abilities and spells
+    public const float WavecallerReflectionPercent = 0.15f;      // Wavecaller: 15% damage reflection when Reflecting
+    public const float WavecallerOceansVoiceCritBonus = 0.20f;   // Wavecaller: +20% crit chance from Ocean's Voice
     // Jester Trickster's Luck
     public const int JesterTrickstersLuckChance = 20;        // Jester: 20% chance per attack to proc random bonus
     public const float JesterLuckBonusDamage = 0.50f;        // +50% bonus damage on lucky proc

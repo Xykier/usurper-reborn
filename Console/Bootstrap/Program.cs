@@ -56,6 +56,10 @@ namespace UsurperConsole
                 return;
             }
 
+            // Initialize Steam integration early — before door mode branch,
+            // so Steam works for both --local (WezTerm/accessible launchers) and standard mode.
+            SteamIntegration.Initialize();
+
             // Check for BBS door mode arguments
             if (args.Length > 0)
             {
@@ -76,9 +80,6 @@ namespace UsurperConsole
             // Standard console mode
             // Set up console close handlers
             SetupConsoleCloseHandlers();
-
-            // Initialize Steam integration (only works if launched through Steam)
-            SteamIntegration.Initialize();
 
             Console.WriteLine("Launching Usurper Reborn – Console Mode");
 
@@ -384,6 +385,7 @@ namespace UsurperConsole
 
                 DoorMode.Log("Shutting down door mode...");
                 DoorMode.Shutdown();
+                SteamIntegration.Shutdown();
 
                 // Force process exit to ensure BBS regains control immediately.
                 // Without this, background threads (worldsim, timers, heartbeat) can keep

@@ -1479,7 +1479,7 @@ public static class ClassAbilitySystem
             Id = "breakwater",
             Name = "Breakwater",
             Description = "Become an immovable bastion. Defense +100 for 2 rounds.",
-            LevelRequired = 15, StaminaCost = 60, Cooldown = 5,
+            LevelRequired = 25, StaminaCost = 60, Cooldown = 5,
             Type = AbilityType.Defense, DefenseBonus = 100, Duration = 2,
             SpecialEffect = "breakwater",
             AvailableToClasses = new[] { CharacterClass.Tidesworn }
@@ -1488,8 +1488,8 @@ public static class ClassAbilitySystem
         {
             Id = "living_waters",
             Name = "Living Waters",
-            Description = "Channel the Ocean's restorative power. Heals 100 HP + 20 HP/round for 3 rounds.",
-            LevelRequired = 25, StaminaCost = 50, Cooldown = 5,
+            Description = "Channel the Ocean's restorative power. Heals 100 HP + 20 HP/round for 3 rounds. Enhanced by Ocean's Blessing.",
+            LevelRequired = 15, StaminaCost = 50, Cooldown = 5,
             Type = AbilityType.Heal, BaseHealing = 100, Duration = 3,
             SpecialEffect = "regen_20",
             AvailableToClasses = new[] { CharacterClass.Tidesworn }
@@ -1528,7 +1528,7 @@ public static class ClassAbilitySystem
         {
             Id = "oceans_embrace",
             Name = "Ocean's Embrace",
-            Description = "The Ocean cradles all allies. Heals 150 HP to party. Cleanses all debuffs.",
+            Description = "The Ocean cradles all allies. Heals 150 HP to party. Cleanses all debuffs. Restores 25% mana.",
             LevelRequired = 70, StaminaCost = 80, Cooldown = 6,
             Type = AbilityType.Heal, BaseHealing = 150,
             SpecialEffect = "oceans_embrace",
@@ -1584,7 +1584,7 @@ public static class ClassAbilitySystem
             Name = "Wave Echo",
             Description = "Project a focused wave of sound. Damage doubles if target is debuffed.",
             LevelRequired = 5, StaminaCost = 25, Cooldown = 2,
-            Type = AbilityType.Attack, BaseDamage = 50,
+            Type = AbilityType.Attack, BaseDamage = 70,
             SpecialEffect = "double_vs_debuffed",
             AvailableToClasses = new[] { CharacterClass.Wavecaller }
         },
@@ -2242,6 +2242,10 @@ public static class ClassAbilitySystem
                 healingMultiplier += GameConfig.AlchemistPotionMasteryBonus; // Potion Mastery: +50% healing
             if (user.Class == CharacterClass.Cleric)
                 healingMultiplier += GameConfig.ClericDivineGraceBonus; // Divine Grace: +25% healing
+            if (user.Class == CharacterClass.Tidesworn)
+                healingMultiplier += GameConfig.TideswornOceansBlessingBonus; // Ocean's Blessing: +25% healing
+            if (user.Class == CharacterClass.Wavecaller)
+                healingMultiplier += GameConfig.WavecallerHarmonicResonanceBonus; // Harmonic Resonance: +25% healing
             result.Healing = (int)(ability.BaseHealing * totalScale * healingMultiplier * (0.9 + random.NextDouble() * 0.2));
         }
 

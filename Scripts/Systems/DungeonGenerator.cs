@@ -1425,6 +1425,7 @@ namespace UsurperRemake.Systems
                 if (bossRoom != null)
                 {
                     bossRoom.HasSecretBoss = true;
+                    bossRoom.HasEvent = true;
                     bossRoom.SecretBossType = floor.Level switch
                     {
                         25 => SecretBossType.TheFirstWave,
