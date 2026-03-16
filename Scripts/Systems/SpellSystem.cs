@@ -1368,7 +1368,8 @@ public static class SpellSystem
             case 1: // Tidal Ward - Protection +20, reflects 10% melee damage
                 result.ProtectionBonus = ScaleProtectionEffect(20 + (caster.Level / 8), caster, profMult);
                 result.Duration = 999;
-                result.Message += $" A barrier of living water surrounds {caster.Name2}! (+{result.ProtectionBonus} defense)";
+                result.SpecialEffect = "tidal_reflect";
+                result.Message += $" A barrier of living water surrounds {caster.Name2}! (+{result.ProtectionBonus} defense, reflects 10% melee damage)";
                 break;
             case 2: // Purifying Surge - 40-60 heal + cure disease/poison
                 int tideHeal2 = 40 + random.Next(21);

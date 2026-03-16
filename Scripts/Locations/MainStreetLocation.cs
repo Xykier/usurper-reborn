@@ -147,23 +147,23 @@ public class MainStreetLocation : BaseLocation
 
             terminal.WriteLine("");
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  Captain Aldric strides toward you, a rare smile crossing his face.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_approach")}");
             terminal.WriteLine("");
             terminal.SetColor("white");
-            terminal.WriteLine("  \"You made it back in one piece. That's more than I can say for");
-            terminal.WriteLine("  my last scouts. Let me see what you found...\"");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_made_it")}");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_scouts")}");
             terminal.WriteLine("");
             terminal.SetColor("gray");
-            terminal.WriteLine("  He reviews your report and nods approvingly.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_review")}");
             terminal.WriteLine("");
             terminal.SetColor("white");
-            terminal.WriteLine("  \"Good work, recruit. The dungeon is dangerous, but you've shown");
-            terminal.WriteLine("  you can handle yourself down there. Here — you've earned this.\"");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_good_work")}");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_handle")}");
             terminal.WriteLine("");
             terminal.SetColor("bright_green");
-            terminal.WriteLine("  === QUEST COMPLETE: Captain Aldric's Mission ===");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.quest_complete")}");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  Reward: 500 gold");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.reward_gold", 500)}");
             currentPlayer.Gold += 500;
             terminal.SetColor("white");
             terminal.WriteLine("");
@@ -324,13 +324,13 @@ public class MainStreetLocation : BaseLocation
             currentPlayer.HintsShown.Remove("aldric_quest_active");
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  Captain Aldric strides toward you, a rare smile crossing his face.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_approach")}");
             terminal.SetColor("white");
-            terminal.WriteLine("  \"Good work, recruit. You've earned this.\"");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.completion_bbs")}");
             terminal.SetColor("bright_green");
-            terminal.WriteLine("  === QUEST COMPLETE: Captain Aldric's Mission ===");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.quest_complete")}");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  Reward: 500 gold");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.reward_gold", 500)}");
             currentPlayer.Gold += 500;
             terminal.WriteLine("");
 

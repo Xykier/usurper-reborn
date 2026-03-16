@@ -40,6 +40,14 @@ public class DungeonLocation : BaseLocation
     // This prevents invalid keys and guide navigation from double-ticking poison.
     protected override bool SuppressBasePoisonTick => true;
 
+    /// <summary>
+    /// Invalidate the cached floor so it regenerates with current language on next entry.
+    /// </summary>
+    public void InvalidateFloorCache()
+    {
+        currentFloor = null!;
+    }
+
     // One-time tutorial flag stored in player.HintsShown
     private const string DUNGEON_TUTORIAL_FLAG = "dungeon_tutorial_v1";
 
@@ -244,9 +252,9 @@ public class DungeonLocation : BaseLocation
             player.HintsShown.Add("quest_scout_enter_dungeon");
             term.WriteLine("");
             term.SetColor("bright_green");
-            term.WriteLine("  You've entered the dungeon! Captain Aldric will be pleased.");
+            term.WriteLine($"  {Loc.Get("aldric_quest.dungeon_entered")}");
             term.SetColor("yellow");
-            term.WriteLine("  [Quest Updated: Enter the dungeon - COMPLETE]");
+            term.WriteLine($"  {Loc.Get("aldric_quest.dungeon_updated")}");
             term.SetColor("white");
             term.WriteLine("");
         }
@@ -693,10 +701,10 @@ public class DungeonLocation : BaseLocation
                     {
                         term.WriteLine("");
                         term.SetColor("bright_yellow");
-                        term.WriteLine("The corridor blazes with golden light. Aurelion senses the blade's return.");
+                        term.WriteLine(Loc.Get("dungeon.sunforged_corridor"));
                         await Task.Delay(1500);
                         term.SetColor("bright_cyan");
-                        term.WriteLine("You feel the Sunforged Blade humming in resonance with the God of Light.");
+                        term.WriteLine(Loc.Get("dungeon.sunforged_humming"));
                         await Task.Delay(1500);
                         term.WriteLine("");
 
@@ -716,14 +724,14 @@ public class DungeonLocation : BaseLocation
                 if (StoryProgressionSystem.Instance.HasStoryFlag("aurelion_save_quest") &&
                     !ArtifactSystem.Instance.HasArtifact(ArtifactType.SunforgedBlade))
                 {
-                    await ShowStoryMoment(term, "The Sunforged Blade",
+                    await ShowStoryMoment(term, Loc.Get("dungeon.sunforged_title"),
                         new[] {
-                            "The chamber ahead burns with a light that has no source.",
-                            "In the center, embedded in a pillar of crystallized sunlight,",
-                            "a blade radiates warmth that pushes back the dungeon's eternal cold.",
+                            Loc.Get("dungeon.sunforged_1"),
+                            Loc.Get("dungeon.sunforged_2"),
+                            Loc.Get("dungeon.sunforged_3"),
                             "",
-                            "This is Aurelion's light, forged into steel.",
-                            "With this, you can restore what was taken from the God of Light.",
+                            Loc.Get("dungeon.sunforged_4"),
+                            Loc.Get("dungeon.sunforged_5"),
                         }, "bright_yellow");
 
                     // Grant the artifact
@@ -731,8 +739,8 @@ public class DungeonLocation : BaseLocation
 
                     term.WriteLine("");
                     term.SetColor("bright_yellow");
-                    term.WriteLine("The blade settles into your hands, warm as a promise.");
-                    term.WriteLine("Return to Aurelion on floor 85 to complete the save quest.", "yellow");
+                    term.WriteLine(Loc.Get("dungeon.sunforged_warm"));
+                    term.WriteLine(Loc.Get("dungeon.sunforged_return"), "yellow");
                 }
                 break;
 
@@ -2177,7 +2185,7 @@ public class DungeonLocation : BaseLocation
         if (currentPlayer != null && currentPlayer.IsBloodMoon)
         {
             terminal.SetColor("red");
-            terminal.WriteLine("  [Blood Moon] A crimson glow bathes everything in eerie red light.");
+            terminal.WriteLine($"  {Loc.Get("dungeon.blood_moon_atmosphere")}");
             terminal.WriteLine("");
         }
 
@@ -2252,7 +2260,7 @@ public class DungeonLocation : BaseLocation
         if (player != null && player.IsBloodMoon)
         {
             terminal.SetColor("red");
-            terminal.WriteLine("  [Blood Moon] Crimson glow. Monsters +50% | XP x2 | Gold x3");
+            terminal.WriteLine($"  {Loc.Get("dungeon.blood_moon_atmosphere_bbs")}");
         }
 
         // Lines 3-6: Room contents (compact, 1 line each)
@@ -5035,15 +5043,15 @@ public class DungeonLocation : BaseLocation
             player.HintsShown.Add("quest_scout_find_treasure");
             terminal.WriteLine("");
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  A treasure cache! This is exactly what Aldric described.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.treasure_found")}");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  [Quest Updated: Find a treasure cache - COMPLETE]");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.treasure_updated")}");
 
             // Check if all dungeon objectives are done
             if (player.HintsShown.Contains("quest_scout_enter_dungeon") && player.HintsShown.Contains("quest_scout_kill_monster"))
             {
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("  All objectives complete! Return to Main Street to report to Aldric.");
+                terminal.WriteLine($"  {Loc.Get("aldric_quest.all_complete")}");
             }
             terminal.SetColor("white");
         }
@@ -7859,15 +7867,15 @@ public class DungeonLocation : BaseLocation
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("Unlike the other shrines in this dungeon, this one feels different.");
-        terminal.WriteLine("Older. Sadder. The air hums with faded divinity.");
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.intro_1"));
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.intro_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("gray");
-        terminal.WriteLine("Before the altar kneels a woman.");
-        terminal.WriteLine("Silver-streaked hair cascades past her shoulders.");
-        terminal.WriteLine("Her eyes, when she turns to look at you, hold ancient sorrow.");
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.woman_1"));
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.woman_2"));
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.woman_3"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
@@ -7877,7 +7885,7 @@ public class DungeonLocation : BaseLocation
         await Task.Delay(2000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("She rises slowly, studying you with unnerving intensity.");
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.studies"));
         terminal.WriteLine("");
         terminal.SetColor("cyan");
         terminal.WriteLine($"\"{lyris.DialogueHints[1]}\"");
@@ -7886,9 +7894,9 @@ public class DungeonLocation : BaseLocation
 
         // Show her details
         terminal.SetColor("yellow");
-        terminal.WriteLine($"This is {lyris.Name}, {lyris.Title}.");
-        terminal.WriteLine($"Role: {lyris.CombatRole}");
-        terminal.WriteLine($"Abilities: {string.Join(", ", lyris.Abilities)}");
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.this_is", lyris.Name, lyris.Title));
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.role", lyris.CombatRole));
+        terminal.WriteLine(Loc.Get("quest.lyris_shrine.abilities", string.Join(", ", lyris.Abilities)));
         terminal.WriteLine("");
 
         terminal.SetColor("gray");
@@ -7905,9 +7913,9 @@ public class DungeonLocation : BaseLocation
         }
         else
         {
-            terminal.WriteLine("[R] Ask her to join you");
-            terminal.WriteLine("[T] Talk more");
-            terminal.WriteLine("[L] Leave her to her prayers");
+            terminal.WriteLine($"[R] {Loc.Get("quest.lyris_shrine.option_join")}");
+            terminal.WriteLine($"[T] {Loc.Get("quest.lyris_shrine.option_talk")}");
+            terminal.WriteLine($"[L] {Loc.Get("quest.lyris_shrine.option_leave")}");
         }
         terminal.WriteLine("");
 
@@ -7922,11 +7930,11 @@ public class DungeonLocation : BaseLocation
                 {
                     terminal.SetColor("bright_green");
                     terminal.WriteLine("");
-                    terminal.WriteLine($"{lyris.Name} rises from the altar.");
-                    terminal.WriteLine("\"Perhaps... this is what I was waiting for.\"");
+                    terminal.WriteLine(Loc.Get("quest.lyris_shrine.rises", lyris.Name));
+                    terminal.WriteLine(Loc.Get("quest.lyris_shrine.rises_quote"));
                     terminal.WriteLine("");
                     terminal.SetColor("yellow");
-                    terminal.WriteLine("WARNING: Companions can die permanently. Guard her well.");
+                    terminal.WriteLine(Loc.Get("quest.lyris_shrine.warning"));
 
                     // Generate news
                     NewsSystem.Instance.Newsy(false, $"{player.Name2} found {lyris.Name} at a forgotten shrine in the dungeon.");
@@ -7936,7 +7944,7 @@ public class DungeonLocation : BaseLocation
             case "T":
                 terminal.WriteLine("");
                 terminal.SetColor("cyan");
-                terminal.WriteLine($"{lyris.Name} speaks of her past...");
+                terminal.WriteLine(Loc.Get("quest.lyris_shrine.speaks", lyris.Name));
                 terminal.WriteLine("");
                 terminal.SetColor("white");
                 terminal.WriteLine(lyris.Description);
@@ -7944,7 +7952,7 @@ public class DungeonLocation : BaseLocation
                 if (!string.IsNullOrEmpty(lyris.PersonalQuestDescription))
                 {
                     terminal.SetColor("bright_magenta");
-                    terminal.WriteLine($"Personal Quest: {lyris.PersonalQuestName}");
+                    terminal.WriteLine(Loc.Get("quest.lyris_shrine.personal_quest", lyris.PersonalQuestName));
                     terminal.WriteLine($"\"{lyris.PersonalQuestDescription}\"");
                     terminal.WriteLine("");
                 }
@@ -7952,7 +7960,7 @@ public class DungeonLocation : BaseLocation
                 terminal.WriteLine($"\"{lyris.DialogueHints[2]}\"");
                 terminal.WriteLine("");
 
-                var followUp = await terminal.GetInput("Ask her to join you? (Y/N): ");
+                var followUp = await terminal.GetInput(Loc.Get("quest.lyris_shrine.ask_join_yn"));
                 if (followUp.ToUpper() == "Y")
                 {
                     await TryRecruitCompanionInDungeon(
@@ -7963,8 +7971,8 @@ public class DungeonLocation : BaseLocation
             default:
                 terminal.SetColor("gray");
                 terminal.WriteLine("");
-                terminal.WriteLine($"You nod to {lyris.Name} and continue on your way.");
-                terminal.WriteLine("\"We will meet again,\" she whispers as you leave.");
+                terminal.WriteLine(Loc.Get("quest.lyris_shrine.nod_leave", lyris.Name));
+                terminal.WriteLine(Loc.Get("quest.lyris_shrine.meet_again"));
                 break;
         }
 
@@ -8196,13 +8204,19 @@ public class DungeonLocation : BaseLocation
         terminal.WriteLine(Loc.Get("dungeon.merchant_greeting_text"));
         terminal.WriteLine("");
 
-        var choice = await terminal.GetInput(Loc.Get("dungeon.merchant_trade_or_attack"));
+        string choice;
+        while (true)
+        {
+            choice = (await terminal.GetInput(Loc.Get("dungeon.merchant_trade_or_attack"))).ToUpper();
+            if (choice == "T" || choice == "A" || choice == "L" || choice == "")
+                break;
+        }
 
-        if (choice.ToUpper() == "T")
+        if (choice == "T")
         {
             await MerchantTradeMenu(player);
         }
-        else if (choice.ToUpper() == "A")
+        else if (choice == "A")
         {
             terminal.SetColor("red");
             terminal.WriteLine(Loc.Get("dungeon.merchant_rob"));
@@ -8270,7 +8284,7 @@ public class DungeonLocation : BaseLocation
             terminal.SetColor("red");
             terminal.WriteLine(Loc.Get("dungeon.merchant_darkness"));
         }
-        else
+        else // L or empty — leave peacefully
         {
             terminal.SetColor("gray");
             terminal.WriteLine(Loc.Get("dungeon.merchant_goodbye"));
@@ -8552,6 +8566,7 @@ public class DungeonLocation : BaseLocation
             var item = LootGenerator.GenerateWeapon(level, playerClass);
             if (item != null && item.Attack > 0)
             {
+                item.IsIdentified = true; // Merchant items are always identified
                 long merchantPrice = Math.Max(500, (long)(item.Value * 1.5));
                 items.Add(new MerchantRareItem
                 {
@@ -8572,11 +8587,12 @@ public class DungeonLocation : BaseLocation
             var item = LootGenerator.GenerateArmor(level, playerClass);
             if (item != null && item.Armor > 0)
             {
+                item.IsIdentified = true; // Merchant items are always identified
                 long merchantPrice = Math.Max(500, (long)(item.Value * 1.5));
                 items.Add(new MerchantRareItem
                 {
                     Name = item.Name,
-                    Description = $"Def +{item.Armor}" + FormatItemBonuses(item),
+                    Description = $"AC +{item.Armor}" + FormatItemBonuses(item),
                     Price = merchantPrice,
                     Type = "armor",
                     LootItem = item
@@ -8595,10 +8611,11 @@ public class DungeonLocation : BaseLocation
                 // Avoid duplicates
                 if (items.Any(i => i.Name == item.Name)) continue;
 
+                item.IsIdentified = true; // Merchant items are always identified
                 long merchantPrice = Math.Max(500, (long)(item.Value * 1.5));
                 string stats = item.Type == ObjType.Weapon
                     ? $"Atk +{item.Attack}" + FormatItemBonuses(item)
-                    : $"Def +{item.Armor}" + FormatItemBonuses(item);
+                    : $"AC +{item.Armor}" + FormatItemBonuses(item);
                 items.Add(new MerchantRareItem
                 {
                     Name = item.Name,
@@ -8623,6 +8640,7 @@ public class DungeonLocation : BaseLocation
 
             if (item != null)
             {
+                item.IsIdentified = true; // Merchant items are always identified
                 long merchantPrice = Math.Max(300, (long)(item.Value * 1.5));
                 string stats = FormatAccessoryStats(item);
                 items.Add(new MerchantRareItem
@@ -8665,7 +8683,7 @@ public class DungeonLocation : BaseLocation
     {
         var stats = new List<string>();
         if (item.Attack > 0) stats.Add($"Atk +{item.Attack}");
-        if (item.Armor > 0) stats.Add($"Def +{item.Armor}");
+        if (item.Armor > 0) stats.Add($"AC +{item.Armor}");
         if (item.Strength != 0) stats.Add($"STR {item.Strength:+#;-#;0}");
         if (item.Defence != 0) stats.Add($"DEF {item.Defence:+#;-#;0}");
         if (item.Dexterity != 0) stats.Add($"DEX {item.Dexterity:+#;-#;0}");
@@ -13836,42 +13854,42 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_magenta");
         WriteThickDivider();
-        terminal.WriteLine("                    THE LIGHT THAT WAS                                        ");
+        terminal.WriteLine($"                    {Loc.Get("quest.lyris_light.title")}                                        ");
         WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("Lyris suddenly stops, her eyes widening.");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.stops"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("\"I feel it,\" she whispers. \"The artifact... it's close.\"");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.feels_it"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("She moves to a seemingly unremarkable section of wall,");
-        terminal.WriteLine("pressing her palm against the stone. Ancient symbols flare to life.");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.wall_1"));
+        terminal.WriteLine(Loc.Get("quest.lyris_light.wall_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("A hidden chamber opens, revealing a pedestal.");
-        terminal.WriteLine("Upon it rests a crystalline orb, pulsing with fading golden light.");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.chamber_1"));
+        terminal.WriteLine(Loc.Get("quest.lyris_light.chamber_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("\"Aurelion's Heart,\" Lyris breathes. \"The last fragment of his true self.\"");
-        terminal.WriteLine("\"Before the corruption. Before Manwe twisted everything.\"");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.heart_1"));
+        terminal.WriteLine(Loc.Get("quest.lyris_light.heart_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("She reaches for it, then hesitates, looking at you.");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.hesitates"));
         terminal.WriteLine("");
 
         terminal.SetColor("darkgray");
@@ -13881,7 +13899,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Encourage her to take it");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.option_1"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -13889,7 +13907,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Warn her it might be dangerous");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.option_2"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -13897,30 +13915,30 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Take it yourself");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.option_3"));
         terminal.WriteLine("");
 
-        var choice = await terminal.GetInput("What do you do? ");
+        var choice = await terminal.GetInput(Loc.Get("quest.lyris_light.what_do"));
 
         switch (choice)
         {
             case "1":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("You nod encouragingly. \"This is what you've been searching for.\"");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c1_encourage"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("bright_magenta");
-                terminal.WriteLine("Lyris gently lifts the orb. Light floods the chamber.");
-                terminal.WriteLine("For a moment, you see her as she once was - radiant, divine.");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c1_lifts"));
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c1_once_was"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("\"I... I can feel him. The god I once served.\"");
-                terminal.WriteLine("\"He's still in there, buried under Manwe's corruption.\"");
-                terminal.WriteLine("\"With this... maybe there's hope.\"");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c1_feel_1"));
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c1_feel_2"));
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c1_feel_3"));
                 terminal.WriteLine("");
 
                 UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
@@ -13930,19 +13948,19 @@ public class DungeonLocation : BaseLocation
             case "2":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("\"Be careful,\" you warn. \"Divine artifacts can be treacherous.\"");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c2_careful"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("\"You're right to be cautious,\" she says softly.");
-                terminal.WriteLine("\"But this... this is worth any risk.\"");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c2_right"));
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c2_worth"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("bright_magenta");
-                terminal.WriteLine("She carefully lifts the orb, bracing for pain that never comes.");
-                terminal.WriteLine("Instead, warmth spreads through the chamber.");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c2_lifts"));
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c2_warmth"));
                 terminal.WriteLine("");
 
                 UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
@@ -13952,21 +13970,21 @@ public class DungeonLocation : BaseLocation
             case "3":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("You step forward to take the orb yourself.");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c3_reach"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("red");
-                terminal.WriteLine("The moment your fingers touch it, searing pain shoots through you!");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c3_pain"));
                 var orbDmg = player.MaxHP / 4;
                 player.HP = Math.Max(1, player.HP - orbDmg);
-                terminal.WriteLine($"You take {orbDmg} damage!");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c3_damage", orbDmg));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("\"It only responds to those who once served the light,\"");
-                terminal.WriteLine("Lyris explains, gently taking the orb from your burned hands.");
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c3_responds_1"));
+                terminal.WriteLine(Loc.Get("quest.lyris_light.c3_responds_2"));
                 terminal.WriteLine("");
 
                 UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
@@ -13978,7 +13996,7 @@ public class DungeonLocation : BaseLocation
 
         terminal.SetColor("bright_green");
         WriteThickDivider();
-        terminal.WriteLine("           QUEST COMPLETE: THE LIGHT THAT WAS                                 ");
+        terminal.WriteLine($"           {Loc.Get("quest.lyris_light.complete_title")}                                 ");
         WriteThickDivider();
         terminal.WriteLine("");
 
@@ -13989,7 +14007,7 @@ public class DungeonLocation : BaseLocation
         // Bonus: Lyris gains power
         lyris.BaseStats.MagicPower += 25;
         lyris.BaseStats.HealingPower += 15;
-        terminal.WriteLine("Lyris has gained new power from connecting with Aurelion's essence!", "bright_cyan");
+        terminal.WriteLine(Loc.Get("quest.lyris_light.bonus"), "bright_cyan");
 
         await terminal.PressAnyKey();
         return true;
@@ -14016,38 +14034,38 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("dark_red");
         WriteThickDivider();
-        terminal.WriteLine("                    GHOSTS OF THE GUARD                                       ");
+        terminal.WriteLine($"                    {Loc.Get("quest.aldric_ghosts.title")}                                       ");
         WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("Aldric freezes mid-step, his face going pale.");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.freezes"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("\"That smell,\" he growls. \"Brimstone and blood. I know it.\"");
-        terminal.WriteLine("\"Malachar. The demon that slaughtered my men.\"");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.smell_1"));
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.smell_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("From the shadows ahead, a massive figure emerges.");
-        terminal.WriteLine("Horned, wreathed in flame, its eyes burning with malevolent intelligence.");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.emerges_1"));
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.emerges_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("red");
-        terminal.WriteLine("MALACHAR THE SLAYER speaks:");
-        terminal.WriteLine("\"The last of the King's Guard. I wondered when you'd find me.\"");
-        terminal.WriteLine("\"Your men died screaming your name. Did you know that?\"");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_speaks"));
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_1"));
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("Aldric's hands tremble on his shield.");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.trembles"));
         terminal.WriteLine("");
 
         terminal.SetColor("darkgray");
@@ -14057,7 +14075,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Aldric, we fight together. You're not alone this time.\"");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.option_1"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14065,7 +14083,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"This is your battle. I'll support you from behind.\"");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.option_2"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14073,18 +14091,18 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"We should retreat and prepare properly.\"");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.option_3"));
         terminal.WriteLine("");
 
-        var choice = await terminal.GetInput("What do you say? ");
+        var choice = await terminal.GetInput(Loc.Get("quest.aldric_ghosts.what_say"));
 
         switch (choice)
         {
             case "1":
                 terminal.SetColor("bright_cyan");
                 terminal.WriteLine("");
-                terminal.WriteLine("\"Together,\" Aldric nods, his fear hardening into resolve.");
-                terminal.WriteLine("\"This time, I won't fail.\"");
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.c1_together"));
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.c1_wont_fail"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
@@ -14097,8 +14115,8 @@ public class DungeonLocation : BaseLocation
             case "2":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("\"I understand,\" Aldric says quietly. \"This is my burden.\"");
-                terminal.WriteLine("\"But... thank you for being here.\"");
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.c2_understand"));
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.c2_thanks"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
@@ -14111,8 +14129,8 @@ public class DungeonLocation : BaseLocation
             case "3":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("\"No,\" Aldric says firmly. \"I've run from this for too long.\"");
-                terminal.WriteLine("\"Today it ends. With or without you.\"");
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.c3_no"));
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.c3_ends"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
@@ -14134,7 +14152,7 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("red");
         WriteThickDivider();
-        terminal.WriteLine("                    BOSS: MALACHAR THE SLAYER                                 ");
+        terminal.WriteLine($"                    {Loc.Get("quest.aldric_ghosts.boss_title")}                                 ");
         WriteThickDivider();
         terminal.WriteLine("");
 
@@ -14151,7 +14169,7 @@ public class DungeonLocation : BaseLocation
         };
 
         terminal.SetColor("red");
-        terminal.WriteLine($"Malachar HP: {malachar.HP}/{malachar.MaxHP}");
+        terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_hp", malachar.HP, malachar.MaxHP));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
@@ -14166,24 +14184,24 @@ public class DungeonLocation : BaseLocation
             {
                 long playerDmg = player.Strength + player.WeapPow + dungeonRandom.Next(50);
                 malachar.HP -= (int)playerDmg;
-                terminal.WriteLine($"You strike Malachar for {playerDmg} damage!", "bright_cyan");
+                terminal.WriteLine(Loc.Get("quest.aldric_ghosts.player_strike", playerDmg), "bright_cyan");
             }
 
             // Aldric attacks with determination
             int aldricDmg = aldric.BaseStats.Attack * 2 + dungeonRandom.Next(100);
             malachar.HP -= aldricDmg;
-            terminal.WriteLine($"Aldric unleashes his fury for {aldricDmg} damage!", "bright_yellow");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.aldric_fury", aldricDmg), "bright_yellow");
 
             if (malachar.HP <= 0) break;
 
             // Malachar attacks Aldric (his target)
             int demonDmg = 50 + dungeonRandom.Next(80);
             aldric.BaseStats.HP -= demonDmg;
-            terminal.WriteLine($"Malachar claws Aldric for {demonDmg} damage!", "red");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_claws", demonDmg), "red");
 
             terminal.WriteLine("");
-            terminal.WriteLine($"Malachar HP: {Math.Max(0, malachar.HP)}/{malachar.MaxHP}", "red");
-            terminal.WriteLine($"Aldric HP: {Math.Max(0, aldric.BaseStats.HP)}", "yellow");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_hp", Math.Max(0, malachar.HP), malachar.MaxHP), "red");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.aldric_hp", Math.Max(0, aldric.BaseStats.HP)), "yellow");
             await Task.Delay(800);
             terminal.WriteLine("");
         }
@@ -14195,29 +14213,29 @@ public class DungeonLocation : BaseLocation
         {
             terminal.SetColor("bright_green");
             terminal.WriteLine("");
-            terminal.WriteLine("Malachar falls, his flames sputtering out.");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.falls"));
             terminal.WriteLine("");
             await Task.Delay(1500);
 
             terminal.SetColor("white");
-            terminal.WriteLine("Aldric stands over the demon's corpse, tears streaming down his face.");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.tears"));
             terminal.WriteLine("");
             await Task.Delay(1000);
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("\"It's done,\" he whispers. \"Sergeant Bors. Private Kell. Captain Maren.\"");
-            terminal.WriteLine("\"All of them. They can rest now. I... I did it.\"");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.done_1"));
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.done_2"));
             terminal.WriteLine("");
             await Task.Delay(1500);
 
             terminal.SetColor("cyan");
-            terminal.WriteLine("He turns to you, and for the first time, you see peace in his eyes.");
-            terminal.WriteLine("\"Thank you. For standing with me. For not letting me face this alone.\"");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.peace_1"));
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.peace_2"));
             terminal.WriteLine("");
 
             terminal.SetColor("bright_green");
             WriteThickDivider();
-            terminal.WriteLine("           QUEST COMPLETE: GHOSTS OF THE GUARD                               ");
+            terminal.WriteLine($"           {Loc.Get("quest.aldric_ghosts.complete_title")}                               ");
             WriteThickDivider();
             terminal.WriteLine("");
 
@@ -14229,11 +14247,11 @@ public class DungeonLocation : BaseLocation
             // Bonus: Aldric's guilt is lifted, gaining stats
             aldric.BaseStats.Defense += 30;
             aldric.BaseStats.HP += 200;
-            terminal.WriteLine("Aldric's burden is lifted. He fights with renewed purpose!", "bright_cyan");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.bonus"), "bright_cyan");
 
             // XP reward
             player.Experience += 25000;
-            terminal.WriteLine($"You gained 25,000 experience!", "bright_green");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.xp_reward", "25,000"), "bright_green");
         }
 
         await terminal.PressAnyKey();
@@ -14258,35 +14276,35 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_green");
         WriteThickDivider();
-        terminal.WriteLine("                    THE MEANING OF MERCY                                      ");
+        terminal.WriteLine($"                    {Loc.Get("quest.mira_mercy.title")}                                      ");
         WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("You come upon a gruesome scene.");
-        terminal.WriteLine("A young adventurer lies dying, wounds too severe to survive.");
-        terminal.WriteLine("Beside him, an older woman - his mother, by the look - weeps.");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.scene_1"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.scene_2"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.scene_3"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("Mira kneels beside them, her hands already glowing with healing light.");
-        terminal.WriteLine("But she stops, her face twisted with doubt.");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.kneels_1"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.kneels_2"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("\"I can save him,\" she whispers. \"But he'll never walk again.\"");
-        terminal.WriteLine("\"He'll live, but as a shadow of who he was.\"");
-        terminal.WriteLine("\"Is that mercy? Or cruelty?\"");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.save_1"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.save_2"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.save_3"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("gray");
-        terminal.WriteLine("The mother looks at you desperately. \"Please, any life is better than none!\"");
-        terminal.WriteLine("The young man's eyes find yours. He shakes his head slightly.");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.mother"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.youngman"));
         terminal.WriteLine("");
 
         terminal.SetColor("darkgray");
@@ -14296,7 +14314,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Heal him, Mira. Life is precious, no matter the cost.\"");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.option_1"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14304,7 +14322,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Let him go peacefully. Some pain should not be prolonged.\"");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.option_2"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14312,74 +14330,74 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"This is your choice, Mira. Not mine.\"");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.option_3"));
         terminal.WriteLine("");
 
-        var choice = await terminal.GetInput("What do you say? ");
+        var choice = await terminal.GetInput(Loc.Get("quest.mira_mercy.what_say"));
 
         switch (choice)
         {
             case "1":
                 terminal.SetColor("bright_green");
                 terminal.WriteLine("");
-                terminal.WriteLine("Mira nods slowly, and her hands blaze with light.");
-                terminal.WriteLine("The young man gasps, color returning to his cheeks.");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c1_nods"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c1_gasps"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("white");
-                terminal.WriteLine("The mother sobs with relief, clutching her son.");
-                terminal.WriteLine("But the young man's eyes... there's something broken there.");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c1_sobs"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c1_broken"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("\"I saved a life,\" Mira says quietly. \"That has to mean something.\"");
-                terminal.WriteLine("\"Even if... even if he hates me for it someday.\"");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c1_saved"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c1_hates"));
                 story.SetStoryFlag("mira_chose_life", true);
                 break;
 
             case "2":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("Mira's light fades. She takes the young man's hand instead.");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c2_fades"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("\"I'm here,\" she whispers. \"You don't have to be afraid.\"");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c2_here"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("white");
-                terminal.WriteLine("He smiles - genuinely smiles - and closes his eyes.");
-                terminal.WriteLine("The mother's wails echo through the dungeon.");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c2_smiles"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c2_wails"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("\"Sometimes,\" Mira says, tears streaming, \"the kindest thing\"");
-                terminal.WriteLine("\"is to hold their hand at the end.\"");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c2_kindest_1"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c2_kindest_2"));
                 story.SetStoryFlag("mira_chose_peace", true);
                 break;
 
             case "3":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("Mira looks at you, then back at the dying man.");
-                terminal.WriteLine("For a long moment, no one moves.");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c3_looks"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c3_noone"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("cyan");
-                terminal.WriteLine("Finally, she speaks. \"I became a healer to help people.\"");
-                terminal.WriteLine("\"But I forgot that helping isn't just about bodies.\"");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c3_healer_1"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c3_healer_2"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("She heals his pain, but not his wounds.");
-                terminal.WriteLine("He slips away peacefully, free of suffering.");
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c3_heals"));
+                terminal.WriteLine(Loc.Get("quest.mira_mercy.c3_slips"));
                 terminal.WriteLine("");
                 story.SetStoryFlag("mira_chose_middle", true);
                 break;
@@ -14389,7 +14407,7 @@ public class DungeonLocation : BaseLocation
 
         terminal.SetColor("bright_green");
         WriteThickDivider();
-        terminal.WriteLine("           QUEST COMPLETE: THE MEANING OF MERCY                               ");
+        terminal.WriteLine($"           {Loc.Get("quest.mira_mercy.complete_title")}                               ");
         WriteThickDivider();
         terminal.WriteLine("");
 
@@ -14398,14 +14416,14 @@ public class DungeonLocation : BaseLocation
             UsurperRemake.Systems.CompanionId.Mira, true);
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("\"Thank you,\" Mira says. \"For being here. For helping me understand.\"");
-        terminal.WriteLine("\"Healing isn't about fixing everything. It's about being present.\"");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.thanks_1"));
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.thanks_2"));
         terminal.WriteLine("");
 
         // Bonus: Mira gains wisdom
         mira.BaseStats.HealingPower += 40;
         mira.BaseStats.MagicPower += 20;
-        terminal.WriteLine("Mira's understanding deepens. Her healing grows stronger!", "bright_cyan");
+        terminal.WriteLine(Loc.Get("quest.mira_mercy.bonus"), "bright_cyan");
 
         UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
             UsurperRemake.Systems.CompanionId.Mira, 20, "Helped her find meaning");
@@ -14445,7 +14463,7 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
         WriteThickDivider();
-        terminal.WriteLine("                    ONE MORE SUNRISE                                          ");
+        terminal.WriteLine($"                    {Loc.Get("quest.vex_sunrise.title")}                                          ");
         WriteThickDivider();
         terminal.WriteLine("");
 
@@ -14475,7 +14493,7 @@ public class DungeonLocation : BaseLocation
         {
             terminal.SetColor("bright_green");
             WriteThickDivider();
-            terminal.WriteLine("           QUEST COMPLETE: ONE MORE SUNRISE                                   ");
+            terminal.WriteLine($"           {Loc.Get("quest.vex_sunrise.complete_title")}                                   ");
             WriteThickDivider();
             terminal.WriteLine("");
 
@@ -14483,9 +14501,9 @@ public class DungeonLocation : BaseLocation
                 UsurperRemake.Systems.CompanionId.Vex, true);
 
             terminal.SetColor("cyan");
-            terminal.WriteLine("Vex grins at you, his eyes misty.");
-            terminal.WriteLine("\"I did it. Everything I wanted to do before... you know.\"");
-            terminal.WriteLine("\"Thank you. For making these last days mean something.\"");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.complete_1"));
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.complete_2"));
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.complete_3"));
             terminal.WriteLine("");
         }
 
@@ -14497,19 +14515,19 @@ public class DungeonLocation : BaseLocation
         UsurperRemake.Systems.StoryProgressionSystem story)
     {
         terminal.SetColor("white");
-        terminal.WriteLine("Vex suddenly stops, a mischievous grin spreading across his face.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_stops"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"You know what I always wanted to do?\" he asks.");
-        terminal.WriteLine("\"Find a legendary treasure. The kind they write songs about.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_wanted_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_wanted_2"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("He points to a hidden alcove you would have missed.");
-        terminal.WriteLine("Inside: a chest covered in ancient runes.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_points_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_points_2"));
         terminal.WriteLine("");
 
         terminal.SetColor("darkgray");
@@ -14519,7 +14537,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Help him open it together");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_option_1"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14527,34 +14545,34 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Let him have this moment alone");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_option_2"));
         terminal.WriteLine("");
 
         var choice = await terminal.GetInput(Loc.Get("ui.choice"));
 
         terminal.SetColor("bright_yellow");
         terminal.WriteLine("");
-        terminal.WriteLine("The chest opens to reveal genuine treasure - gold, gems, artifacts!");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_opens"));
         terminal.WriteLine("");
 
         long gold = 50000 + dungeonRandom.Next(25000);
         player.Gold += gold;
-        terminal.WriteLine($"You found {gold} gold!", "bright_green");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_found_gold", gold), "bright_green");
         terminal.WriteLine("");
 
         if (choice == "1")
         {
             terminal.SetColor("cyan");
-            terminal.WriteLine("\"Legendary treasure, found together,\" Vex laughs.");
-            terminal.WriteLine("\"That's even better than the songs.\"");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_together_1"));
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_together_2"));
             UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
                 UsurperRemake.Systems.CompanionId.Vex, 15, "Shared treasure discovery");
         }
         else
         {
             terminal.SetColor("cyan");
-            terminal.WriteLine("\"My name in the history books,\" Vex murmurs.");
-            terminal.WriteLine("\"Even if just as a footnote. That's something.\"");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_alone_1"));
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_alone_2"));
             UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
                 UsurperRemake.Systems.CompanionId.Vex, 10, "Let him have his moment");
         }
@@ -14562,55 +14580,55 @@ public class DungeonLocation : BaseLocation
         story.SetStoryFlag("vex_bucket_treasure", true);
         terminal.SetColor("gray");
         terminal.WriteLine("");
-        terminal.WriteLine("[Bucket List: Find Legendary Treasure - COMPLETE]");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.t_bucket"));
     }
 
     private async Task VexBucketJoke(Character player, UsurperRemake.Systems.Companion vex,
         UsurperRemake.Systems.StoryProgressionSystem story)
     {
         terminal.SetColor("white");
-        terminal.WriteLine("You encounter a patrol of demon guards.");
-        terminal.WriteLine("Before you can draw your weapon, Vex steps forward.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_encounter"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_steps"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Hey! Why did the demon cross the road?\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_joke_1"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("red");
-        terminal.WriteLine("The demons look at each other, confused.");
-        terminal.WriteLine("\"What?\" one snarls.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_confused"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_what"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Because he was DYING to get to the other side!\"");
-        terminal.WriteLine("Vex spreads his arms. \"Get it? DYING?\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_punchline_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_punchline_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("The demons stare. One snorts. Then another.");
-        terminal.WriteLine("Suddenly, they're all laughing.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_stare"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_laughing"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("red");
-        terminal.WriteLine("\"That's terrible,\" the lead demon wheezes.");
-        terminal.WriteLine("\"Get out of here before I change my mind.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_terrible"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_getout"));
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("As you hurry past, Vex is beaming.");
-        terminal.WriteLine("\"Made a demon laugh. MADE A DEMON LAUGH!\"");
-        terminal.WriteLine("\"Cross that off the list!\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_beaming"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_triumph_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_triumph_2"));
         terminal.WriteLine("");
 
         story.SetStoryFlag("vex_bucket_joke", true);
         terminal.SetColor("gray");
-        terminal.WriteLine("[Bucket List: Make a Demon Laugh - COMPLETE]");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.j_bucket"));
 
         UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
             UsurperRemake.Systems.CompanionId.Vex, 10, "Witnessed his triumph");
@@ -14620,13 +14638,13 @@ public class DungeonLocation : BaseLocation
         UsurperRemake.Systems.StoryProgressionSystem story)
     {
         terminal.SetColor("white");
-        terminal.WriteLine("During a rest, Vex grows uncharacteristically quiet.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_quiet"));
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Can I tell you something?\" he asks softly.");
-        terminal.WriteLine("\"Something I've never told anyone?\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_tell_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_tell_2"));
         terminal.WriteLine("");
 
         terminal.SetColor("darkgray");
@@ -14636,7 +14654,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"Of course. I'm listening.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_option_1"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14644,63 +14662,63 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("\"You don't have to tell me anything.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_option_2"));
         terminal.WriteLine("");
 
-        var choice = await terminal.GetInput("Response: ");
+        var choice = await terminal.GetInput(Loc.Get("quest.vex_sunrise.truth_prompt"));
 
         terminal.SetColor("white");
         terminal.WriteLine("");
         if (choice == "1")
         {
-            terminal.WriteLine("You sit beside him, waiting.");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_sit"));
         }
         else
         {
-            terminal.WriteLine("\"No,\" he says. \"I need to. While I still can.\"");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_need"));
         }
         terminal.WriteLine("");
         await Task.Delay(1000);
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("\"I act like I don't care about dying,\" he begins.");
-        terminal.WriteLine("\"All the jokes. The bravado. The 'life's too short' nonsense.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_act_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_act_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("His voice cracks.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_cracks"));
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("\"I'm terrified. Every single day.\"");
-        terminal.WriteLine("\"I don't want to go. I want to see what happens next.\"");
-        terminal.WriteLine("\"I want to fall in love. Grow old. Have regrets.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_terrified"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_want_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_want_2"));
         terminal.WriteLine("");
         await Task.Delay(2000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("He laughs, but there's no humor in it.");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_laughs"));
         terminal.WriteLine("");
 
         terminal.SetColor("cyan");
-        terminal.WriteLine("\"But I don't get that. So I make jokes instead.\"");
-        terminal.WriteLine("\"Because if I'm laughing, I can pretend I'm not screaming.\"");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_jokes_1"));
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_jokes_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         if (choice == "1")
         {
             terminal.SetColor("white");
-            terminal.WriteLine("You put a hand on his shoulder. No words needed.");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_shoulder"));
             UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
                 UsurperRemake.Systems.CompanionId.Vex, 20, "Listened to his truth");
         }
         else
         {
             terminal.SetColor("white");
-            terminal.WriteLine("He wipes his eyes and forces a smile.");
-            terminal.WriteLine("\"Thanks for not making me say it alone.\"");
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_wipes"));
+            terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_alone"));
             UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
                 UsurperRemake.Systems.CompanionId.Vex, 15, "Respected his truth");
         }
@@ -14708,7 +14726,7 @@ public class DungeonLocation : BaseLocation
         story.SetStoryFlag("vex_bucket_truth", true);
         terminal.SetColor("gray");
         terminal.WriteLine("");
-        terminal.WriteLine("[Bucket List: Tell Someone the Truth - COMPLETE]");
+        terminal.WriteLine(Loc.Get("quest.vex_sunrise.truth_bucket"));
     }
 
     /// <summary>
@@ -14734,49 +14752,49 @@ public class DungeonLocation : BaseLocation
         terminal.ClearScreen();
         terminal.SetColor("bright_magenta");
         WriteThickDivider();
-        terminal.WriteLine("                       THE LOST OPUS                                        ");
+        terminal.WriteLine($"                       {Loc.Get("quest.melodia_opus.title")}                                        ");
         WriteThickDivider();
         terminal.WriteLine("");
 
         await Task.Delay(1000);
 
         terminal.SetColor("white");
-        terminal.WriteLine("A faint melody echoes through the stone corridors — impossible,");
-        terminal.WriteLine("yet unmistakable. Melodia freezes mid-step.");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.melody_1"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.melody_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("\"Do you hear that?\" she whispers, her eyes wide.");
-        terminal.WriteLine("\"That melody... I've only ever read about it in the oldest texts.\"");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.hear_1"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.hear_2"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("She follows the sound through a narrow passage you hadn't noticed,");
-        terminal.WriteLine("her fingers tracing symbols carved into the walls — musical notation");
-        terminal.WriteLine("in a language older than any living tongue.");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.follows_1"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.follows_2"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.follows_3"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine("The passage opens into a small chamber. In its center stands a");
-        terminal.WriteLine("stone lectern, and upon it rests pages of crumbling parchment.");
-        terminal.WriteLine("The air hums with resonance, as if the room itself is singing.");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.chamber_1"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.chamber_2"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.chamber_3"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine("\"The Lost Opus,\" Melodia breathes, barely audible.");
-        terminal.WriteLine("\"A composition said to capture the essence of the world itself —\"");
-        terminal.WriteLine("\"every joy, every sorrow, every truth, woven into a single song.\"");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.breathes_1"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.breathes_2"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.breathes_3"));
         terminal.WriteLine("");
         await Task.Delay(1500);
 
         terminal.SetColor("white");
-        terminal.WriteLine("She reaches toward the score, then hesitates.");
-        terminal.WriteLine("\"The legends say it was hidden here to protect it. That only");
-        terminal.WriteLine("someone who truly understands music's power should claim it.\"");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.reaches_1"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.reaches_2"));
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.reaches_3"));
         terminal.WriteLine("");
 
         terminal.SetColor("darkgray");
@@ -14786,7 +14804,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Encourage her — this is her destiny");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.option_1"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14794,7 +14812,7 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Help her transcribe it carefully before it crumbles");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.option_2"));
         terminal.SetColor("darkgray");
         terminal.Write("[");
         terminal.SetColor("bright_yellow");
@@ -14802,31 +14820,31 @@ public class DungeonLocation : BaseLocation
         terminal.SetColor("darkgray");
         terminal.Write("] ");
         terminal.SetColor("yellow");
-        terminal.WriteLine("Take the pages yourself for safekeeping");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.option_3"));
         terminal.WriteLine("");
 
-        var choice = await terminal.GetInput("What do you do? ");
+        var choice = await terminal.GetInput(Loc.Get("quest.melodia_opus.what_do"));
 
         switch (choice)
         {
             case "1":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("\"This is what you were meant to find,\" you say. \"Take it.\"");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_take"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("bright_magenta");
-                terminal.WriteLine("Melodia lifts the score with reverent hands. As her fingers");
-                terminal.WriteLine("touch the parchment, the room erupts in light and sound —");
-                terminal.WriteLine("a harmony so beautiful it brings tears to your eyes.");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_lifts_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_lifts_2"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_lifts_3"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("\"I can hear it all,\" she whispers, tears streaming.");
-                terminal.WriteLine("\"Every song I've ever played was just an echo of this.\"");
-                terminal.WriteLine("\"Now I understand what music truly is.\"");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_hear_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_hear_2"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c1_hear_3"));
                 terminal.WriteLine("");
 
                 UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
@@ -14836,27 +14854,27 @@ public class DungeonLocation : BaseLocation
             case "2":
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("\"Let's work together — I'll hold the pages while you copy them.\"");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_work"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("\"Brilliant idea,\" she says, pulling out blank parchment.");
-                terminal.WriteLine("Together you work in the humming chamber, Melodia transcribing");
-                terminal.WriteLine("each note with a master's precision while you steady the fragile originals.");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_brilliant_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_brilliant_2"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_brilliant_3"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("bright_magenta");
-                terminal.WriteLine("When she plays the first bars from her copy, the chamber resonates.");
-                terminal.WriteLine("The original pages glow bright, then dissolve into motes of light");
-                terminal.WriteLine("that sink into the stone — returning to the world they described.");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_plays_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_plays_2"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_plays_3"));
                 terminal.WriteLine("");
                 await Task.Delay(1500);
 
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("\"We saved it,\" she says, clutching the transcription to her chest.");
-                terminal.WriteLine("\"You and I — we saved a piece of eternity.\"");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_saved_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c2_saved_2"));
                 terminal.WriteLine("");
 
                 UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
@@ -14867,22 +14885,22 @@ public class DungeonLocation : BaseLocation
             default:
                 terminal.SetColor("white");
                 terminal.WriteLine("");
-                terminal.WriteLine("You reach for the score. The moment your fingers touch the");
-                terminal.WriteLine("parchment, a discordant shriek fills the chamber!");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c3_reach_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c3_reach_2"));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("red");
                 var opusDmg = player.MaxHP / 5;
                 player.HP = Math.Max(1, player.HP - opusDmg);
-                terminal.WriteLine($"The dissonance tears through you! You take {opusDmg} damage!");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c3_damage", opusDmg));
                 terminal.WriteLine("");
                 await Task.Delay(1000);
 
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("Melodia gently steadies you and takes the score.");
-                terminal.WriteLine("\"It's not just paper — it's a living song. It chooses its keeper.\"");
-                terminal.WriteLine("She studies it, her expression softening. \"But thank you for trying.\"");
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c3_takes_1"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c3_takes_2"));
+                terminal.WriteLine(Loc.Get("quest.melodia_opus.c3_takes_3"));
                 terminal.WriteLine("");
 
                 UsurperRemake.Systems.CompanionSystem.Instance.ModifyLoyalty(
@@ -14894,7 +14912,7 @@ public class DungeonLocation : BaseLocation
 
         terminal.SetColor("bright_green");
         WriteThickDivider();
-        terminal.WriteLine("              QUEST COMPLETE: THE LOST OPUS                                  ");
+        terminal.WriteLine($"              {Loc.Get("quest.melodia_opus.complete_title")}                                  ");
         WriteThickDivider();
         terminal.WriteLine("");
 
@@ -14905,8 +14923,8 @@ public class DungeonLocation : BaseLocation
         // Bonus: Melodia gains power from understanding the world's true song
         melodia.BaseStats.MagicPower += 30;
         melodia.BaseStats.HealingPower += 20;
-        terminal.WriteLine("Melodia's understanding of music has deepened profoundly!", "bright_cyan");
-        terminal.WriteLine("Her magical power and healing ability have increased!", "bright_cyan");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.bonus_1"), "bright_cyan");
+        terminal.WriteLine(Loc.Get("quest.melodia_opus.bonus_2"), "bright_cyan");
 
         await terminal.PressAnyKey();
         return true;

@@ -924,5 +924,41 @@ public partial class RelationshipSystem
 
     #endregion
 
+    /// <summary>
+    /// Clear all relationships (single-player NG+)
+    /// </summary>
+    public void Reset()
+    {
+        _instanceRelationships.Clear();
+        _instanceDailyGains.Clear();
+    }
+
+    /// <summary>
+    /// Clear only relationships involving a specific player (online NG+)
+    /// NPC-to-NPC relationships are shared and must be preserved.
+    /// </summary>
+    public void ResetPlayerRelationships(string playerName)
+    {
+        var keysToRemove = new List<(string outer, string inner)>();
+        foreach (var outerPair in _instanceRelationships)
+        {
+            foreach (var innerPair in outerPair.Value)
+            {
+                var record = innerPair.Value;
+                if (record.Name1.Equals(playerName, StringComparison.OrdinalIgnoreCase) ||
+                    record.Name2.Equals(playerName, StringComparison.OrdinalIgnoreCase))
+                {
+                    keysToRemove.Add((outerPair.Key, innerPair.Key));
+                }
+            }
+        }
+        foreach (var (outer, inner) in keysToRemove)
+        {
+            _instanceRelationships[outer].Remove(inner);
+            if (_instanceRelationships[outer].Count == 0)
+                _instanceRelationships.Remove(outer);
+        }
+    }
+
     #endregion
 }

@@ -477,6 +477,12 @@ public class Character
         return ("Exhausted", "bright_red");
     }
 
+    // Team HQ upgrade levels (v0.52.8) — cached from DB on login, not serialized
+    public int HQArmoryLevel { get; set; }    // +5% attack per level
+    public int HQBarracksLevel { get; set; }  // +5% defense per level
+    public int HQTrainingLevel { get; set; }  // +5% XP per level
+    public int HQInfirmaryLevel { get; set; } // +10% healing per level
+
     // Herb pouch inventory (v0.48.5)
     public int HerbHealing { get; set; }        // Healing Herbs (garden lv1)
     public int HerbIronbark { get; set; }       // Ironbark Root (garden lv2)

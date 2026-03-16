@@ -50,6 +50,8 @@ public partial class MagicShopLocation : BaseLocation
     protected override void SetupLocation()
     {
         base.SetupLocation();
+        _currentAccessoryCategory = null;
+        _accessoryPage = 0;
     }
 
     protected override string GetMudPromptName() => "Magic Shop";
@@ -2157,6 +2159,8 @@ public partial class MagicShopLocation : BaseLocation
         switch (choice)
         {
             case "R":
+                _currentAccessoryCategory = null;
+                _accessoryPage = 0;
                 await NavigateToLocation(GameLocation.MainStreet);
                 return true;
 

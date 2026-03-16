@@ -88,7 +88,7 @@ namespace UsurperRemake.Systems
                 },
 
                 CombatRole = CombatRole.Hybrid,
-                Abilities = new[] { "Lay on Hands", "Divine Smite", "Aura of Protection", "Holy Avenger" },
+                Abilities = new[] { "Precise Shot", "Hunter's Mark", "Nature's Blessing", "Camouflage" },
 
                 PersonalQuestName = "The Light That Was",
                 PersonalQuestDescription = "Help Lyris recover an artifact that could restore Aurelion's true nature.",
@@ -1986,7 +1986,7 @@ namespace UsurperRemake.Systems
                 CombatRole.Tank => WeaponType.Sword,        // Aldric (Warrior) - swords
                 CombatRole.Damage => WeaponType.Dagger,     // Vex (Assassin) - daggers for backstab
                 CombatRole.Healer => WeaponType.Mace,       // Mira (Cleric) - maces
-                CombatRole.Hybrid => WeaponType.Sword,      // Lyris (Paladin) - swords
+                CombatRole.Hybrid => WeaponType.Sword,      // Lyris (Ranger) - swords
                 CombatRole.Bard => WeaponType.Instrument,   // Melodia (Bard) - instruments for songs
                 _ => WeaponType.Sword
             };

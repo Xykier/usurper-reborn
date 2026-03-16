@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UsurperRemake.Systems;
 
 /// <summary>
@@ -90,16 +91,60 @@ public static class LootGenerator
             _ => "white"
         };
 
-        public static string GetRarityPrefix(ItemRarity rarity) => rarity switch
+        public static string GetRarityPrefix(ItemRarity rarity)
         {
-            ItemRarity.Common => "",
-            ItemRarity.Uncommon => "Fine ",
-            ItemRarity.Rare => "Superior ",
-            ItemRarity.Epic => "Exquisite ",
-            ItemRarity.Legendary => "Legendary ",
-            ItemRarity.Artifact => "Mythic ",
-            _ => ""
-        };
+            var key = rarity switch
+            {
+                ItemRarity.Uncommon => "item.rarity.fine",
+                ItemRarity.Rare => "item.rarity.superior",
+                ItemRarity.Epic => "item.rarity.exquisite",
+                ItemRarity.Legendary => "item.rarity.legendary",
+                ItemRarity.Artifact => "item.rarity.mythic",
+                _ => null
+            };
+            return key == null ? "" : Loc.Get(key) + " ";
+        }
+
+        /// <summary>
+        /// Convert an English template name to a localization key and look it up.
+        /// E.g. "Long Sword" → "item.long_sword" → Loc.Get("item.long_sword")
+        /// Falls back to the original English name if no key exists.
+        /// </summary>
+        private static string LocalizeTemplateName(string englishName)
+        {
+            // Strip apostrophes first (Assassin's → Assassins), then convert remaining non-alphanumeric to underscores
+            string stripped = englishName.Replace("'", "").Replace("\u2019", "");
+            string key = "item." + Regex.Replace(stripped.ToLowerInvariant(), @"[^a-z0-9]+", "_").Trim('_');
+            string result = Loc.Get(key);
+            // If Loc.Get returns the raw key, the template isn't in the localization file — use original name
+            return result == key ? englishName : result;
+        }
+
+        /// <summary>
+        /// Get localized effect prefix/suffix/name via item.effect.* keys.
+        /// Converts SpecialEffect enum to snake_case key component.
+        /// </summary>
+        private static string GetEffectKey(SpecialEffect effect)
+        {
+            // Convert PascalCase enum to snake_case: FireDamage → fire_damage
+            string name = effect.ToString();
+            return Regex.Replace(name, @"(?<!^)([A-Z])", "_$1").ToLowerInvariant();
+        }
+
+        private static string GetLocalizedEffectPrefix(SpecialEffect effect)
+        {
+            return Loc.Get($"item.effect.{GetEffectKey(effect)}.prefix");
+        }
+
+        private static string GetLocalizedEffectSuffix(SpecialEffect effect)
+        {
+            return Loc.Get($"item.effect.{GetEffectKey(effect)}.suffix");
+        }
+
+        private static string GetLocalizedEffectName(SpecialEffect effect)
+        {
+            return Loc.Get($"item.effect.{GetEffectKey(effect)}.name");
+        }
 
         #endregion
 
@@ -1573,7 +1618,7 @@ public static class LootGenerator
 
             return new Item
             {
-                Name = $"{GetRarityPrefix(rarity)}Weapon",
+                Name = $"{GetRarityPrefix(rarity)}{Loc.Get("item.slot.weapon")}",
                 Type = ObjType.Weapon,
                 Value = power * 15,
                 Attack = power,
@@ -1590,15 +1635,15 @@ public static class LootGenerator
 
             string slotName = armorType switch
             {
-                ObjType.Head => "Helm",
-                ObjType.Arms => "Armguards",
-                ObjType.Hands => "Gauntlets",
-                ObjType.Legs => "Greaves",
-                ObjType.Feet => "Boots",
-                ObjType.Waist => "Belt",
-                ObjType.Face => "Mask",
-                ObjType.Abody => "Cloak",
-                _ => "Armor"
+                ObjType.Head => Loc.Get("item.slot.helm"),
+                ObjType.Arms => Loc.Get("item.slot.armguards"),
+                ObjType.Hands => Loc.Get("item.slot.gauntlets"),
+                ObjType.Legs => Loc.Get("item.slot.greaves"),
+                ObjType.Feet => Loc.Get("item.slot.boots"),
+                ObjType.Waist => Loc.Get("item.slot.belt"),
+                ObjType.Face => Loc.Get("item.slot.mask"),
+                ObjType.Abody => Loc.Get("item.slot.cloak"),
+                _ => Loc.Get("item.slot.armor")
             };
 
             return new Item
@@ -1615,28 +1660,29 @@ public static class LootGenerator
         private static string BuildItemName(string baseName, ItemRarity rarity,
             List<(SpecialEffect effect, int value)> effects, bool isCursed)
         {
+            string localizedBase = LocalizeTemplateName(baseName);
+
             if (isCursed)
             {
-                return $"Cursed {baseName}";
+                return $"{Loc.Get("item.rarity.cursed")} {localizedBase}";
             }
 
             if (effects.Count == 0)
             {
-                return GetRarityPrefix(rarity) + baseName;
+                return GetRarityPrefix(rarity) + localizedBase;
             }
 
             // Use the first effect to name the item
             var primaryEffect = effects[0].effect;
-            var info = EffectInfo[primaryEffect];
 
             // 50% chance prefix, 50% chance suffix
             if (random.NextDouble() < 0.5)
             {
-                return info.Prefix + baseName;
+                return GetLocalizedEffectPrefix(primaryEffect) + " " + localizedBase;
             }
             else
             {
-                return baseName + info.Suffix;
+                return localizedBase + " " + GetLocalizedEffectSuffix(primaryEffect);
             }
         }
 
@@ -1752,7 +1798,7 @@ public static class LootGenerator
             // Store effects description
             if (effects.Count > 0)
             {
-                var effectDescs = effects.Select(e => $"{EffectInfo[e.effect].Name} +{e.value}");
+                var effectDescs = effects.Select(e => $"{GetLocalizedEffectName(e.effect)} +{e.value}");
                 if (item.Description.Count > 0)
                     item.Description[0] = string.Join(", ", effectDescs);
             }
@@ -1913,16 +1959,23 @@ public static class LootGenerator
         /// </summary>
         public static ItemRarity GetItemRarity(Item item)
         {
-            // Determine rarity based on name or power
-            if (item.Name.StartsWith("Mythic ") || item.Name.Contains("Artifact"))
+            // Determine rarity based on name or power (check localized prefixes)
+            string mythic = Loc.Get("item.rarity.mythic");
+            string legendary = Loc.Get("item.rarity.legendary");
+            string exquisite = Loc.Get("item.rarity.exquisite");
+            string superior = Loc.Get("item.rarity.superior");
+            string fine = Loc.Get("item.rarity.fine");
+            string cursed = Loc.Get("item.rarity.cursed");
+
+            if (item.Name.StartsWith(mythic + " ") || item.Name.Contains("Artifact"))
                 return ItemRarity.Artifact;
-            if (item.Name.StartsWith("Legendary "))
+            if (item.Name.StartsWith(legendary + " "))
                 return ItemRarity.Legendary;
-            if (item.Name.StartsWith("Exquisite ") || item.Name.Contains("Cursed"))
+            if (item.Name.StartsWith(exquisite + " ") || item.Name.StartsWith(cursed + " "))
                 return ItemRarity.Epic;
-            if (item.Name.StartsWith("Superior "))
+            if (item.Name.StartsWith(superior + " "))
                 return ItemRarity.Rare;
-            if (item.Name.StartsWith("Fine "))
+            if (item.Name.StartsWith(fine + " "))
                 return ItemRarity.Uncommon;
 
             // Check by power level

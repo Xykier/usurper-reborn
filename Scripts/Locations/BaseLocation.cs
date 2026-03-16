@@ -3670,6 +3670,9 @@ public abstract class BaseLocation
                         currentPlayer.Language = selectedLang;
                         GameConfig.Language = selectedLang;
                         terminal.WriteLine(Loc.Get("prefs.language_set", UsurperRemake.Systems.Loc.GetLanguageName(selectedLang)), "green");
+                        // Invalidate cached dungeon floor so rooms regenerate in new language
+                        var dungeonLoc = LocationManager.Instance?.GetLocation(GameLocation.Dungeons) as DungeonLocation;
+                        dungeonLoc?.InvalidateFloorCache();
                         await GameEngine.Instance.SaveCurrentGame();
                         await Task.Delay(800);
                     }
@@ -4954,6 +4957,20 @@ public abstract class BaseLocation
             {
                 terminal.SetColor("bright_cyan");
                 terminal.WriteLine($"  - Divine Blessing ({currentPlayer.DivineBlessingCombats} combats)");
+            }
+            // Team HQ upgrade bonuses
+            if (currentPlayer.HQArmoryLevel > 0 || currentPlayer.HQBarracksLevel > 0 ||
+                currentPlayer.HQTrainingLevel > 0 || currentPlayer.HQInfirmaryLevel > 0)
+            {
+                terminal.SetColor("bright_yellow");
+                if (currentPlayer.HQArmoryLevel > 0)
+                    terminal.WriteLine($"  - Team Armory Lv{currentPlayer.HQArmoryLevel}: +{currentPlayer.HQArmoryLevel * 5}% attack");
+                if (currentPlayer.HQBarracksLevel > 0)
+                    terminal.WriteLine($"  - Team Barracks Lv{currentPlayer.HQBarracksLevel}: +{currentPlayer.HQBarracksLevel * 5}% defense");
+                if (currentPlayer.HQTrainingLevel > 0)
+                    terminal.WriteLine($"  - Team Training Lv{currentPlayer.HQTrainingLevel}: +{currentPlayer.HQTrainingLevel * 5}% XP");
+                if (currentPlayer.HQInfirmaryLevel > 0)
+                    terminal.WriteLine($"  - Team Infirmary Lv{currentPlayer.HQInfirmaryLevel}: +{currentPlayer.HQInfirmaryLevel * 10}% potion healing");
             }
             terminal.WriteLine("");
         }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using UsurperRemake.BBS;
 using UsurperRemake.Server;
 using UsurperRemake.UI;
+using UsurperRemake.Locations;
 using UsurperRemake.Utils;
 
 namespace UsurperRemake.Systems
@@ -210,6 +211,102 @@ namespace UsurperRemake.Systems
             if (classId >= 0 && classId < ClassNames.Length)
                 return ClassNames[classId];
             return "Unknown";
+        }
+
+        /// <summary>
+        /// Apply class-based stat increases to raw PlayerSaveData for admin level edits.
+        /// Mirrors LevelMasterLocation.ApplyClassStatIncreases() but works on save data directly.
+        /// </summary>
+        private static void ApplyClassStatIncreasesToSaveData(PlayerData player, int levelsGained)
+        {
+            for (int i = 0; i < levelsGained; i++)
+            {
+                // Base stats everyone gets per level
+                player.BaseMaxHP += 5;
+                player.BaseDefence += 1;
+                player.BaseStamina += 1;
+
+                switch (player.Class)
+                {
+                    case CharacterClass.Magician:
+                        player.BaseIntelligence += 4; player.BaseWisdom += 3; player.BaseMaxMana += 15;
+                        player.BaseMaxHP += 6; player.BaseStrength += 1; player.BaseDefence += 1; player.BaseConstitution += 2;
+                        break;
+                    case CharacterClass.Cleric:
+                        player.BaseWisdom += 4; player.BaseIntelligence += 2; player.BaseMaxMana += 12;
+                        player.BaseMaxHP += 6; player.BaseStrength += 2; player.BaseConstitution += 2;
+                        break;
+                    case CharacterClass.Sage:
+                        player.BaseIntelligence += 5; player.BaseWisdom += 4; player.BaseMaxMana += 18;
+                        player.BaseMaxHP += 5; player.BaseStrength += 1; player.BaseDefence += 1; player.BaseConstitution += 1;
+                        break;
+                    case CharacterClass.Alchemist:
+                        player.BaseIntelligence += 4; player.BaseWisdom += 2; player.BaseDexterity += 2;
+                        player.BaseMaxHP += 5; player.BaseConstitution += 2; player.BaseStamina += 2;
+                        break;
+                    case CharacterClass.Warrior:
+                        player.BaseStrength += 3; player.BaseConstitution += 3; player.BaseMaxHP += 12;
+                        player.BaseDexterity += 2; player.BaseDefence += 2;
+                        break;
+                    case CharacterClass.Barbarian:
+                        player.BaseStrength += 4; player.BaseConstitution += 4; player.BaseMaxHP += 12;
+                        player.BaseStamina += 2;
+                        break;
+                    case CharacterClass.Paladin:
+                        player.BaseStrength += 3; player.BaseConstitution += 3; player.BaseWisdom += 2;
+                        player.BaseCharisma += 2; player.BaseMaxHP += 10; player.BaseDefence += 1;
+                        break;
+                    case CharacterClass.Assassin:
+                        player.BaseDexterity += 4; player.BaseAgility += 3; player.BaseStrength += 2;
+                        player.BaseMaxHP += 6; player.BaseStamina += 2;
+                        break;
+                    case CharacterClass.Ranger:
+                        player.BaseDexterity += 3; player.BaseAgility += 3; player.BaseStrength += 2;
+                        player.BaseMaxHP += 8; player.BaseStamina += 2; player.BaseConstitution += 2;
+                        break;
+                    case CharacterClass.Jester:
+                        player.BaseCharisma += 4; player.BaseDexterity += 3; player.BaseAgility += 3;
+                        player.BaseMaxHP += 5; player.BaseStamina += 2;
+                        break;
+                    case CharacterClass.Bard:
+                        player.BaseCharisma += 4; player.BaseDexterity += 2; player.BaseAgility += 2;
+                        player.BaseIntelligence += 2; player.BaseMaxHP += 5; player.BaseStamina += 2;
+                        break;
+                    case CharacterClass.Tidesworn:
+                        player.BaseStrength += 4; player.BaseConstitution += 4; player.BaseWisdom += 3;
+                        player.BaseCharisma += 2; player.BaseDefence += 2; player.BaseMaxHP += 13; player.BaseMaxMana += 8;
+                        break;
+                    case CharacterClass.Wavecaller:
+                        player.BaseCharisma += 5; player.BaseWisdom += 4; player.BaseIntelligence += 3;
+                        player.BaseConstitution += 2; player.BaseAgility += 2; player.BaseMaxHP += 7; player.BaseMaxMana += 14;
+                        break;
+                    case CharacterClass.Cyclebreaker:
+                        player.BaseStrength += 3; player.BaseIntelligence += 3; player.BaseWisdom += 3;
+                        player.BaseDexterity += 3; player.BaseConstitution += 3; player.BaseAgility += 2;
+                        player.BaseMaxHP += 9; player.BaseMaxMana += 10;
+                        break;
+                    case CharacterClass.Abysswarden:
+                        player.BaseDexterity += 5; player.BaseStrength += 4; player.BaseAgility += 4;
+                        player.BaseIntelligence += 3; player.BaseConstitution += 2; player.BaseMaxHP += 8; player.BaseMaxMana += 10;
+                        break;
+                    case CharacterClass.Voidreaver:
+                        player.BaseStrength += 5; player.BaseIntelligence += 5; player.BaseDexterity += 4;
+                        player.BaseAgility += 3; player.BaseStamina += 2; player.BaseMaxHP += 6; player.BaseMaxMana += 12;
+                        break;
+                    default:
+                        player.BaseStrength += 2; player.BaseConstitution += 2; player.BaseMaxHP += 8;
+                        break;
+                }
+            }
+
+            // Update computed stats to match base stats
+            player.Strength = player.BaseStrength;
+            player.Defence = player.BaseDefence;
+            player.MaxHP = player.BaseMaxHP;
+            player.HP = player.MaxHP;
+            player.MaxMana = player.BaseMaxMana;
+            player.Mana = player.MaxMana;
+            player.Stamina = player.BaseStamina;
         }
 
         private string GetPlayerStatus(AdminPlayerInfo p)
@@ -649,7 +746,22 @@ namespace UsurperRemake.Systems
                 switch (choice.ToUpper())
                 {
                     case "1":
+                        int oldLevel = player.Level;
                         player.Level = (int)await PromptNumericEdit("Level", player.Level, 1, 100);
+                        if (player.Level != oldLevel)
+                        {
+                            int levelsGained = player.Level - oldLevel;
+                            if (levelsGained > 0)
+                            {
+                                ApplyClassStatIncreasesToSaveData(player, levelsGained);
+                                terminal.WriteLine($"  Applied {levelsGained} levels of {GetClassName((int)player.Class)} stat increases.", "bright_green");
+                            }
+                            else
+                            {
+                                terminal.SetColor("yellow");
+                                terminal.WriteLine("  Level decreased. Stats NOT auto-adjusted — edit manually if needed.");
+                            }
+                        }
                         modified = true;
                         break;
                     case "2":

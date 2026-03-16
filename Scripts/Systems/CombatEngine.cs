@@ -2675,7 +2675,7 @@ public partial class CombatEngine
             if (random.Next(100) < (int)(GameConfig.WavecallerOceansVoiceCritBonus * 100))
             {
                 rollMultiplier = StatEffectsSystem.GetCriticalDamageMultiplier(attacker.Dexterity, attacker.GetEquipmentCritDamageBonus());
-                terminal.WriteLine("Ocean's Voice resonates — CRITICAL HIT!", "bright_magenta");
+                terminal.WriteLine(Loc.Get("combat.oceans_voice_crit"), "bright_magenta");
             }
         }
 
@@ -2820,6 +2820,12 @@ public partial class CombatEngine
         if (attacker.PermanentDamageBonus > 0)
         {
             attackPower += (long)(attackPower * (attacker.PermanentDamageBonus / 100.0));
+        }
+
+        // Team HQ Armory bonus: +5% attack per level
+        if (attacker.HQArmoryLevel > 0)
+        {
+            attackPower += (long)(attackPower * (attacker.HQArmoryLevel * 0.05));
         }
 
         // BossSlayer effect: +10% damage vs bosses (from world boss exclusive loot)
@@ -3017,6 +3023,8 @@ public partial class CombatEngine
             long healAmount = 30 + player.Level * 5 + random.Next(10, 30);
             if (player.Class == CharacterClass.Alchemist)
                 healAmount = (long)(healAmount * (1.0 + GameConfig.AlchemistPotionMasteryBonus));
+            if (player.HQInfirmaryLevel > 0)
+                healAmount = (long)(healAmount * (1.0 + player.HQInfirmaryLevel * 0.10));
             healAmount = DifficultySystem.ApplyHealingMultiplier(healAmount);
             healAmount = Math.Min(healAmount, player.MaxHP - player.HP);
             player.HP += healAmount;
@@ -3059,6 +3067,8 @@ public partial class CombatEngine
                 long healAmount = 30 + player.Level * 5 + random.Next(10, 30);
                 if (player.Class == CharacterClass.Alchemist)
                     healAmount = (long)(healAmount * (1.0 + GameConfig.AlchemistPotionMasteryBonus));
+                if (player.HQInfirmaryLevel > 0)
+                    healAmount = (long)(healAmount * (1.0 + player.HQInfirmaryLevel * 0.10));
                 healAmount = DifficultySystem.ApplyHealingMultiplier(healAmount);
                 healAmount = Math.Min(healAmount, player.MaxHP - player.HP);
                 player.HP += healAmount;
@@ -3965,6 +3975,12 @@ public partial class CombatEngine
             playerDefense += (long)(playerDefense * (player.PermanentDefenseBonus / 100.0));
         }
 
+        // Team HQ Barracks bonus: +5% defense per level
+        if (player.HQBarracksLevel > 0)
+        {
+            playerDefense += (long)(playerDefense * (player.HQBarracksLevel * 0.05));
+        }
+
         // TitanResolve effect: +5% defense (from world boss exclusive loot)
         if (WorldBossSystem.HasSpecialEffect(player, LootGenerator.SpecialEffect.TitanResolve))
         {
@@ -4074,8 +4090,8 @@ public partial class CombatEngine
             player.DeathsEmbraceActive = false;
             player.DodgeNextAttack = true;
             terminal.SetColor("bright_red");
-            terminal.WriteLine("DEATH'S EMBRACE TRIGGERS! You cheat death and rise with newfound fury!");
-            terminal.WriteLine($"Revived with {player.HP} HP! Next attack will miss!", "dark_red");
+            terminal.WriteLine(Loc.Get("combat.deaths_embrace_trigger"));
+            terminal.WriteLine(Loc.Get("combat.deaths_embrace_revived", player.HP), "dark_red");
         }
 
         // Track statistics - damage taken
@@ -5318,6 +5334,12 @@ public partial class CombatEngine
                 expReward = (long)(expReward * guildMult);
         }
 
+        // Team HQ Training bonus: +5% XP per level
+        if (result.Player.HQTrainingLevel > 0)
+        {
+            expReward += (long)(expReward * (result.Player.HQTrainingLevel * 0.05));
+        }
+
         // Fatigue XP penalty — Exhausted tier only (single-player only)
         if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && result.Player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
         {
@@ -5472,15 +5494,15 @@ public partial class CombatEngine
         {
             result.Player.HintsShown.Add("quest_scout_kill_monster");
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  First blood! Aldric was right \u2014 you have potential.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.first_blood")}");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  [Quest Updated: Defeat a monster - COMPLETE]");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.kill_updated")}");
 
             // Check if all dungeon objectives are done
             if (result.Player.HintsShown.Contains("quest_scout_enter_dungeon") && result.Player.HintsShown.Contains("quest_scout_find_treasure"))
             {
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("  All objectives complete! Return to Main Street to report to Aldric.");
+                terminal.WriteLine($"  {Loc.Get("aldric_quest.all_complete")}");
             }
             terminal.SetColor("white");
         }
@@ -9593,12 +9615,12 @@ public partial class CombatEngine
                         if (isCrit)
                         {
                             rollMult = 1.5f + (float)(random.NextDouble() * 0.5); // 1.5-2.0
-                            terminal.WriteLine("CRITICAL HIT!", "bright_red");
+                            terminal.WriteLine(Loc.Get("combat.critical_hit"), "bright_red");
                         }
                         else if (dexCrit)
                         {
                             rollMult = StatEffectsSystem.GetCriticalDamageMultiplier(player.Dexterity, player.GetEquipmentCritDamageBonus());
-                            terminal.WriteLine($"Precision strike!", "bright_yellow");
+                            terminal.WriteLine(Loc.Get("combat.precision_strike"), "bright_yellow");
                         }
 
                         // Wavecaller Ocean's Voice: +20% bonus crit chance when buff active
@@ -9608,7 +9630,7 @@ public partial class CombatEngine
                             if (random.Next(100) < (int)(GameConfig.WavecallerOceansVoiceCritBonus * 100))
                             {
                                 rollMult = StatEffectsSystem.GetCriticalDamageMultiplier(player.Dexterity, player.GetEquipmentCritDamageBonus());
-                                terminal.WriteLine("Ocean's Voice resonates — CRITICAL HIT!", "bright_magenta");
+                                terminal.WriteLine(Loc.Get("combat.oceans_voice_crit"), "bright_magenta");
                             }
                         }
 
@@ -9658,6 +9680,8 @@ public partial class CombatEngine
                             attackPower += (long)(attackPower * GameConfig.PoisonCoatingDamageBonus);
                         if (player.PermanentDamageBonus > 0)
                             attackPower += (long)(attackPower * (player.PermanentDamageBonus / 100.0));
+                        if (player.HQArmoryLevel > 0)
+                            attackPower += (long)(attackPower * (player.HQArmoryLevel * 0.05));
 
                         // Divine boon damage bonus (multi-monster path)
                         var mmBoons = player.CachedBoonEffects;
@@ -10393,10 +10417,12 @@ public partial class CombatEngine
         if (abilityResult.Healing > 0)
         {
             long actualHealing = Math.Min(abilityResult.Healing, player.MaxHP - player.HP);
-            player.HP += actualHealing;
-
-            terminal.SetColor("bright_green");
-            terminal.WriteLine(Loc.Get(isPlayer ? "combat.ability_you_recover" : "combat.ability_npc_recovers", actorName, actualHealing));
+            if (actualHealing > 0)
+            {
+                player.HP += actualHealing;
+                terminal.SetColor("bright_green");
+                terminal.WriteLine(Loc.Get(isPlayer ? "combat.ability_you_recover" : "combat.ability_npc_recovers", actorName, actualHealing));
+            }
         }
 
         // Apply buffs
@@ -10473,6 +10499,7 @@ public partial class CombatEngine
                 {
                     int defReduction = Math.Max(1, (int)(target.Defence * 0.25));
                     target.Defence = Math.Max(0, target.Defence - defReduction);
+                    target.WeakenRounds = Math.Max(target.WeakenRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
                     terminal.SetColor("yellow");
                     terminal.WriteLine($"{target.Name}'s resolve crumbles! (-{defReduction} DEF for the fight)");
                 }
@@ -10952,55 +10979,55 @@ public partial class CombatEngine
 
             case "party_stimulant":
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine(isPlayer ? "You distribute stimulant vials to the party!" : $"{actorName} distributes stimulant vials to the party!");
+                terminal.WriteLine(isPlayer ? Loc.Get("combat.party_stimulant_player") : Loc.Get("combat.party_stimulant_npc", actorName));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_stimulant", isPlayer);
                 break;
 
             case "party_heal_mist":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("A healing mist washes over the party!");
+                terminal.WriteLine(Loc.Get("combat.party_heal_mist"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_heal_mist", isPlayer);
                 break;
 
             case "party_antidote":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("The antidote bomb neutralizes all toxins!");
+                terminal.WriteLine(Loc.Get("combat.party_antidote"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_antidote", isPlayer);
                 break;
 
             case "party_smoke_screen":
                 terminal.SetColor("gray");
-                terminal.WriteLine("A dense smoke screen blankets the party!");
+                terminal.WriteLine(Loc.Get("combat.party_smoke_screen"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_smoke_screen", isPlayer);
                 break;
 
             case "party_battle_brew":
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine(isPlayer ? "You hand out battle tinctures — the party surges with power!" : $"{actorName} hands out battle tinctures — the party surges with power!");
+                terminal.WriteLine(isPlayer ? Loc.Get("combat.party_battle_brew_player") : Loc.Get("combat.party_battle_brew_npc", actorName));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_battle_brew", isPlayer);
                 break;
 
             case "party_remedy":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("The Grand Remedy flows through the party — all wounds close!");
+                terminal.WriteLine(Loc.Get("combat.party_remedy"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_remedy", isPlayer);
                 break;
 
             case "party_heal_divine":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine(isPlayer ? "A circle of divine light radiates from your prayer!" : $"A circle of divine light radiates from {actorName}'s prayer!");
+                terminal.WriteLine(isPlayer ? Loc.Get("combat.party_heal_divine_player") : Loc.Get("combat.party_heal_divine_npc", actorName));
                 ApplyClericPartyEffect(player, abilityResult, result, "party_heal_divine", isPlayer);
                 break;
 
             case "party_beacon":
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine(isPlayer ? "You become a beacon of holy light, shielding all allies!" : $"{actorName} becomes a beacon of holy light, shielding all allies!");
+                terminal.WriteLine(isPlayer ? Loc.Get("combat.party_beacon_player") : Loc.Get("combat.party_beacon_npc", actorName));
                 ApplyClericPartyEffect(player, abilityResult, result, "party_beacon", isPlayer);
                 break;
 
             case "party_heal_cleanse":
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("A sacred covenant purifies and heals the entire party!");
+                terminal.WriteLine(Loc.Get("combat.party_heal_cleanse"));
                 ApplyClericPartyEffect(player, abilityResult, result, "party_heal_cleanse", isPlayer);
                 break;
 
@@ -11011,7 +11038,7 @@ public partial class CombatEngine
                     corrodeTarget.IsCorroded = true;
                     corrodeTarget.CorrodedDuration = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
                     terminal.SetColor("dark_green");
-                    terminal.WriteLine($"  {corrodeTarget.Name} is corroded — armor dissolves!");
+                    terminal.WriteLine($"  {Loc.Get("combat.corroded_armor", corrodeTarget.Name)}");
                 }
                 break;
 
@@ -11268,7 +11295,8 @@ public partial class CombatEngine
                 if (target != null && target.IsAlive)
                 {
                     bool isDebuffed = target.Poisoned || target.Stunned || target.Charmed || target.Distracted ||
-                        target.WeakenRounds > 0 || target.IsSlowed || target.IsMarked;
+                        target.WeakenRounds > 0 || target.IsSlowed || target.IsMarked ||
+                        target.IsCorroded || target.IsFeared || target.IsConfused || target.IsSleeping || target.IsFrozen;
                     int dmg = abilityResult.Damage;
                     if (isDebuffed) dmg *= 2;
                     target.HP -= dmg;
@@ -12150,7 +12178,7 @@ public partial class CombatEngine
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine(GameConfig.ScreenReaderMode ? "COMBAT ABILITIES:" : "═══ COMBAT ABILITIES ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? Loc.Get("combat.ability_header_sr") : Loc.Get("combat.ability_header_visual"));
         terminal.WriteLine("");
 
         var availableAbilities = ClassAbilitySystem.GetAvailableAbilities(player);
@@ -12296,8 +12324,38 @@ public partial class CombatEngine
         // AllyTargetIndex is a stable index into currentTeammates (not a filtered list)
         if (spellInfo.SpellType == "Buff" || spellInfo.SpellType == "Heal")
         {
+            // Multi-target buff (e.g. Covenant of the Deep, Symphony of the Depths) — buff caster AND all teammates
+            if (spellInfo.IsMultiTarget && spellInfo.SpellType == "Buff")
+            {
+                // Apply buffs to caster
+                ApplySpellEffects(player, null, spellResult);
+
+                // Apply buffs to all living teammates
+                if (currentTeammates != null)
+                {
+                    foreach (var tm in currentTeammates.Where(t => t.IsAlive))
+                    {
+                        if (spellResult.ProtectionBonus > 0)
+                        {
+                            int dur = spellResult.Duration > 0 ? spellResult.Duration : 999;
+                            tm.MagicACBonus = spellResult.ProtectionBonus;
+                            tm.ApplyStatus(StatusEffect.Blessed, dur);
+                            terminal.WriteLine($"{tm.DisplayName} is magically protected! (+{spellResult.ProtectionBonus} AC)", "blue");
+                        }
+                        if (spellResult.AttackBonus > 0)
+                        {
+                            int dur = spellResult.Duration > 0 ? spellResult.Duration : 3;
+                            tm.TempAttackBonus += spellResult.AttackBonus;
+                            tm.TempAttackBonusDuration = Math.Max(tm.TempAttackBonusDuration, dur);
+                            terminal.WriteLine($"{tm.DisplayName}'s power surges! (+{spellResult.AttackBonus} attack)", "red");
+                        }
+                    }
+                }
+
+                result.CombatLog.Add($"{player.DisplayName} casts {spellInfo.Name} on the whole party.");
+            }
             // Multi-target heal (e.g. Mass Cure) — heal caster AND all living teammates
-            if (spellInfo.IsMultiTarget && spellInfo.SpellType == "Heal" && spellResult.Healing > 0)
+            else if (spellInfo.IsMultiTarget && spellInfo.SpellType == "Heal" && spellResult.Healing > 0)
             {
                 // Heal the caster
                 long oldPlayerHP = player.HP;
@@ -12617,6 +12675,22 @@ public partial class CombatEngine
                 }
                 break;
 
+            case "shadowstep":
+                // Shadow Step: deal bonus damage equal to target's armor (compensates for defense subtraction)
+                if (target.IsAlive && target.ArmPow > 0)
+                {
+                    long shadowBonus = Math.Max(1, target.ArmPow);
+                    target.HP -= shadowBonus;
+                    terminal.WriteLine($"The shadow strike bypasses all defenses for {shadowBonus} bonus damage!", "dark_red");
+                    if (target.HP <= 0)
+                    {
+                        target.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(target))
+                            result.DefeatedMonsters.Add(target);
+                    }
+                }
+                break;
+
             case "unmaking":
                 // Unmaking: if target dies, restore caster's HP and mana
                 if (!target.IsAlive || target.HP <= 0)
@@ -12654,6 +12728,24 @@ public partial class CombatEngine
                 }
                 break;
 
+            case "angel":
+                // Summoned angel shields caster
+                player.DodgeNextAttack = true;
+                terminal.WriteLine($"The angel shields {player.DisplayName} from the next attack!", "bright_yellow");
+                break;
+
+            case "demon":
+                // Summoned demon shields caster
+                player.DodgeNextAttack = true;
+                terminal.WriteLine($"The demon shields {player.DisplayName} from the next attack!", "dark_red");
+                break;
+
+            case "dodge_next":
+                // Deja Vu: dodge the next incoming attack
+                player.DodgeNextAttack = true;
+                terminal.WriteLine($"{player.DisplayName} glimpses the future — next attack will miss!", "cyan");
+                break;
+
             case "psychic":
                 // 25% chance to confuse target for 1 round
                 if (random.Next(100) < 25)
@@ -12664,12 +12756,48 @@ public partial class CombatEngine
                 }
                 break;
 
+            case "weaken":
+                // Reduce attack and defense — used by Siren's Lament, Cutting Words, etc.
+                {
+                    int atkReduction = Math.Max(1, (int)(target.Strength * 0.30));
+                    int defReduction2 = Math.Max(1, (int)(target.Defence * 0.20));
+                    target.Strength = Math.Max(0, target.Strength - atkReduction);
+                    target.Defence = Math.Max(0, target.Defence - defReduction2);
+                    target.WeakenRounds = Math.Max(target.WeakenRounds, duration > 0 ? duration : 4);
+                    terminal.WriteLine($"{target.Name}'s resolve crumbles! (-{atkReduction} ATK, -{defReduction2} DEF)", "yellow");
+                }
+                break;
+
             case "dispel":
-                // Clear monster positive states
-                target.Charmed = false;
-                target.IsFriendly = false;
-                target.IsConverted = false;
-                terminal.WriteLine(Loc.Get("combat.spell_dispel", target.Name), "bright_white");
+                // Strip monster power-ups (enrage, phase immunity, shields) without removing player-applied charm/convert
+                {
+                    bool dispelled = false;
+                    if (target.IsEnraged)
+                    {
+                        target.IsEnraged = false;
+                        dispelled = true;
+                    }
+                    if (target.IsPhysicalImmune || target.IsMagicalImmune)
+                    {
+                        target.IsPhysicalImmune = false;
+                        target.IsMagicalImmune = false;
+                        target.PhaseImmunityRounds = 0;
+                        dispelled = true;
+                    }
+                    if (target.IsChanneling)
+                    {
+                        target.IsChanneling = false;
+                        target.ChannelingRoundsLeft = 0;
+                        dispelled = true;
+                    }
+                    // Reduce defense by 20% as "banish dark enchantments"
+                    int dispelDefReduction = Math.Max(1, (int)(target.Defence * 0.20));
+                    target.Defence = Math.Max(0, target.Defence - dispelDefReduction);
+                    terminal.WriteLine(Loc.Get("combat.spell_dispel", target.Name), "bright_white");
+                    if (dispelled)
+                        terminal.WriteLine($"{target.Name}'s magical protections are stripped away!", "bright_white");
+                    terminal.WriteLine($"{target.Name} loses {dispelDefReduction} defense!", "yellow");
+                }
                 break;
 
             case "convert":
@@ -13857,6 +13985,7 @@ public partial class CombatEngine
 
         // Don't pick heal abilities unless someone in the party actually needs healing
         // (TryTeammateHealAction already handles heal spells/potions with proper thresholds)
+        // Also filter buff abilities that have BaseHealing (e.g. Terravok's Call) when no one needs healing
         var allParty = new List<Character> { currentPlayer };
         if (currentTeammates != null)
             allParty.AddRange(currentTeammates.Where(t => t.IsAlive));
@@ -13864,7 +13993,7 @@ public partial class CombatEngine
         if (!anyoneNeedsHealing)
         {
             affordableAbilities = affordableAbilities
-                .Where(a => a.Type != ClassAbilitySystem.AbilityType.Heal)
+                .Where(a => a.Type != ClassAbilitySystem.AbilityType.Heal && a.BaseHealing <= 0)
                 .ToList();
             if (affordableAbilities.Count == 0) return false;
         }
@@ -14958,6 +15087,12 @@ public partial class CombatEngine
                 adjustedExp = (long)(adjustedExp * guildMultMM);
         }
 
+        // Team HQ Training bonus: +5% XP per level — multi-monster path
+        if (result.Player.HQTrainingLevel > 0)
+        {
+            adjustedExp += (long)(adjustedExp * (result.Player.HQTrainingLevel * 0.05));
+        }
+
         // Fatigue XP penalty — Exhausted tier only (single-player only)
         if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && result.Player.Fatigue >= GameConfig.FatigueExhaustedThreshold)
         {
@@ -15070,14 +15205,14 @@ public partial class CombatEngine
         {
             result.Player.HintsShown.Add("quest_scout_kill_monster");
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  First blood! Aldric was right \u2014 you have potential.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.first_blood")}");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  [Quest Updated: Defeat a monster - COMPLETE]");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.kill_updated")}");
 
             if (result.Player.HintsShown.Contains("quest_scout_enter_dungeon") && result.Player.HintsShown.Contains("quest_scout_find_treasure"))
             {
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("  All objectives complete! Return to Main Street to report to Aldric.");
+                terminal.WriteLine($"  {Loc.Get("aldric_quest.all_complete")}");
             }
             terminal.SetColor("white");
         }
@@ -15462,6 +15597,12 @@ public partial class CombatEngine
             double guildMultPV = GuildSystem.Instance.GetGuildXPMultiplier(result.Player.Name1 ?? "");
             if (guildMultPV > 1.0)
                 adjustedExp = (long)(adjustedExp * guildMultPV);
+        }
+
+        // Team HQ Training bonus: +5% XP per level — berserker/special path
+        if (result.Player.HQTrainingLevel > 0)
+        {
+            adjustedExp += (long)(adjustedExp * (result.Player.HQTrainingLevel * 0.05));
         }
 
         // Auto-reset XP distribution when fighting solo — prevents 0% XP trap
@@ -16260,7 +16401,7 @@ public partial class CombatEngine
     {
         terminal.ClearScreen();
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine(GameConfig.ScreenReaderMode ? "COMBAT ABILITIES:" : "═══ COMBAT ABILITIES ═══");
+        terminal.WriteLine(GameConfig.ScreenReaderMode ? Loc.Get("combat.ability_header_sr") : Loc.Get("combat.ability_header_visual"));
         terminal.WriteLine("");
 
         // Get available abilities for this character
@@ -16575,6 +16716,7 @@ public partial class CombatEngine
                 {
                     int defReduction = Math.Max(1, (int)(monster.Defence * 0.25));
                     monster.Defence = Math.Max(0, monster.Defence - defReduction);
+                    monster.WeakenRounds = Math.Max(monster.WeakenRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
                     terminal.SetColor("yellow");
                     terminal.WriteLine($"{monster.Name}'s resolve crumbles! (-{defReduction} DEF for the fight)");
                 }
@@ -16949,55 +17091,55 @@ public partial class CombatEngine
 
             case "party_stimulant":
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine("You distribute stimulant vials to the party!");
+                terminal.WriteLine(Loc.Get("combat.party_stimulant_player"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_stimulant", true);
                 break;
 
             case "party_heal_mist":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("A healing mist washes over the party!");
+                terminal.WriteLine(Loc.Get("combat.party_heal_mist"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_heal_mist", true);
                 break;
 
             case "party_antidote":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("The antidote bomb neutralizes all toxins!");
+                terminal.WriteLine(Loc.Get("combat.party_antidote"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_antidote", true);
                 break;
 
             case "party_smoke_screen":
                 terminal.SetColor("gray");
-                terminal.WriteLine("A dense smoke screen blankets the party!");
+                terminal.WriteLine(Loc.Get("combat.party_smoke_screen"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_smoke_screen", true);
                 break;
 
             case "party_battle_brew":
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("You hand out battle tinctures — the party surges with power!");
+                terminal.WriteLine(Loc.Get("combat.party_battle_brew_player"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_battle_brew", true);
                 break;
 
             case "party_remedy":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("The Grand Remedy flows through the party — all wounds close!");
+                terminal.WriteLine(Loc.Get("combat.party_remedy"));
                 ApplyAlchemistPartyEffect(player, abilityResult, result, "party_remedy", true);
                 break;
 
             case "party_heal_divine":
                 terminal.SetColor("bright_green");
-                terminal.WriteLine("A circle of divine light radiates from your prayer!");
+                terminal.WriteLine(Loc.Get("combat.party_heal_divine_player"));
                 ApplyClericPartyEffect(player, abilityResult, result, "party_heal_divine", true);
                 break;
 
             case "party_beacon":
                 terminal.SetColor("bright_yellow");
-                terminal.WriteLine("You become a beacon of holy light, shielding all allies!");
+                terminal.WriteLine(Loc.Get("combat.party_beacon_player"));
                 ApplyClericPartyEffect(player, abilityResult, result, "party_beacon", true);
                 break;
 
             case "party_heal_cleanse":
                 terminal.SetColor("bright_cyan");
-                terminal.WriteLine("A sacred covenant purifies and heals the entire party!");
+                terminal.WriteLine(Loc.Get("combat.party_heal_cleanse"));
                 ApplyClericPartyEffect(player, abilityResult, result, "party_heal_cleanse", true);
                 break;
 
@@ -17272,7 +17414,8 @@ public partial class CombatEngine
                 if (monster != null && monster.IsAlive)
                 {
                     bool isDebuffed = monster.Poisoned || monster.Stunned || monster.Charmed || monster.Distracted ||
-                        monster.WeakenRounds > 0 || monster.IsSlowed || monster.IsMarked;
+                        monster.WeakenRounds > 0 || monster.IsSlowed || monster.IsMarked ||
+                        monster.IsCorroded || monster.IsFeared || monster.IsConfused || monster.IsSleeping || monster.IsFrozen;
                     int dvdDmg = abilityResult.Damage;
                     if (isDebuffed) dvdDmg *= 2;
                     monster.HP -= dvdDmg;
@@ -18546,9 +18689,9 @@ public partial class CombatEngine
             }
 
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine(GameConfig.ScreenReaderMode ? "COMBAT ABILITIES:" : "═══ COMBAT ABILITIES ═══");
+            terminal.WriteLine(GameConfig.ScreenReaderMode ? Loc.Get("combat.ability_header_sr") : Loc.Get("combat.ability_header_visual"));
             terminal.SetColor("cyan");
-            terminal.WriteLine($"Combat Stamina: {attacker.CurrentCombatStamina}/{attacker.MaxCombatStamina}");
+            terminal.WriteLine(Loc.Get("combat.combat_stamina", attacker.CurrentCombatStamina, attacker.MaxCombatStamina));
             terminal.WriteLine("");
 
             int displayIndex = 1;
@@ -19117,10 +19260,10 @@ public partial class CombatEngine
 
         if (spellResult.AttackBonus > 0)
         {
-            // Use PowerStance to represent offensive boost (simplified)
             int dur = spellResult.Duration > 0 ? spellResult.Duration : 3;
-            caster.ApplyStatus(StatusEffect.PowerStance, dur);
-            terminal.WriteLine($"{caster.DisplayName}'s power surges! (+50% damage for {dur} rounds)", "red");
+            caster.TempAttackBonus += spellResult.AttackBonus;
+            caster.TempAttackBonusDuration = Math.Max(caster.TempAttackBonusDuration, dur);
+            terminal.WriteLine($"{caster.DisplayName}'s power surges! (+{spellResult.AttackBonus} attack for {dur} rounds)", "red");
         }
         
         // Handle special effects
@@ -19386,6 +19529,31 @@ public partial class CombatEngine
                 caster.StatusImmunityDuration = 999;
                 terminal.WriteLine($"{caster.DisplayName}'s mind becomes an impenetrable fortress!", "bright_white");
                 break;
+
+            case "angel":
+                // Summoned angel shields caster
+                caster.DodgeNextAttack = true;
+                terminal.WriteLine($"The angel shields {caster.DisplayName} from the next attack!", "bright_yellow");
+                break;
+
+            case "demon":
+                // Summoned demon shields caster
+                caster.DodgeNextAttack = true;
+                terminal.WriteLine($"The demon shields {caster.DisplayName} from the next attack!", "dark_red");
+                break;
+
+            case "dodge_next":
+                // Deja Vu: dodge the next incoming attack
+                caster.DodgeNextAttack = true;
+                terminal.WriteLine($"{caster.DisplayName} glimpses the future — next attack will miss!", "cyan");
+                break;
+
+            case "tidal_reflect":
+                // Tidal Ward: reflect 15% of melee damage back at attackers
+                if (!caster.ActiveStatuses.ContainsKey(StatusEffect.Reflecting))
+                    caster.ActiveStatuses[StatusEffect.Reflecting] = 999;
+                terminal.WriteLine($"The tidal barrier will reflect damage back at attackers!", "bright_cyan");
+                break;
         }
     }
 
@@ -19509,6 +19677,27 @@ public partial class CombatEngine
                 if (caster.HasStatus(StatusEffect.Diseased)) caster.RemoveStatus(StatusEffect.Diseased);
                 if (caster.Poison > 0) { caster.Poison = 0; caster.PoisonTurns = 0; }
                 terminal.WriteLine($"{caster.DisplayName} is purified!", "bright_green");
+                break;
+
+            case "tidal_reflect":
+                if (!caster.ActiveStatuses.ContainsKey(StatusEffect.Reflecting))
+                    caster.ActiveStatuses[StatusEffect.Reflecting] = 999;
+                terminal.WriteLine($"The tidal barrier will reflect damage back at attackers!", "bright_cyan");
+                break;
+
+            case "angel":
+                caster.DodgeNextAttack = true;
+                terminal.WriteLine($"The angel shields {caster.DisplayName}!", "bright_yellow");
+                break;
+
+            case "demon":
+                caster.DodgeNextAttack = true;
+                terminal.WriteLine($"The demon shields {caster.DisplayName}!", "dark_red");
+                break;
+
+            case "dodge_next":
+                caster.DodgeNextAttack = true;
+                terminal.WriteLine($"{caster.DisplayName} will dodge the next attack!", "cyan");
                 break;
         }
     }
@@ -20911,13 +21100,13 @@ public partial class CombatEngine
             terminal.SetColor("bright_red");
             if (GameConfig.ScreenReaderMode)
             {
-                terminal.WriteLine($"  {bossMonster.Name} HAS ENRAGED! Damage doubled! Defense increased!");
+                terminal.WriteLine($"  {Loc.Get("combat.boss_enraged", bossMonster.Name)} {Loc.Get("combat.boss_enraged_detail")}");
             }
             else
             {
                 terminal.WriteLine("  ╔═══════════════════════════════════════════════╗");
-                terminal.WriteLine($"  ║   {bossMonster.Name} HAS ENRAGED!".PadRight(49) + "║");
-                terminal.WriteLine("  ║   Damage doubled! Defense increased!          ║");
+                terminal.WriteLine($"  ║   {Loc.Get("combat.boss_enraged", bossMonster.Name)}".PadRight(49) + "║");
+                terminal.WriteLine($"  ║   {Loc.Get("combat.boss_enraged_detail")}".PadRight(49) + "║");
                 terminal.WriteLine("  ╚═══════════════════════════════════════════════╝");
             }
         }

@@ -36,6 +36,8 @@ public class WeaponShopLocation : BaseLocation
     {
         base.SetupLocation();
         shopkeeperName = "Tully";
+        currentCategory = null;
+        currentPage = 0;
     }
 
     protected override string GetMudPromptName() => "Weapon Shop";
@@ -646,6 +648,8 @@ public class WeaponShopLocation : BaseLocation
         switch (choice)
         {
             case "R":
+                currentCategory = null;
+                currentPage = 0;
                 await NavigateToLocation(GameLocation.MainStreet);
                 return true;
 

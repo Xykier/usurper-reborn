@@ -109,23 +109,23 @@ namespace UsurperRemake.Systems
             // The dream
             var dreamLines = new[]
             {
-                ("...", "dark_gray"),
+                (Loc.Get("opening_story.dream_ellipsis"), "dark_gray"),
                 ("", ""),
-                ("You are drowning.", "gray"),
+                (Loc.Get("opening_story.dream_drowning"), "gray"),
                 ("", ""),
-                ("Not in water, but in light.", "bright_cyan"),
-                ("Endless, blinding, warm.", "bright_cyan"),
+                (Loc.Get("opening_story.dream_not_water"), "bright_cyan"),
+                (Loc.Get("opening_story.dream_endless"), "bright_cyan"),
                 ("", ""),
-                ("A voice speaks - your voice, but ancient:", "white"),
+                (Loc.Get("opening_story.dream_voice"), "white"),
                 ("", ""),
-                ("\"Remember...\"", "bright_yellow"),
+                (Loc.Get("opening_story.dream_remember"), "bright_yellow"),
                 ("", ""),
-                ("Remember what?", "gray"),
+                (Loc.Get("opening_story.dream_remember_what"), "gray"),
                 ("", ""),
-                ("\"Remember what you are.\"", "bright_yellow"),
+                (Loc.Get("opening_story.dream_remember_answer"), "bright_yellow"),
                 ("", ""),
-                ("The light fades. Darkness takes you.", "gray"),
-                ("And then...", "gray")
+                (Loc.Get("opening_story.dream_fades"), "gray"),
+                (Loc.Get("opening_story.dream_and_then"), "gray")
             };
 
             foreach (var (line, color) in dreamLines)
@@ -161,26 +161,26 @@ namespace UsurperRemake.Systems
 
             var sceneLines = new[]
             {
-                ("You wake with a gasp.", "white"),
+                (Loc.Get("opening_story.dorm_gasp"), "white"),
                 ("", ""),
-                ("Cold stone beneath you. The smell of damp hay.", "gray"),
-                ("A dormitory - rows of empty beds stretching into shadow.", "gray"),
+                (Loc.Get("opening_story.dorm_cold_stone"), "gray"),
+                (Loc.Get("opening_story.dorm_rows"), "gray"),
                 ("", ""),
-                ("Your head pounds. You try to remember...", "white"),
+                (Loc.Get("opening_story.dorm_head_pounds"), "white"),
                 ("", ""),
-                ("Nothing.", "bright_red"),
+                (Loc.Get("opening_story.dorm_nothing"), "bright_red"),
                 ("", ""),
-                ("Your name. Your past. Your family.", "gray"),
-                ("All of it - gone.", "gray"),
+                (Loc.Get("opening_story.dorm_name_past"), "gray"),
+                (Loc.Get("opening_story.dorm_all_gone"), "gray"),
                 ("", ""),
-                ("Only fragments remain:", "white"),
+                (Loc.Get("opening_story.dorm_fragments"), "white"),
                 ("", ""),
-                ($"  You are called {player.Name2}.", "bright_yellow"),
-                ($"  You are {GetRaceDescription(player.Race)}.", "yellow"),
-                ($"  You know how to {GetClassDescription(player.Class)}.", "yellow"),
+                ($"  {Loc.Get("opening_story.dorm_called", player.Name2)}", "bright_yellow"),
+                ($"  {Loc.Get("opening_story.dorm_race", GetRaceDescription(player.Race))}", "yellow"),
+                ($"  {Loc.Get("opening_story.dorm_class", GetClassDescription(player.Class))}", "yellow"),
                 ("", ""),
-                ("But who you WERE? Why you're HERE?", "white"),
-                ("The answers slip away like water through fingers.", "cyan"),
+                (Loc.Get("opening_story.dorm_who_were"), "white"),
+                (Loc.Get("opening_story.dorm_slip_away"), "cyan"),
             };
 
             foreach (var (line, color) in sceneLines)
@@ -210,13 +210,13 @@ namespace UsurperRemake.Systems
 
             var mysteryLines = new[]
             {
-                ("You stand, unsteady. Look around.", "white"),
+                (Loc.Get("opening_story.mystery_stand"), "white"),
                 ("", ""),
-                ("On a table by your bed: a scrap of parchment.", "gray"),
-                ("The handwriting is unmistakably your own.", "bright_yellow"),
-                ("But you don't remember writing it.", "white"),
+                (Loc.Get("opening_story.mystery_parchment"), "gray"),
+                (Loc.Get("opening_story.mystery_handwriting"), "bright_yellow"),
+                (Loc.Get("opening_story.mystery_dont_remember"), "white"),
                 ("", ""),
-                ("The message reads:", "gray"),
+                (Loc.Get("opening_story.mystery_reads"), "gray"),
                 ("", ""),
             };
 
@@ -239,28 +239,28 @@ namespace UsurperRemake.Systems
                 terminal.WriteLine("  ┌─────────────────────────────────────────────────────────┐", "yellow");
                 await SkippableDelay(200);
                 terminal.WriteLine("  │                                                         │", "yellow");
-                terminal.WriteLine("  │  To myself, if I survive:                               │", "yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_to_myself"),-55}│", "yellow");
                 await SkippableDelay(500);
                 terminal.WriteLine("  │                                                         │", "yellow");
-                terminal.WriteLine("  │  The gods are broken. Corrupted. Manwe has gone mad,    │", "yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_gods_broken"),-55}│", "yellow");
                 await SkippableDelay(300);
-                terminal.WriteLine("  │  and the Old Gods fight an endless war in his shadow.   │", "yellow");
-                await SkippableDelay(300);
-                terminal.WriteLine("  │                                                         │", "yellow");
-                terminal.WriteLine("  │  There are SEVEN SEALS hidden in the dungeons below.    │", "yellow");
-                await SkippableDelay(300);
-                terminal.WriteLine("  │  Collect them. Break the cycle. End the suffering.      │", "yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_old_gods"),-55}│", "yellow");
                 await SkippableDelay(300);
                 terminal.WriteLine("  │                                                         │", "yellow");
-                terminal.WriteLine("  │  Trust no one. Especially not the Stranger.             │", "yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_seven_seals"),-55}│", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_collect"),-55}│", "yellow");
                 await SkippableDelay(300);
                 terminal.WriteLine("  │                                                         │", "yellow");
-                terminal.WriteLine("  │  And remember this:                                     │", "yellow");
-                terminal.WriteLine("  │  You are not what you think you are.                    │", "bright_cyan");
-                terminal.WriteLine("  │  You never were.                                        │", "bright_cyan");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_trust"),-55}│", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("  │                                                         │", "yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_remember"),-55}│", "yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_not_what"),-55}│", "bright_cyan");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_never_were"),-55}│", "bright_cyan");
                 await SkippableDelay(500);
                 terminal.WriteLine("  │                                                         │", "yellow");
-                terminal.WriteLine("  │                                    - You (Before)       │", "gray");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.letter_signed"),55}│", "gray");
                 terminal.WriteLine("  │                                                         │", "yellow");
                 terminal.WriteLine("  └─────────────────────────────────────────────────────────┘", "yellow");
             }
@@ -269,28 +269,28 @@ namespace UsurperRemake.Systems
                 terminal.WriteLine($"  --- {Loc.Get("opening_story.letter_title")} ---", "yellow");
                 await SkippableDelay(200);
                 terminal.WriteLine("", "yellow");
-                terminal.WriteLine("  To myself, if I survive:", "yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_to_myself")}", "yellow");
                 await SkippableDelay(500);
                 terminal.WriteLine("", "yellow");
-                terminal.WriteLine("  The gods are broken. Corrupted. Manwe has gone mad,", "yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_gods_broken")}", "yellow");
                 await SkippableDelay(300);
-                terminal.WriteLine("  and the Old Gods fight an endless war in his shadow.", "yellow");
-                await SkippableDelay(300);
-                terminal.WriteLine("", "yellow");
-                terminal.WriteLine("  There are SEVEN SEALS hidden in the dungeons below.", "yellow");
-                await SkippableDelay(300);
-                terminal.WriteLine("  Collect them. Break the cycle. End the suffering.", "yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_old_gods")}", "yellow");
                 await SkippableDelay(300);
                 terminal.WriteLine("", "yellow");
-                terminal.WriteLine("  Trust no one. Especially not the Stranger.", "yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_seven_seals")}", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_collect")}", "yellow");
                 await SkippableDelay(300);
                 terminal.WriteLine("", "yellow");
-                terminal.WriteLine("  And remember this:", "yellow");
-                terminal.WriteLine("  You are not what you think you are.", "bright_cyan");
-                terminal.WriteLine("  You never were.", "bright_cyan");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_trust")}", "yellow");
+                await SkippableDelay(300);
+                terminal.WriteLine("", "yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_remember")}", "yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_not_what")}", "bright_cyan");
+                terminal.WriteLine($"  {Loc.Get("opening_story.letter_never_were")}", "bright_cyan");
                 await SkippableDelay(500);
                 terminal.WriteLine("", "yellow");
-                terminal.WriteLine("                                    - You (Before)", "gray");
+                terminal.WriteLine($"                                    {Loc.Get("opening_story.letter_signed")}", "gray");
                 terminal.WriteLine("", "yellow");
             }
 
@@ -321,24 +321,24 @@ namespace UsurperRemake.Systems
 
             var goalLines = new[]
             {
-                ("You step out of the dormitory into the morning light.", "white"),
+                (Loc.Get("opening_story.goal_step_out"), "white"),
                 ("", ""),
-                ("The town of Dorashire spreads before you.", "gray"),
-                ("An Inn. An Auction House. A Temple to gods you don't remember.", "gray"),
-                ("And beyond the walls - the entrance to the Dungeons.", "bright_red"),
+                (Loc.Get("opening_story.goal_dorashire"), "gray"),
+                (Loc.Get("opening_story.goal_locations"), "gray"),
+                (Loc.Get("opening_story.goal_dungeons"), "bright_red"),
                 ("", ""),
-                ("Somewhere down there, in the darkness:", "white"),
-                ("Seven Seals wait to be found.", "bright_yellow"),
-                ("Old Gods wage their secret war.", "yellow"),
-                ("And the truth of your identity lies buried.", "bright_cyan"),
+                (Loc.Get("opening_story.goal_somewhere"), "white"),
+                (Loc.Get("opening_story.goal_seals"), "bright_yellow"),
+                (Loc.Get("opening_story.goal_old_gods"), "yellow"),
+                (Loc.Get("opening_story.goal_truth"), "bright_cyan"),
                 ("", ""),
-                ("You don't know who erased your memory.", "gray"),
-                ("You don't know why you wrote yourself that warning.", "gray"),
-                ("You don't know what 'the cycle' means.", "gray"),
+                (Loc.Get("opening_story.goal_dont_know_memory"), "gray"),
+                (Loc.Get("opening_story.goal_dont_know_warning"), "gray"),
+                (Loc.Get("opening_story.goal_dont_know_cycle"), "gray"),
                 ("", ""),
-                ("But you know one thing:", "white"),
+                (Loc.Get("opening_story.goal_but_know"), "white"),
                 ("", ""),
-                ("You will find out.", "bright_white"),
+                (Loc.Get("opening_story.goal_find_out"), "bright_white"),
             };
 
             foreach (var (line, color) in goalLines)
@@ -395,17 +395,17 @@ namespace UsurperRemake.Systems
         {
             return race switch
             {
-                CharacterRace.Human => "a human, unremarkable yet adaptable",
-                CharacterRace.Elf => "an elf, touched by ancient magic",
-                CharacterRace.Dwarf => "a dwarf, with the strength of stone in your bones",
-                CharacterRace.Hobbit => "a hobbit, small but surprisingly resilient",
-                CharacterRace.HalfElf => "a half-elf, caught between two worlds",
-                CharacterRace.Orc => "an orc, with savage strength coursing through your veins",
-                CharacterRace.Gnome => "a gnome, clever and quick-witted",
-                CharacterRace.Troll => "a troll, massive and nearly unkillable",
-                CharacterRace.Gnoll => "a gnoll, with the cunning of a hyena",
-                CharacterRace.Mutant => "a mutant, changed by forces unknown",
-                _ => "of uncertain origin"
+                CharacterRace.Human => Loc.Get("opening_story.race_human"),
+                CharacterRace.Elf => Loc.Get("opening_story.race_elf"),
+                CharacterRace.Dwarf => Loc.Get("opening_story.race_dwarf"),
+                CharacterRace.Hobbit => Loc.Get("opening_story.race_hobbit"),
+                CharacterRace.HalfElf => Loc.Get("opening_story.race_halfelf"),
+                CharacterRace.Orc => Loc.Get("opening_story.race_orc"),
+                CharacterRace.Gnome => Loc.Get("opening_story.race_gnome"),
+                CharacterRace.Troll => Loc.Get("opening_story.race_troll"),
+                CharacterRace.Gnoll => Loc.Get("opening_story.race_gnoll"),
+                CharacterRace.Mutant => Loc.Get("opening_story.race_mutant"),
+                _ => Loc.Get("opening_story.race_unknown")
             };
         }
 
@@ -416,18 +416,18 @@ namespace UsurperRemake.Systems
         {
             return charClass switch
             {
-                CharacterClass.Warrior => "fight with blade and fury",
-                CharacterClass.Magician => "wield arcane forces beyond mortal ken",
-                CharacterClass.Assassin => "move unseen and strike from shadow",
-                CharacterClass.Paladin => "channel divine power through righteous steel",
-                CharacterClass.Ranger => "track prey through any terrain",
-                CharacterClass.Cleric => "invoke the blessings of forgotten gods",
-                CharacterClass.Barbarian => "crush enemies with primal rage",
-                CharacterClass.Bard => "weave magic through song and story",
-                CharacterClass.Jester => "confuse and confound your enemies",
-                CharacterClass.Alchemist => "transmute the world to your will",
-                CharacterClass.Sage => "unlock secrets long forgotten",
-                _ => "survive by any means necessary"
+                CharacterClass.Warrior => Loc.Get("opening_story.class_warrior"),
+                CharacterClass.Magician => Loc.Get("opening_story.class_magician"),
+                CharacterClass.Assassin => Loc.Get("opening_story.class_assassin"),
+                CharacterClass.Paladin => Loc.Get("opening_story.class_paladin"),
+                CharacterClass.Ranger => Loc.Get("opening_story.class_ranger"),
+                CharacterClass.Cleric => Loc.Get("opening_story.class_cleric"),
+                CharacterClass.Barbarian => Loc.Get("opening_story.class_barbarian"),
+                CharacterClass.Bard => Loc.Get("opening_story.class_bard"),
+                CharacterClass.Jester => Loc.Get("opening_story.class_jester"),
+                CharacterClass.Alchemist => Loc.Get("opening_story.class_alchemist"),
+                CharacterClass.Sage => Loc.Get("opening_story.class_sage"),
+                _ => Loc.Get("opening_story.class_unknown")
             };
         }
 
@@ -466,17 +466,17 @@ namespace UsurperRemake.Systems
 
             var ngPlusLines = new[]
             {
-                ("You wake with a gasp.", "white"),
+                (Loc.Get("opening_story.ngplus_gasp"), "white"),
                 ("", ""),
-                ("The dormitory. Again.", "gray"),
+                (Loc.Get("opening_story.ngplus_again"), "gray"),
                 ("", ""),
-                ("This time, something is different.", "bright_yellow"),
-                ("Fragments of the past cycle cling to your mind.", "yellow"),
-                ("Not memories, exactly. More like... echoes.", "cyan"),
+                (Loc.Get("opening_story.ngplus_different"), "bright_yellow"),
+                (Loc.Get("opening_story.ngplus_fragments"), "yellow"),
+                (Loc.Get("opening_story.ngplus_echoes"), "cyan"),
                 ("", ""),
-                ("The letter on the table is the same.", "gray"),
-                ("But now you notice something you missed before:", "white"),
-                ("A second page, hidden beneath the first.", "bright_yellow"),
+                (Loc.Get("opening_story.ngplus_same_letter"), "gray"),
+                (Loc.Get("opening_story.ngplus_notice"), "white"),
+                (Loc.Get("opening_story.ngplus_second_page"), "bright_yellow"),
                 ("", ""),
             };
 
@@ -498,33 +498,33 @@ namespace UsurperRemake.Systems
             {
                 terminal.WriteLine("  ┌─────────────────────────────────────────────────────────┐", "bright_magenta");
                 terminal.WriteLine("  │                                                         │", "bright_magenta");
-                terminal.WriteLine("  │  This is not the first time.                            │", "magenta");
-                terminal.WriteLine("  │  You have done this before.                             │", "magenta");
-                terminal.WriteLine("  │  Again and again.                                       │", "magenta");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_not_first"),-55}│", "magenta");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_done_before"),-55}│", "magenta");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_again_again"),-55}│", "magenta");
                 terminal.WriteLine("  │                                                         │", "bright_magenta");
-                terminal.WriteLine("  │  The cycle is not punishment.                           │", "bright_cyan");
-                terminal.WriteLine("  │  It is the ocean, learning to understand its waves.     │", "bright_cyan");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_not_punishment"),-55}│", "bright_cyan");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_ocean"),-55}│", "bright_cyan");
                 terminal.WriteLine("  │                                                         │", "bright_magenta");
-                terminal.WriteLine("  │  Each time, you remember a little more.                 │", "white");
-                terminal.WriteLine("  │  Each time, you get closer to the truth.                │", "white");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_remember_more"),-55}│", "white");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_closer"),-55}│", "white");
                 terminal.WriteLine("  │                                                         │", "bright_magenta");
-                terminal.WriteLine($"  │  This is Cycle {cycle}. How many more until you wake?       │", "bright_yellow");
+                terminal.WriteLine($"  │  {Loc.Get("opening_story.ngplus_cycle_count", cycle),-55}│", "bright_yellow");
                 terminal.WriteLine("  │                                                         │", "bright_magenta");
                 terminal.WriteLine("  └─────────────────────────────────────────────────────────┘", "bright_magenta");
             }
             else
             {
-                terminal.WriteLine("  This is not the first time.", "magenta");
-                terminal.WriteLine("  You have done this before.", "magenta");
-                terminal.WriteLine("  Again and again.", "magenta");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_not_first")}", "magenta");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_done_before")}", "magenta");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_again_again")}", "magenta");
                 terminal.WriteLine("", "bright_magenta");
-                terminal.WriteLine("  The cycle is not punishment.", "bright_cyan");
-                terminal.WriteLine("  It is the ocean, learning to understand its waves.", "bright_cyan");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_not_punishment")}", "bright_cyan");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_ocean")}", "bright_cyan");
                 terminal.WriteLine("", "bright_magenta");
-                terminal.WriteLine("  Each time, you remember a little more.", "white");
-                terminal.WriteLine("  Each time, you get closer to the truth.", "white");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_remember_more")}", "white");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_closer")}", "white");
                 terminal.WriteLine("", "bright_magenta");
-                terminal.WriteLine($"  This is Cycle {cycle}. How many more until you wake?", "bright_yellow");
+                terminal.WriteLine($"  {Loc.Get("opening_story.ngplus_cycle_count", cycle)}", "bright_yellow");
             }
 
             terminal.WriteLine("");

@@ -3512,6 +3512,12 @@ public partial class GameEngine
             WorldInitializerSystem.Instance.ResetWorld();
             NPCMarriageRegistry.Instance.Reset();
             NPCDialogueDatabase.ClearAllTracking();
+            RelationshipSystem.Instance.Reset();
+        }
+        else
+        {
+            // Online mode: only clear this player's relationships, preserve NPC-to-NPC
+            RelationshipSystem.Instance.ResetPlayerRelationships(playerName);
         }
 
         // Initialize per-session daily state for new character
@@ -3620,33 +3626,34 @@ public partial class GameEngine
             terminal.ClearScreen();
             terminal.WriteLine("");
             terminal.SetColor("bright_yellow");
-            terminal.WriteLine("  A weathered soldier steps from the shadows, blocking your path.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.soldier_appears")}");
             terminal.WriteLine("");
             terminal.SetColor("white");
-            terminal.WriteLine("  \"Hold there, newcomer. I'm Captain Aldric of the Town Guard.\"");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.intro")}");
             terminal.WriteLine("");
             terminal.SetColor("gray");
-            terminal.WriteLine("  He studies you with a practiced eye, then nods slowly.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.studies_you")}");
             terminal.WriteLine("");
             terminal.SetColor("white");
-            terminal.WriteLine("  \"We've lost contact with our scouts in the dungeon below.");
-            terminal.WriteLine("  I need someone to go down there and report back. Nothing fancy —");
-            terminal.WriteLine("  just enter the dungeon, deal with whatever you find, and look");
-            terminal.WriteLine("  for any treasure the scouts may have left behind.\"");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.lost_contact")}");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.need_someone")}");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.just_enter")}");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.for_treasure")}");
             terminal.WriteLine("");
             terminal.SetColor("bright_cyan");
-            terminal.WriteLine("  He hands you a worn mission scroll.");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.hands_scroll")}");
             terminal.WriteLine("");
             terminal.SetColor("yellow");
-            terminal.WriteLine("  === QUEST RECEIVED: Captain Aldric's Mission ===");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.quest_received")}");
             terminal.SetColor("gray");
-            terminal.WriteLine("    1. Enter the dungeon");
-            terminal.WriteLine("    2. Defeat a monster");
-            terminal.WriteLine("    3. Find a treasure cache");
-            terminal.WriteLine("    4. Report back to Main Street");
+            terminal.WriteLine($"    {Loc.Get("aldric_quest.obj_enter")}");
+            terminal.WriteLine($"    {Loc.Get("aldric_quest.obj_defeat")}");
+            terminal.WriteLine($"    {Loc.Get("aldric_quest.obj_treasure")}");
+            terminal.WriteLine($"    {Loc.Get("aldric_quest.obj_report")}");
             terminal.WriteLine("");
             terminal.SetColor("white");
-            terminal.WriteLine("  \"Come find me on Main Street when you're done. Good luck.\"");
+            terminal.WriteLine($"  {Loc.Get("aldric_quest.good_luck")}");
+
             terminal.WriteLine("");
             currentPlayer.HintsShown.Add("aldric_quest_active");
             await terminal.PressAnyKey();
@@ -4551,6 +4558,19 @@ public partial class GameEngine
         if (!string.IsNullOrEmpty(player.Team))
         {
             WorldSimulator.RegisterPlayerTeam(player.Team);
+
+            // Cache team HQ upgrade levels for combat bonuses (online mode only)
+            if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
+            {
+                var hqBackend = SaveSystem.Instance.Backend as SqlSaveBackend;
+                if (hqBackend != null)
+                {
+                    player.HQArmoryLevel = hqBackend.GetTeamUpgradeLevel(player.Team, "armory");
+                    player.HQBarracksLevel = hqBackend.GetTeamUpgradeLevel(player.Team, "barracks");
+                    player.HQTrainingLevel = hqBackend.GetTeamUpgradeLevel(player.Team, "training");
+                    player.HQInfirmaryLevel = hqBackend.GetTeamUpgradeLevel(player.Team, "infirmary");
+                }
+            }
         }
 
         // Apply player's color theme preference

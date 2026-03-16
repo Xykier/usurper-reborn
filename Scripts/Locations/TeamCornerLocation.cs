@@ -2497,6 +2497,13 @@ public class TeamCornerLocation : BaseLocation
         await backend.UpgradeTeamFacility(teamName, key, cost);
         terminal.SetColor("bright_green");
         terminal.WriteLine(Loc.Get("team.facility_upgraded", Loc.Get(def.NameKey), currentLevel + 1));
+
+        // Refresh cached HQ upgrade levels on the player
+        currentPlayer.HQArmoryLevel = backend.GetTeamUpgradeLevel(teamName, "armory");
+        currentPlayer.HQBarracksLevel = backend.GetTeamUpgradeLevel(teamName, "barracks");
+        currentPlayer.HQTrainingLevel = backend.GetTeamUpgradeLevel(teamName, "training");
+        currentPlayer.HQInfirmaryLevel = backend.GetTeamUpgradeLevel(teamName, "infirmary");
+
         await Task.Delay(2000);
     }
 

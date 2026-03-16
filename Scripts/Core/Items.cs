@@ -170,15 +170,15 @@ public class Item
             
         if (Durability < 100)
         {
-            var condition = Durability switch
+            var conditionKey = Durability switch
             {
-                >= 80 => "Good",
-                >= 60 => "Fair", 
-                >= 40 => "Poor",
-                >= 20 => "Bad",
-                _ => "Broken"
+                >= 80 => "item.condition.good",
+                >= 60 => "item.condition.fair",
+                >= 40 => "item.condition.poor",
+                >= 20 => "item.condition.bad",
+                _ => "item.condition.broken"
             };
-            name += $" [{condition}]";
+            name += $" [{Loc.Get(conditionKey)}]";
         }
         
         if (IsArtifact)
