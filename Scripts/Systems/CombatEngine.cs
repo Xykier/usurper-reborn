@@ -2917,6 +2917,23 @@ public partial class CombatEngine
             }
         }
 
+        // Assassin Lethal Precision: +25% crit damage with dagger, +10% damage vs poisoned targets
+        if (attacker.Class == CharacterClass.Assassin)
+        {
+            if (attackRoll.IsCriticalSuccess && attacker.GetEquipment(EquipmentSlot.MainHand)?.WeaponType == WeaponType.Dagger)
+            {
+                long critBonus = (long)(attackPower * GameConfig.AssassinLethalPrecisionCritBonus);
+                attackPower += critBonus;
+                terminal.WriteLine($"  Lethal Precision! Dagger crit deals +{critBonus} bonus damage!", "bright_red");
+            }
+            if (target.Poisoned)
+            {
+                long poisonBonus = (long)(attackPower * GameConfig.AssassinLethalPrecisionPoisonBonus);
+                attackPower += poisonBonus;
+                terminal.WriteLine($"  The poison weakens {target.Name} — +{poisonBonus} bonus damage!", "dark_green");
+            }
+        }
+
         // Comprehensive combat logging for every player attack (single-monster path)
         DebugLogger.Instance.LogInfo("COMBAT_ATTACK",
             $"player={attacker.Name} lv={attacker.Level} class={attacker.Class} path=single " +
@@ -3339,6 +3356,7 @@ public partial class CombatEngine
             case PoisonType.Deathbane:
                 // Damage bonus already handled in attack power calculation
                 target.Poisoned = true;
+                target.PoisonRounds = Math.Max(target.PoisonRounds, 3);
                 target.Strength = Math.Max(1, target.Strength - target.Strength / 4); // -25% strength
                 terminal.SetColor("bright_red");
                 terminal.WriteLine($"  Deathbane ravages {target.Name} — poisoned and weakened!");
@@ -8683,8 +8701,14 @@ public partial class CombatEngine
         terminal.Write($"{player.Strength + player.WeapPow,-5} ");
         terminal.SetColor("gray");
         terminal.Write($"DEF: ");
-        terminal.SetColor("bright_cyan");
-        terminal.Write($"{player.Defence + player.ArmPow + player.MagicACBonus,-5} ");
+        terminal.SetColor(player.MagicACBonus > 0 ? "bright_white" : "bright_cyan");
+        terminal.Write($"{player.Defence + player.ArmPow + player.MagicACBonus}");
+        if (player.MagicACBonus > 0)
+        {
+            terminal.SetColor("bright_blue");
+            terminal.Write($"(+{player.MagicACBonus})");
+        }
+        terminal.Write(" ");
 
         // Show damage absorption if active
         if (player.DamageAbsorptionPool > 0)
@@ -8837,8 +8861,13 @@ public partial class CombatEngine
         terminal.Write($"{player.Strength + player.WeapPow}");
         terminal.SetColor("gray");
         terminal.Write($"  {Loc.Get("combat.bar_def")}:");
-        terminal.SetColor("bright_cyan");
+        terminal.SetColor(player.MagicACBonus > 0 ? "bright_white" : "bright_cyan");
         terminal.Write($"{player.Defence + player.ArmPow + player.MagicACBonus}");
+        if (player.MagicACBonus > 0)
+        {
+            terminal.SetColor("bright_blue");
+            terminal.Write($"(+{player.MagicACBonus})");
+        }
         if (player.DamageAbsorptionPool > 0)
         {
             terminal.SetColor("gray");
@@ -8969,7 +8998,10 @@ public partial class CombatEngine
 
         // Combat stats
         terminal.SetColor("gray");
-        terminal.WriteLine($"  {Loc.Get("combat.sr_attack_defense", player.Strength + player.WeapPow, player.Defence + player.ArmPow + player.MagicACBonus)}");
+        if (player.MagicACBonus > 0)
+            terminal.WriteLine($"  {Loc.Get("combat.sr_attack_defense", player.Strength + player.WeapPow, player.Defence + player.ArmPow + player.MagicACBonus)} (magic shield: +{player.MagicACBonus})");
+        else
+            terminal.WriteLine($"  {Loc.Get("combat.sr_attack_defense", player.Strength + player.WeapPow, player.Defence + player.ArmPow + player.MagicACBonus)}");
 
         // Damage absorption
         if (player.DamageAbsorptionPool > 0)
@@ -9932,6 +9964,23 @@ public partial class CombatEngine
                             }
                         }
 
+                        // Assassin Lethal Precision: +25% crit damage with dagger, +10% damage vs poisoned targets
+                        if (player.Class == CharacterClass.Assassin)
+                        {
+                            if ((isCrit || dexCrit) && player.GetEquipment(EquipmentSlot.MainHand)?.WeaponType == WeaponType.Dagger)
+                            {
+                                long critBonusMM = (long)(attackPower * GameConfig.AssassinLethalPrecisionCritBonus);
+                                attackPower += critBonusMM;
+                                terminal.WriteLine($"  Lethal Precision! Dagger crit deals +{critBonusMM} bonus damage!", "bright_red");
+                            }
+                            if (target.Poisoned)
+                            {
+                                long poisonBonusMM = (long)(attackPower * GameConfig.AssassinLethalPrecisionPoisonBonus);
+                                attackPower += poisonBonusMM;
+                                terminal.WriteLine($"  The poison weakens {target.Name} — +{poisonBonusMM} bonus damage!", "dark_green");
+                            }
+                        }
+
                         long damage = Math.Max(1, attackPower);
 
                         // Comprehensive combat logging for every player attack
@@ -10698,8 +10747,55 @@ public partial class CombatEngine
                 if (target != null && target.IsAlive)
                 {
                     target.Poisoned = true;
+                    target.PoisonRounds = Math.Max(target.PoisonRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 3);
                     terminal.SetColor("green");
                     terminal.WriteLine(Loc.Get("combat.ability_poisoned", target.Name));
+                }
+                break;
+
+            case "biaxin":
+                if (target != null && target.IsAlive)
+                {
+                    // Poison
+                    target.Poisoned = true;
+                    target.PoisonRounds = Math.Max(target.PoisonRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                    // Corrode armor using the IsCorroded system (duration-tracked, -40% defense)
+                    target.IsCorroded = true;
+                    target.CorrodedDuration = Math.Max(target.CorrodedDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                    terminal.SetColor("dark_green");
+                    terminal.WriteLine($"  {Loc.Get("combat.biaxin_apply", target.Name)}");
+                    terminal.SetColor("green");
+                    terminal.WriteLine($"  {Loc.Get("combat.biaxin_effect", target.Name)}");
+                }
+                break;
+
+            case "execute":
+                if (target != null && target.IsAlive)
+                {
+                    double hpPercentMM = (double)target.HP / Math.Max(1, target.MaxHP);
+                    if (hpPercentMM < 0.30)
+                    {
+                        long executeBonusMM = abilityResult.Damage;
+                        target.HP = Math.Max(0, target.HP - executeBonusMM);
+                        result.TotalDamageDealt += executeBonusMM;
+                        result.Player?.Statistics.RecordDamageDealt(executeBonusMM, false);
+                        terminal.SetColor("bright_red");
+                        terminal.WriteLine($"  EXECUTE! {target.Name} is critically wounded — {executeBonusMM} bonus damage!");
+                    }
+                    else if (hpPercentMM < 0.50)
+                    {
+                        long executeBonusMM = abilityResult.Damage / 2;
+                        target.HP = Math.Max(0, target.HP - executeBonusMM);
+                        result.TotalDamageDealt += executeBonusMM;
+                        result.Player?.Statistics.RecordDamageDealt(executeBonusMM, false);
+                        terminal.SetColor("red");
+                        terminal.WriteLine($"  Finishing blow! {target.Name} takes {executeBonusMM} bonus damage!");
+                    }
+                    else
+                    {
+                        terminal.SetColor("gray");
+                        terminal.WriteLine($"  {target.Name} is too healthy for a finishing blow.");
+                    }
                 }
                 break;
 
@@ -12557,6 +12653,8 @@ public partial class CombatEngine
         // Only apply effects if spell succeeded (not fumbled/failed)
         if (!spellResult.Success)
         {
+            terminal.SetColor("yellow");
+            terminal.WriteLine("  ** The spell had no effect! Train at the Level Master to improve your casting. **");
             result.CombatLog.Add($"{player.DisplayName}'s spell fizzles.");
             return;
         }
@@ -15929,15 +16027,6 @@ public partial class CombatEngine
     /// <summary>
     /// Handle player death with resurrection options
     /// </summary>
-    /// <summary>
-    /// Public wrapper for HandlePlayerDeath — used by faction ambush and other
-    /// PvP paths where the combat engine doesn't handle death internally.
-    /// </summary>
-    public async Task HandlePlayerDeathPublic(CombatResult result)
-    {
-        await HandlePlayerDeath(result);
-    }
-
     private async Task HandlePlayerDeath(CombatResult result)
     {
         terminal.ClearScreen();
@@ -16951,7 +17040,56 @@ public partial class CombatEngine
                 if (monster != null)
                 {
                     monster.Poisoned = true;
+                    monster.PoisonRounds = Math.Max(monster.PoisonRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 3);
                     terminal.WriteLine($"{monster.Name} is poisoned!", "green");
+                }
+                break;
+
+            case "biaxin":
+                if (monster != null)
+                {
+                    // Poison
+                    monster.Poisoned = true;
+                    monster.PoisonRounds = Math.Max(monster.PoisonRounds, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                    // Corrode armor using the IsCorroded system (duration-tracked, -40% defense)
+                    monster.IsCorroded = true;
+                    monster.CorrodedDuration = Math.Max(monster.CorrodedDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                    terminal.SetColor("dark_green");
+                    terminal.WriteLine($"  {Loc.Get("combat.biaxin_apply", monster.Name)}");
+                    terminal.SetColor("green");
+                    terminal.WriteLine($"  {Loc.Get("combat.biaxin_effect", monster.Name)}");
+                }
+                break;
+
+            case "execute":
+                if (monster != null && monster.IsAlive)
+                {
+                    double hpPercent = (double)monster.HP / Math.Max(1, monster.MaxHP);
+                    if (hpPercent < 0.30)
+                    {
+                        // Below 30% HP: deal 2x bonus damage
+                        long executeBonusSM = abilityResult.Damage;
+                        monster.HP = Math.Max(0, monster.HP - executeBonusSM);
+                        result.TotalDamageDealt += executeBonusSM;
+                        result.Player?.Statistics.RecordDamageDealt(executeBonusSM, false);
+                        terminal.SetColor("bright_red");
+                        terminal.WriteLine($"  EXECUTE! {monster.Name} is critically wounded — {executeBonusSM} bonus damage!");
+                    }
+                    else if (hpPercent < 0.50)
+                    {
+                        // Below 50% HP: deal 50% bonus damage
+                        long executeBonusSM = abilityResult.Damage / 2;
+                        monster.HP = Math.Max(0, monster.HP - executeBonusSM);
+                        result.TotalDamageDealt += executeBonusSM;
+                        result.Player?.Statistics.RecordDamageDealt(executeBonusSM, false);
+                        terminal.SetColor("red");
+                        terminal.WriteLine($"  Finishing blow! {monster.Name} takes {executeBonusSM} bonus damage!");
+                    }
+                    else
+                    {
+                        terminal.SetColor("gray");
+                        terminal.WriteLine($"  {monster.Name} is too healthy for a finishing blow.");
+                    }
                 }
                 break;
 
@@ -19066,6 +19204,15 @@ public partial class CombatEngine
                 actualDamage = (long)(actualDamage * 1.5);
                 terminal.WriteLine(Loc.Get("combat.critical_from_shadows"), "bright_yellow");
             }
+            else if (abilityResult.SpecialEffect == "biaxin")
+            {
+                // Poison the PvP target
+                defender.ApplyStatus(StatusEffect.Poisoned, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                // Corrode armor — apply Weakened status (duration-tracked defense reduction)
+                defender.ApplyStatus(StatusEffect.Weakened, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
+                terminal.WriteLine($"  {Loc.Get("combat.biaxin_apply", defender.DisplayName)}", "dark_green");
+                terminal.WriteLine($"  {Loc.Get("combat.biaxin_effect", defender.DisplayName)}", "green");
+            }
 
             // Apply defense (abilities partially bypass defense)
             if (abilityResult.SpecialEffect != "armor_pierce")
@@ -19468,7 +19615,17 @@ public partial class CombatEngine
             var spellResult = SpellSystem.CastSpell(player, selectedSpell.Level, null);
 
             terminal.WriteLine("");
-            terminal.WriteLine(spellResult.Message);
+            if (!spellResult.Success)
+            {
+                terminal.SetColor("red");
+                terminal.WriteLine(spellResult.Message);
+                terminal.SetColor("yellow");
+                terminal.WriteLine("  ** The spell had no effect! Train at the Level Master to improve your casting. **");
+            }
+            else
+            {
+                terminal.WriteLine(spellResult.Message);
+            }
 
             // Apply spell effects
             ApplySpellEffects(player, monster, spellResult, result);

@@ -139,7 +139,7 @@ Lyris showed as "Paladin" class on the Inn companion management screens (equipme
 
 Continued localization audit converting hardcoded English UI strings to `Loc.Get()` calls across three player-facing files.
 
-**PrisonWalkLocation.cs** — 79 new localization keys. All menu text, status display, prisoner list, prison break narrative, guard combat messages, success/failure outcomes, and help commands converted. Full Spanish translations; Hungarian, Italian, French get English placeholders.
+**PrisonWalkLocation.cs** — 79 new localization keys. All menu text, status display, prisoner list, prison break narrative, guard combat messages, success/failure outcomes, and help commands converted. Full translations in all 5 languages.
 
 **StreetEncounterSystem.cs** — 5 new localization keys for the remaining hardcoded combat result messages (honor duel victory, brawl victory, defeated NPC, lost to NPC, bounty collected).
 
@@ -208,9 +208,9 @@ The opt-in PostHog analytics system (`TelemetrySystem.cs`) has been completely r
 - `Scripts/Locations/BaseLocation.cs` — Removed hardcoded ` is ` from NPC activity display; `GetLocationContextActivity()` and `GetNPCShout()` pass NPC name as `{0}` to all `Loc.Get()` calls
 - `Localization/en.json` — `home.upgrades` shortened; Main Street menu labels shortened for column fit; 59 NPC activity/shout keys converted to active-voice sentences with `{0}`; 172 new keys (88 dialogue + 79 prison + 5 street)
 - `Localization/es.json` — `home.upgrades` shortened; 59 NPC activity/shout keys updated with `{0}` and Spanish active voice; 172 new keys with full Spanish translations
-- `Localization/it.json` — `home.upgrades` shortened; 59 NPC activity/shout keys updated with `{0}` and Italian active voice; 172 new keys (English placeholders)
-- `Localization/hu.json` — 59 NPC activity/shout keys updated with `{0}` and Hungarian active voice; 172 new keys (English placeholders)
-- `Localization/fr.json` — 59 NPC activity/shout keys updated with `{0}` and French active voice; 172 new dialogue/prison keys
+- `Localization/it.json` — `home.upgrades` shortened; 59 NPC activity/shout keys updated with `{0}` and Italian active voice; 172 new keys
+- `Localization/hu.json` — 59 NPC activity/shout keys updated with `{0}` and Hungarian active voice; 172 new keys
+- `Localization/fr.json` — 59 NPC activity/shout keys updated with `{0}` and French active voice; 172 new keys
 - `Scripts/Locations/PrisonWalkLocation.cs` — All UI strings converted to `Loc.Get()` (79 keys: menus, status, prisoner list, prison break, guard combat, outcomes, help)
 - `Scripts/Systems/StreetEncounterSystem.cs` — 5 combat result messages converted to `Loc.Get()` (honor duel, brawl, defeat, loss, bounty)
 - `Scripts/Systems/VisualNovelDialogueSystem.cs` — 80 UI narration strings converted to `Loc.Get()` (charisma, options, warnings, flirt/compliment/confession/kiss/proposition/provocation narration, affair menu/outcomes, wedding ceremony)

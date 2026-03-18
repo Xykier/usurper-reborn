@@ -1396,7 +1396,52 @@ public partial class TerminalEmulator
     public async Task PressAnyKey(string? message = null)
     {
         message ??= UsurperRemake.Systems.Loc.Get("ui.press_any_key");
-        await GetInput(message);
+
+        // MUD stream mode — must use line input (Enter to continue)
+        if (_streamWriter != null && _streamReader != null)
+        {
+            await GetInput(message);
+            return;
+        }
+
+        // BBS socket mode — delegate to adapter
+        if (ShouldUseBBSAdapter())
+        {
+            await GetInput(message);
+            return;
+        }
+
+        // Console mode (Steam/WezTerm/local) — accept any single keypress
+        Write(message, "bright_white");
+        if (!Console.IsInputRedirected && !DoorMode.ShouldUseAnsiOutput)
+        {
+            try
+            {
+                await Task.Run(() => Console.ReadKey(true));
+                WriteLine("");
+            }
+            catch
+            {
+                // Fallback if ReadKey fails (e.g., redirected input)
+                Console.ReadLine();
+            }
+        }
+        else
+        {
+            // Redirected stdin (door/online stdio) — line input only
+            if (DoorMode.ShouldUseAnsiOutput || Console.IsInputRedirected)
+                ReadLineWithBackspace();
+            else
+                Console.ReadLine();
+        }
+
+        // Reset idle tracking
+        if (DoorMode.IsInDoorMode || DoorMode.IsOnlineMode)
+        {
+            DoorMode.LastInputTime = DateTime.UtcNow;
+            _idleWarningShown = false;
+            _consecutiveEmptyInputs = 0;
+        }
     }
     
     // Missing API methods for compatibility
@@ -1944,11 +1989,11 @@ public partial class TerminalEmulator
 
             if (completed != readTask)
             {
-                // No character yet — only deliver messages if the user isn't
-                // actively typing (500ms grace period prevents input stomping).
-                bool userIsTyping = buffer.Length > 0
-                    && (DateTime.Now - lastKeystrokeTime).TotalMilliseconds < 500;
-                if (!userIsTyping)
+                // No character yet — only deliver messages when the input buffer
+                // is empty (player hasn't started typing).  Once any text is in
+                // the buffer, messages queue silently and flush after Enter —
+                // matching how traditional MUDs keep input uninterrupted.
+                if (buffer.Length == 0)
                     DeliverPendingMessagesWithRedraw(prompt, buffer);
                 continue; // readTask is still the same pending call
             }

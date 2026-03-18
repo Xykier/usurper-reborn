@@ -699,6 +699,21 @@ public static class ClassAbilitySystem
             SpecialEffect = "marked",
             AvailableToClasses = new[] { CharacterClass.Assassin }
         },
+        ["biaxin"] = new ClassAbility
+        {
+            Id = "biaxin",
+            Name = "Biaxin",
+            Description = "Coat your blade with Biaxin, a rare paralytic toxin. Deals damage, corrodes the target's armor (-40% DEF for 4 rounds), and poisons them.",
+            LevelRequired = 35,
+            StaminaCost = 45,
+            Cooldown = 4,
+            Type = AbilityType.Attack,
+            BaseDamage = 70,
+            SpecialEffect = "biaxin",
+            Duration = 4,
+            RequiredWeaponTypes = new[] { WeaponType.Dagger },
+            AvailableToClasses = new[] { CharacterClass.Assassin }
+        },
         ["assassinate"] = new ClassAbility
         {
             Id = "assassinate",

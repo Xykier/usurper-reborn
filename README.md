@@ -2,7 +2,7 @@
 
 ## A Persistent Online Text RPG with a Living World
 
-**ALPHA v0.52.12** | **FREE AND OPEN SOURCE** | **GPL v2**
+**ALPHA v0.52.13** | **FREE AND OPEN SOURCE** | **GPL v2**
 
 60+ autonomous NPCs wake up, go to work, visit taverns, fall in love, get married, have children, age, and eventually die of old age — all while you're offline. Log back in, read the news feed, and discover that the blacksmith married the barmaid, the king was assassinated, or a new generation just came of age. The world doesn't wait for you.
 
@@ -261,6 +261,9 @@ For detailed BBS setup instructions, see [DOCS/BBS_DOOR_SETUP.md](DOCS/BBS_DOOR_
 - Additional companion personal quest storylines
 - Expanded faction recruitment ceremonies
 
+### v0.52.13 - Assassin Audit, Localization Sync & Bug Fixes
+Comprehensive translation pass — Hungarian (714), Italian (762), French (915) keys translated. New Assassin Biaxin ability (level 35, poison + armor corrosion). Assassin Lethal Precision passive (+25% crit with dagger, +10% vs poisoned). Execute ability fix. Arcane Shield spell feedback. PressAnyKey spacebar fix. 14 missing Alchemist party ability keys. Monk potion vendor keys translated (Hungarian/Italian).
+
 ### v0.52.12 - Bug Fixes, Balance & Localization
 Online daily reset banner fix. Companion HP equipment bug. Old God boss rebalance (HP/STR/enrage/AoE scaled to endgame). Old God system hardening (4 fixes). Quest abandon persistence. Group reward fairness (follower XP parity). Group loot NPC-first priority. Home chest item loss fix (online). Shop stat display consistency (all bonuses shown). Lyris class display fix. NPC activity localization (59 keys, 5 languages). Localization pass: dialogue (88), prison (79), street encounters (5).
 
@@ -366,4 +369,4 @@ Join our Discord server for discussions, feedback, and updates:
 
 ---
 
-**Status**: ALPHA v0.52.12 — The world is running. [Watch it live.](https://usurper-reborn.net)
+**Status**: ALPHA v0.52.13 — The world is running. [Watch it live.](https://usurper-reborn.net)

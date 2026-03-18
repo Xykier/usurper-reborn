@@ -9,7 +9,7 @@ using System.Collections.Generic;
 public static partial class GameConfig
 {
     // Version information
-    public const string Version = "0.52.12";
+    public const string Version = "0.52.13";
     public const string VersionName = "The Hook";
     public const string DiscordInvite = "discord.gg/EZhwgDT6Ta";
 
@@ -861,6 +861,9 @@ public static partial class GameConfig
     public const int BardInspirationChance = 15;             // Bard: 15% chance per ability use to inspire a teammate
     public const int BardInspirationAttackBonus = 20;        // +20 ATK buff to inspired teammate
     public const int BardInspirationDuration = 2;            // Inspiration lasts 2 rounds
+    // Assassin Lethal Precision passive
+    public const float AssassinLethalPrecisionCritBonus = 0.25f;  // Assassin: +25% crit damage when wielding dagger
+    public const float AssassinLethalPrecisionPoisonBonus = 0.10f; // Assassin: +10% damage vs poisoned targets
     // Jester Trickster's Luck
     public const int JesterTrickstersLuckChance = 20;        // Jester: 20% chance per attack to proc random bonus
     public const float JesterLuckBonusDamage = 0.50f;        // +50% bonus damage on lucky proc

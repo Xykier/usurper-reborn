@@ -3654,6 +3654,14 @@ public partial class GameEngine
                 ngMudServer.BroadcastToAll(
                     $"\u001b[1;33m  {ngDisplayName} has entered the realm. [{ngConnType}]\u001b[0m",
                     excludeUsername: ngSessionKey);
+
+                // New player welcome broadcast (not NG+ rerolls)
+                if (!isNgPlus)
+                {
+                    ngMudServer.BroadcastToAll(
+                        $"\u001b[1;36m  *** {ngDisplayName} is a new adventurer! Type /gos to welcome them! ***\u001b[0m",
+                        excludeUsername: ngSessionKey);
+                }
             }
         }
 
