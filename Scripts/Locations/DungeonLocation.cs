@@ -14154,6 +14154,10 @@ public class DungeonLocation : BaseLocation
             MonsterColor = "dark_red"
         };
 
+        // Aldric gets a proper HP pool for this scripted fight (not his tiny BaseStats.HP)
+        int aldricMaxHP = 2000 + (player.Level * 50);
+        int aldricHP = aldricMaxHP;
+
         terminal.SetColor("red");
         terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_hp", malachar.HP, malachar.MaxHP));
         terminal.WriteLine("");
@@ -14161,7 +14165,7 @@ public class DungeonLocation : BaseLocation
 
         // Simplified boss fight
         int rounds = 0;
-        while (malachar.HP > 0 && player.HP > 0 && aldric.BaseStats.HP > 0 && rounds < 15)
+        while (malachar.HP > 0 && player.HP > 0 && aldricHP > 0 && rounds < 15)
         {
             rounds++;
 
@@ -14173,27 +14177,26 @@ public class DungeonLocation : BaseLocation
                 terminal.WriteLine(Loc.Get("quest.aldric_ghosts.player_strike", playerDmg), "bright_cyan");
             }
 
-            // Aldric attacks with determination
-            int aldricDmg = aldric.BaseStats.Attack * 2 + dungeonRandom.Next(100);
+            // Aldric attacks with determination — hits harder when fighting alone
+            int aldricAtkBonus = playerJoins ? 0 : 150;
+            int aldricDmg = aldric.BaseStats.Attack * 2 + aldricAtkBonus + dungeonRandom.Next(100);
             malachar.HP -= aldricDmg;
             terminal.WriteLine(Loc.Get("quest.aldric_ghosts.aldric_fury", aldricDmg), "bright_yellow");
 
             if (malachar.HP <= 0) break;
 
-            // Malachar attacks Aldric (his target)
-            int demonDmg = 50 + dungeonRandom.Next(80);
-            aldric.BaseStats.HP -= demonDmg;
+            // Malachar attacks Aldric — less damage when player is drawing aggro
+            int demonBaseDmg = playerJoins ? 50 : 120;
+            int demonDmg = demonBaseDmg + dungeonRandom.Next(80);
+            aldricHP -= demonDmg;
             terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_claws", demonDmg), "red");
 
             terminal.WriteLine("");
             terminal.WriteLine(Loc.Get("quest.aldric_ghosts.malachar_hp", Math.Max(0, malachar.HP), malachar.MaxHP), "red");
-            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.aldric_hp", Math.Max(0, aldric.BaseStats.HP)), "yellow");
+            terminal.WriteLine(Loc.Get("quest.aldric_ghosts.aldric_hp", Math.Max(0, aldricHP)), "yellow");
             await Task.Delay(800);
             terminal.WriteLine("");
         }
-
-        // Restore Aldric's HP (he can't die from this scripted fight)
-        aldric.BaseStats.HP = Math.Max(100, aldric.BaseStats.HP);
 
         if (malachar.HP <= 0)
         {

@@ -581,6 +581,7 @@ public class Character
     public bool SettlementShrineUsedToday { get; set; }
     public bool SettlementCircleUsedToday { get; set; }
     public bool SettlementWorkshopUsedToday { get; set; }
+    public bool ThroneChallengedToday { get; set; }
     public int WorkshopBuffCombats { get; set; } = 0;  // Combats remaining with Workshop weapon sharpening buff
 
     // Wilderness exploration (v0.49.4)
@@ -901,7 +902,9 @@ public class Character
             Name = equipment.Name,
             Type = itemType,
             Attack = equipment.WeaponPower,
-            Armor = equipment.ArmorClass + equipment.ShieldBonus,
+            Armor = itemType == global::ObjType.Shield ? 0 : equipment.ArmorClass,
+            ShieldBonus = equipment.ShieldBonus,
+            BlockChance = equipment.BlockChance,
             Value = equipment.Value,
             Strength = equipment.StrengthBonus,
             Dexterity = equipment.DexterityBonus,

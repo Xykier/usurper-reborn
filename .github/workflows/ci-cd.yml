@@ -796,6 +796,73 @@ jobs:
             exit 1
           fi
 
+      - name: Build Steam macOS executables (Intel + Apple Silicon)
+        run: |
+          echo "Building macOS Intel (x64) executable..."
+          dotnet publish usurper-reloaded.csproj -c Steam -r osx-x64 -o steam-build/mac-x64-temp \
+            -p:PublishSingleFile=true -p:SelfContained=true -p:InvariantGlobalization=true
+
+          echo "Building macOS Apple Silicon (arm64) executable..."
+          dotnet publish usurper-reloaded.csproj -c Steam -r osx-arm64 -o steam-build/mac-arm64-temp \
+            -p:PublishSingleFile=true -p:SelfContained=true -p:InvariantGlobalization=true
+
+          # Place both binaries in the depot with architecture suffixes
+          mkdir -p steam-build/depot-macos
+          if [ -f "steam-build/mac-x64-temp/UsurperReborn" ] && [ -f "steam-build/mac-arm64-temp/UsurperReborn" ]; then
+            cp steam-build/mac-x64-temp/UsurperReborn steam-build/depot-macos/UsurperReborn-x64
+            cp steam-build/mac-arm64-temp/UsurperReborn steam-build/depot-macos/UsurperReborn-arm64
+            chmod +x steam-build/depot-macos/UsurperReborn-x64
+            chmod +x steam-build/depot-macos/UsurperReborn-arm64
+
+            # Create universal launcher that detects architecture
+            cat > steam-build/depot-macos/play.sh << 'LAUNCHER'
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ARCH=$(uname -m)
+
+if [ "$ARCH" = "arm64" ]; then
+    BINARY="$SCRIPT_DIR/UsurperReborn-arm64"
+else
+    BINARY="$SCRIPT_DIR/UsurperReborn-x64"
+fi
+
+# Try WezTerm first, fall back to system terminal, fall back to direct
+if [ -d "$SCRIPT_DIR/wezterm/WezTerm.app" ]; then
+    export WEZTERM_CONFIG_FILE="$SCRIPT_DIR/wezterm.lua"
+    "$SCRIPT_DIR/wezterm/WezTerm.app/Contents/MacOS/wezterm" start --cwd "$SCRIPT_DIR" -- "$BINARY" --local "$@"
+elif command -v open &> /dev/null; then
+    osascript -e "tell application \"Terminal\" to do script \"cd '$SCRIPT_DIR' && '$BINARY' --local $*; exit\""
+else
+    "$BINARY" --local "$@"
+fi
+LAUNCHER
+            chmod +x steam-build/depot-macos/play.sh
+
+            # Create accessible launcher
+            cat > steam-build/depot-macos/play-accessible.sh << 'LAUNCHER'
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ARCH=$(uname -m)
+
+if [ "$ARCH" = "arm64" ]; then
+    BINARY="$SCRIPT_DIR/UsurperReborn-arm64"
+else
+    BINARY="$SCRIPT_DIR/UsurperReborn-x64"
+fi
+
+# Accessible mode: run directly in current terminal with screen reader flag
+"$BINARY" --local --screen-reader "$@"
+LAUNCHER
+            chmod +x steam-build/depot-macos/play-accessible.sh
+
+            echo "✅ Steam macOS universal build successful (x64 + arm64)"
+          else
+            echo "❌ Steam macOS build failed"
+            ls -la steam-build/mac-x64-temp/ steam-build/mac-arm64-temp/ 2>/dev/null
+            exit 1
+          fi
+          rm -rf steam-build/mac-x64-temp steam-build/mac-arm64-temp
+
       - name: Copy Steam native libraries from NuGet package
         run: |
           # Debug: Show what's in the Steamworks.NET package
@@ -807,9 +874,10 @@ jobs:
             echo "Package contents:"
             find "$STEAMWORKS_PKG" -type f -name "*.dll" -o -name "*.so" -o -name "*.dylib" 2>/dev/null || echo "No native files found"
 
-            # Search for steam_api64.dll anywhere in the package
+            # Search for native Steam libraries anywhere in the package
             WIN_DLL=$(find "$STEAMWORKS_PKG" -name "steam_api64.dll" -type f 2>/dev/null | head -1)
             LINUX_SO=$(find "$STEAMWORKS_PKG" -name "libsteam_api.so" -type f 2>/dev/null | head -1)
+            MAC_DYLIB=$(find "$STEAMWORKS_PKG" -name "libsteam_api.dylib" -type f 2>/dev/null | head -1)
 
             if [ -n "$WIN_DLL" ]; then
               cp "$WIN_DLL" steam-build/depot-windows/
@@ -824,12 +892,19 @@ jobs:
             else
               echo "⚠️ libsteam_api.so not found in NuGet package"
             fi
+
+            if [ -n "$MAC_DYLIB" ]; then
+              cp "$MAC_DYLIB" steam-build/depot-macos/
+              echo "✅ Copied libsteam_api.dylib from: $MAC_DYLIB"
+            else
+              echo "⚠️ libsteam_api.dylib not found in NuGet package"
+            fi
           else
             echo "❌ Steamworks.NET package not found in NuGet cache"
           fi
 
           # If native libs still missing, download from Steamworks.NET GitHub releases
-          if [ ! -f "steam-build/depot-windows/steam_api64.dll" ] || [ ! -f "steam-build/depot-linux/libsteam_api.so" ]; then
+          if [ ! -f "steam-build/depot-windows/steam_api64.dll" ] || [ ! -f "steam-build/depot-linux/libsteam_api.so" ] || [ ! -f "steam-build/depot-macos/libsteam_api.dylib" ]; then
             echo ""
             echo "=== Downloading native libraries from Steamworks.NET GitHub ==="
 
@@ -843,6 +918,7 @@ jobs:
               # Find and copy the native libraries
               WIN_DLL=$(find /tmp/steamworks -name "steam_api64.dll" -type f 2>/dev/null | head -1)
               LINUX_SO=$(find /tmp/steamworks -name "libsteam_api.so" -type f 2>/dev/null | head -1)
+              MAC_DYLIB=$(find /tmp/steamworks -name "libsteam_api.dylib" -type f 2>/dev/null | head -1)
 
               if [ -n "$WIN_DLL" ] && [ ! -f "steam-build/depot-windows/steam_api64.dll" ]; then
                 cp "$WIN_DLL" steam-build/depot-windows/
@@ -852,6 +928,11 @@ jobs:
               if [ -n "$LINUX_SO" ] && [ ! -f "steam-build/depot-linux/libsteam_api.so" ]; then
                 cp "$LINUX_SO" steam-build/depot-linux/
                 echo "✅ Downloaded and copied libsteam_api.so"
+              fi
+
+              if [ -n "$MAC_DYLIB" ] && [ ! -f "steam-build/depot-macos/libsteam_api.dylib" ]; then
+                cp "$MAC_DYLIB" steam-build/depot-macos/
+                echo "✅ Downloaded and copied libsteam_api.dylib"
               fi
 
               rm -rf /tmp/steamworks /tmp/steamworks.zip
@@ -914,8 +995,29 @@ jobs:
           cp wezterm-cache/wezterm-linux.AppImage steam-build/depot-linux/wezterm/wezterm-gui
           chmod +x steam-build/depot-linux/wezterm/wezterm-gui
 
-          # Copy config, fonts to both depots
-          for dir in steam-build/depot-windows steam-build/depot-linux; do
+          # Download WezTerm for macOS
+          [ -f "wezterm-cache/wezterm-mac.zip" ] || \
+            curl -fSL -o "wezterm-cache/wezterm-mac.zip" \
+              "$BASE/WezTerm-macos-${WEZTERM_VERSION}.zip" || true
+
+          # macOS depot: extract WezTerm app bundle
+          if [ -f "wezterm-cache/wezterm-mac.zip" ]; then
+            mkdir -p steam-build/depot-macos/wezterm
+            unzip -qo wezterm-cache/wezterm-mac.zip -d /tmp/wez-mac-tmp
+            WEZAPP=$(find /tmp/wez-mac-tmp -name "WezTerm.app" -type d 2>/dev/null | head -1)
+            if [ -n "$WEZAPP" ]; then
+              cp -r "$WEZAPP" steam-build/depot-macos/wezterm/
+              echo "✅ WezTerm.app copied to macOS depot"
+            else
+              echo "⚠️ WezTerm.app not found in macOS ZIP"
+            fi
+            rm -rf /tmp/wez-mac-tmp
+          else
+            echo "⚠️ Could not download WezTerm for macOS"
+          fi
+
+          # Copy config, fonts to all depots
+          for dir in steam-build/depot-windows steam-build/depot-linux steam-build/depot-macos; do
             cp wezterm.lua "$dir/"
             cp -r fonts "$dir/"
           done
@@ -941,7 +1043,7 @@ jobs:
           git archive --format=zip --prefix=usurper-reborn-source/ HEAD > usurper-reborn-source.zip
 
           # Copy to depots
-          for dir in steam-build/depot-windows steam-build/depot-linux; do
+          for dir in steam-build/depot-windows steam-build/depot-linux steam-build/depot-macos; do
             cp LICENSE "$dir/"
             cp usurper-reborn-source.zip "$dir/"
           done
@@ -949,12 +1051,14 @@ jobs:
           echo "=== Steam depot contents ==="
           ls -la steam-build/depot-windows/
           ls -la steam-build/depot-linux/
+          ls -la steam-build/depot-macos/
 
       - name: Generate Steam configuration
         env:
           STEAM_APP_ID: ${{ vars.STEAM_APP_ID || 'YOUR_STEAM_APP_ID' }}
           STEAM_DEPOT_WINDOWS: ${{ vars.STEAM_DEPOT_WINDOWS || 'YOUR_WINDOWS_DEPOT_ID' }}
           STEAM_DEPOT_LINUX: ${{ vars.STEAM_DEPOT_LINUX || 'YOUR_LINUX_DEPOT_ID' }}
+          STEAM_DEPOT_MACOS: ${{ vars.STEAM_DEPOT_MACOS || 'YOUR_MACOS_DEPOT_ID' }}
         run: |
           # Generate app_build.vdf with actual IDs from repository variables
           cat > steam-build/app_build.vdf << EOF
@@ -989,6 +1093,16 @@ jobs:
                   "recursive" "1"
                 }
               }
+
+              "${STEAM_DEPOT_MACOS}"
+              {
+                "FileMapping"
+                {
+                  "LocalPath" "depot-macos/*"
+                  "DepotPath" "."
+                  "recursive" "1"
+                }
+              }
             }
           }
           EOF
@@ -1012,6 +1126,13 @@ jobs:
           - **Executable:** `play.sh`
           - **Arguments:** (none needed)
           - **Launch Type:** Launch (Default)
+          - **Note:** Launches the game inside bundled WezTerm branded terminal
+
+          ### macOS
+          - **Executable:** `play.sh`
+          - **Arguments:** (none needed)
+          - **Launch Type:** Launch (Default)
+          - **OS:** macOS
           - **Note:** Launches the game inside bundled WezTerm branded terminal
 
           ## Notes

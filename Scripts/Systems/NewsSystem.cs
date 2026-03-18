@@ -351,13 +351,13 @@ public partial class NewsSystem
                 // Clear today's cache
                 _todaysNews.Clear();
 
-                // Trim news file to last 200 lines
+                // Trim news file to last 100 lines
                 if (File.Exists(_newsFilePath))
                 {
                     var lines = File.ReadAllLines(_newsFilePath);
-                    if (lines.Length > 200)
+                    if (lines.Length > 100)
                     {
-                        var trimmed = lines.Skip(lines.Length - 200).ToArray();
+                        var trimmed = lines.Skip(lines.Length - 100).ToArray();
                         File.WriteAllLines(_newsFilePath, trimmed);
                     }
                 }
@@ -424,6 +424,10 @@ public partial class NewsSystem
         }
     }
 
+    private int _writesSinceTrim = 0;
+    private const int MaxNewsLines = 100;
+    private const int TrimCheckInterval = 50; // Check every 50 writes
+
     private void AppendToNewsFile(string message)
     {
         try
@@ -439,10 +443,33 @@ public partial class NewsSystem
             {
                 writer.WriteLine(message);
             }
+
+            // Periodic trim to prevent unbounded growth
+            _writesSinceTrim++;
+            if (_writesSinceTrim >= TrimCheckInterval)
+            {
+                _writesSinceTrim = 0;
+                TrimNewsFile();
+            }
         }
         catch (Exception ex)
         {
         }
+    }
+
+    private void TrimNewsFile()
+    {
+        try
+        {
+            if (!File.Exists(_newsFilePath)) return;
+            var lines = File.ReadAllLines(_newsFilePath);
+            if (lines.Length > MaxNewsLines)
+            {
+                var trimmed = lines.Skip(lines.Length - MaxNewsLines).ToArray();
+                File.WriteAllLines(_newsFilePath, trimmed);
+            }
+        }
+        catch { }
     }
 
     #endregion

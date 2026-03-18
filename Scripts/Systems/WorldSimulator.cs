@@ -918,6 +918,9 @@ public class WorldSimulator
     {
         var aliveNPCs = npcs.Where(n => n.IsAlive && !n.IsDead && !n.IsAgedDeath && !n.IsPermaDead).ToList();
 
+        // Skip diversity immigration when population is high — only extinction prevention
+        bool populationHigh = aliveNPCs.Count >= 80;
+
         // Calculate average level of alive NPCs for immigrant scaling
         int avgLevel = aliveNPCs.Count > 0 ? Math.Max(1, (int)aliveNPCs.Average(n => n.Level)) : 5;
 
@@ -932,9 +935,7 @@ public class WorldSimulator
                 raceCounts[npc.Race]++;
         }
 
-        int targetPerRace = Math.Max(5, aliveNPCs.Count / raceCount);
-
-        // Phase 1: Extinction prevention — races below 2 get immediate immigrants
+        // Phase 1: Extinction prevention — races below 2 get immediate immigrants (always active)
         foreach (var kvp in raceCounts)
         {
             if (kvp.Value >= 2) continue;
@@ -948,7 +949,12 @@ public class WorldSimulator
             }
         }
 
-        // Phase 2: Diversity balancing — spawn 1 immigrant for the most underrepresented race
+        // Phase 2: Diversity balancing — only when population is below 80
+        if (populationHigh) return;
+
+        int targetPerRace = Math.Max(5, aliveNPCs.Count / raceCount);
+
+        // Spawn 1 immigrant for the most underrepresented race
         // Only triggers if at least one race is below 60% of the target
         int diversityThreshold = (targetPerRace * 3) / 5;
         var mostNeeded = raceCounts
@@ -1461,11 +1467,19 @@ public class WorldSimulator
         int childCount = FamilySystem.Instance?.AllChildren.Count(c => !c.Deleted) ?? 0;
         int totalPop = aliveCount + childCount;
 
+        // Hard cap: no new pregnancies when population is severely overpopulated
+        if (aliveCount >= 120)
+        {
+            return;
+        }
+
         // Dynamic rate: higher when underpopulated, lower when overpopulated
         // Values are denominator for random check (higher = less likely per tick)
-        int pregnancyDenominator = totalPop < 40 ? 150   // ~0.67% if underpopulated
-                                 : totalPop > 80 ? 800   // ~0.125% if overpopulated
-                                 : 400;                   // ~0.25% normal
+        int pregnancyDenominator = totalPop < 40  ? 150    // ~0.67% — repopulate quickly
+                                 : totalPop < 80  ? 400    // ~0.25% — normal
+                                 : totalPop < 120 ? 800    // ~0.125% — slow down
+                                 : totalPop < 160 ? 2000   // ~0.05% — very slow
+                                 :                  4000;   // ~0.025% — near-zero
 
         // Eligible females (married or not) may become pregnant
         var eligibleFemales = npcs.Where(n =>

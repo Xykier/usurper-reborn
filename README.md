@@ -2,7 +2,7 @@
 
 ## A Persistent Online Text RPG with a Living World
 
-**ALPHA v0.52.13** | **FREE AND OPEN SOURCE** | **GPL v2**
+**ALPHA v0.52.14** | **FREE AND OPEN SOURCE** | **GPL v2**
 
 60+ autonomous NPCs wake up, go to work, visit taverns, fall in love, get married, have children, age, and eventually die of old age — all while you're offline. Log back in, read the news feed, and discover that the blacksmith married the barmaid, the king was assassinated, or a new generation just came of age. The world doesn't wait for you.
 
@@ -261,6 +261,9 @@ For detailed BBS setup instructions, see [DOCS/BBS_DOOR_SETUP.md](DOCS/BBS_DOOR_
 - Additional companion personal quest storylines
 - Expanded faction recruitment ceremonies
 
+### v0.52.14 - Stale XP Slot Fix
+Stale teammate XP distribution slots now zeroed when fighting solo, preventing >100% total after teammate departure.
+
 ### v0.52.13 - Assassin Audit, Localization Sync & Bug Fixes
 Comprehensive translation pass — Hungarian (714), Italian (762), French (915) keys translated. New Assassin Biaxin ability (level 35, poison + armor corrosion). Assassin Lethal Precision passive (+25% crit with dagger, +10% vs poisoned). Execute ability fix. Arcane Shield spell feedback. PressAnyKey spacebar fix. 14 missing Alchemist party ability keys. Monk potion vendor keys translated (Hungarian/Italian).
 
@@ -369,4 +372,4 @@ Join our Discord server for discussions, feedback, and updates:
 
 ---
 
-**Status**: ALPHA v0.52.13 — The world is running. [Watch it live.](https://usurper-reborn.net)
+**Status**: ALPHA v0.52.14 — The world is running. [Watch it live.](https://usurper-reborn.net)

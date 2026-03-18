@@ -4442,6 +4442,9 @@ public class CastleLocation : BaseLocation
         if (currentPlayer.King)
             return false;
 
+        if (currentPlayer.ThroneChallengedToday)
+            return false;
+
         if (currentKing == null || !currentKing.IsActive)
             return false;
 
@@ -4495,6 +4498,9 @@ public class CastleLocation : BaseLocation
 
     private async Task<bool> ChallengeThrone()
     {
+        // Mark daily attempt — win or lose, you only get one shot per day
+        currentPlayer.ThroneChallengedToday = true;
+
         terminal.ClearScreen();
         WriteBoxHeader(Loc.Get("castle.throne_challenge"), "bright_red");
         terminal.WriteLine("");

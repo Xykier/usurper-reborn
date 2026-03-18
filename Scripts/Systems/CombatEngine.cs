@@ -5476,6 +5476,13 @@ public partial class CombatEngine
             result.Player.TeamXPPercent[0] = 100;
         }
 
+        // Clear stale teammate XP slots when no teammates present (prevents >100% total)
+        if (!hasXPTeammates)
+        {
+            for (int s = 1; s < result.Player.TeamXPPercent.Length; s++)
+                result.Player.TeamXPPercent[s] = 0;
+        }
+
         // Auto-distribute XP when teammates exist but all teammate slots are at 0%
         AutoDistributeTeamXP(result.Player, result.Teammates);
 
@@ -7144,9 +7151,25 @@ public partial class CombatEngine
                         if (teammateEquip != null)
                         {
                             EquipmentDatabase.RegisterDynamic(teammateEquip);
+                            int invBefore = teammate.Inventory?.Count ?? 0;
                             if (teammate.EquipItem(teammateEquip, out _))
                             {
                                 teammate.RecalculateStats();
+                                // Move displaced items from companion inventory to player inventory
+                                if (teammate.Inventory != null && teammate.Inventory.Count > invBefore)
+                                {
+                                    var displaced = teammate.Inventory.Skip(invBefore).ToList();
+                                    foreach (var d in displaced)
+                                    {
+                                        teammate.Inventory.Remove(d);
+                                        player.Inventory?.Add(d);
+                                    }
+                                    if (displaced.Count > 0)
+                                    {
+                                        terminal.SetColor("cyan");
+                                        terminal.WriteLine(Loc.Get("combat.loot_displaced_to_inventory", displaced[0].Name));
+                                    }
+                                }
                                 CompanionSystem.Instance?.SyncCompanionEquipment(teammate);
                                 string teammateName = teammate.Name2 ?? teammate.Name1 ?? "Your ally";
                                 terminal.SetColor("bright_green");
@@ -7491,9 +7514,25 @@ public partial class CombatEngine
                         if (teammateEquip != null)
                         {
                             EquipmentDatabase.RegisterDynamic(teammateEquip);
+                            int invBefore = teammate.Inventory?.Count ?? 0;
                             if (teammate.EquipItem(teammateEquip, out _))
                             {
                                 teammate.RecalculateStats();
+                                // Move displaced items from companion inventory to player inventory
+                                if (teammate.Inventory != null && teammate.Inventory.Count > invBefore)
+                                {
+                                    var displaced = teammate.Inventory.Skip(invBefore).ToList();
+                                    foreach (var d in displaced)
+                                    {
+                                        teammate.Inventory.Remove(d);
+                                        player.Inventory?.Add(d);
+                                    }
+                                    if (displaced.Count > 0)
+                                    {
+                                        terminal.SetColor("cyan");
+                                        terminal.WriteLine(Loc.Get("combat.loot_displaced_to_inventory", displaced[0].Name));
+                                    }
+                                }
                                 CompanionSystem.Instance?.SyncCompanionEquipment(teammate);
                                 string teammateName = teammate.Name2 ?? teammate.Name1 ?? "Your ally";
                                 terminal.SetColor("bright_green");
@@ -8107,7 +8146,18 @@ public partial class CombatEngine
                 _ => EquipmentSlot.Body
             };
 
-            if (lootItem.Type == global::ObjType.Fingers || lootItem.Type == global::ObjType.Neck)
+            if (lootItem.Type == global::ObjType.Shield)
+            {
+                equipment = Equipment.CreateShield(
+                    id: 10000 + random.Next(10000),
+                    name: lootItem.Name,
+                    shieldBonus: lootItem.ShieldBonus,
+                    blockChance: lootItem.BlockChance,
+                    value: lootItem.Value,
+                    rarity: ConvertRarityToEquipmentRarity(LootGenerator.GetItemRarity(lootItem))
+                );
+            }
+            else if (lootItem.Type == global::ObjType.Fingers || lootItem.Type == global::ObjType.Neck)
             {
                 equipment = Equipment.CreateAccessory(
                     id: 10000 + random.Next(10000),
@@ -15458,6 +15508,13 @@ public partial class CombatEngine
             result.Player.TeamXPPercent[0] = 100;
         }
 
+        // Clear stale teammate XP slots when no teammates present (prevents >100% total)
+        if (!hasXPTeammatesMM)
+        {
+            for (int s = 1; s < result.Player.TeamXPPercent.Length; s++)
+                result.Player.TeamXPPercent[s] = 0;
+        }
+
         // Auto-distribute XP when teammates exist but all teammate slots are at 0%
         AutoDistributeTeamXP(result.Player, result.Teammates);
 
@@ -15964,6 +16021,13 @@ public partial class CombatEngine
         if (!hasXPTeammatesPV && result.Player.TeamXPPercent[0] < 100)
         {
             result.Player.TeamXPPercent[0] = 100;
+        }
+
+        // Clear stale teammate XP slots when no teammates present (prevents >100% total)
+        if (!hasXPTeammatesPV)
+        {
+            for (int s = 1; s < result.Player.TeamXPPercent.Length; s++)
+                result.Player.TeamXPPercent[s] = 0;
         }
 
         // Auto-distribute XP when teammates exist but all teammate slots are at 0%

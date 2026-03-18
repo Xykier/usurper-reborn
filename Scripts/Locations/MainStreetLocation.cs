@@ -641,23 +641,22 @@ public class MainStreetLocation : BaseLocation
             terminal.SetColor(color); terminal.WriteLine(label);
         }
 
-        // Dynamic column width: 79 usable chars (80 - 1 leading space) / items per row
-        int RC(int items) => 79 / items;
+        // Fixed column width: 16 chars per item keeps columns aligned across rows
+        // 5 items × 16 = 80 chars (full terminal width)
+        const int C = 16;
 
         // Row 1 - Primary locations (D/I always, T/O tier 2+)
         terminal.Write(" ");
         if (tier >= 2)
         {
-            int c = RC(4);
-            MI("D", Loc.Get("menu.action.dungeon"), "white", c);
-            MI("I", Loc.Get("menu.action.inn"), "white", c);
-            MI("T", Loc.Get("menu.action.temple"), "white", c);
+            MI("D", Loc.Get("menu.action.dungeon"), "white", C);
+            MI("I", Loc.Get("menu.action.inn"), "white", C);
+            MI("T", Loc.Get("menu.action.temple"), "white", C);
             ML("O", Loc.Get("menu.action.old_church"), "white");
         }
         else
         {
-            int c = RC(2);
-            MI("D", Loc.Get("menu.action.dungeon"), "white", c);
+            MI("D", Loc.Get("menu.action.dungeon"), "white", C);
             ML("I", Loc.Get("menu.action.inn"), "white");
         }
 
@@ -665,19 +664,17 @@ public class MainStreetLocation : BaseLocation
         terminal.Write(" ");
         if (tier >= 3)
         {
-            int c = RC(5);
-            MI("W", Loc.Get("menu.action.weapon_shop"), "white", c);
-            MI("A", Loc.Get("menu.action.armor_shop"), "white", c);
-            MI("M", Loc.Get("menu.action.magic_shop"), "white", c);
-            MI("U", Loc.Get("menu.action.music_shop"), "cyan", c);
+            MI("W", Loc.Get("menu.action.weapon_shop"), "white", C);
+            MI("A", Loc.Get("menu.action.armor_shop"), "white", C);
+            MI("M", Loc.Get("menu.action.magic_shop"), "white", C);
+            MI("U", Loc.Get("menu.action.music_shop"), "cyan", C);
             ML("J", Loc.Get("menu.action.auction_house"), "white");
         }
         else
         {
-            int c = RC(4);
-            MI("W", Loc.Get("menu.action.weapon_shop"), "white", c);
-            MI("A", Loc.Get("menu.action.armor_shop"), "white", c);
-            MI("M", Loc.Get("menu.action.magic_shop"), "white", c);
+            MI("W", Loc.Get("menu.action.weapon_shop"), "white", C);
+            MI("A", Loc.Get("menu.action.armor_shop"), "white", C);
+            MI("M", Loc.Get("menu.action.magic_shop"), "white", C);
             ML("U", Loc.Get("menu.action.music_shop"), "cyan");
         }
 
@@ -685,17 +682,15 @@ public class MainStreetLocation : BaseLocation
         terminal.Write(" ");
         if (tier >= 2)
         {
-            int c = RC(4);
-            MI("B", Loc.Get("menu.action.bank"), "white", c);
-            MI("1", Loc.Get("menu.action.healer"), "white", c);
-            MI("2", Loc.Get("menu.action.quest_hall"), "white", c);
+            MI("B", Loc.Get("menu.action.bank"), "white", C);
+            MI("1", Loc.Get("menu.action.healer"), "white", C);
+            MI("2", Loc.Get("menu.action.quest_hall"), "white", C);
             ML("V", Loc.Get("menu.action.level_master"), "white");
         }
         else
         {
-            int c = RC(3);
-            MI("1", Loc.Get("menu.action.healer"), "white", c);
-            MI("2", Loc.Get("menu.action.quest_hall"), "white", c);
+            MI("1", Loc.Get("menu.action.healer"), "white", C);
+            MI("2", Loc.Get("menu.action.quest_hall"), "white", C);
             ML("V", Loc.Get("menu.action.level_master"), "white");
         }
 
@@ -705,17 +700,15 @@ public class MainStreetLocation : BaseLocation
             terminal.Write(" ");
             if (tier >= 3)
             {
-                int c = RC(5);
-                MI("K", Loc.Get("menu.action.castle"), "white", c);
-                MI("H", Loc.Get("menu.action.home"), "white", c);
-                MI("C", Loc.Get("menu.action.challenges"), "white", c);
-                MI("L", Loc.Get("menu.action.lodging_short"), "white", c);
+                MI("K", Loc.Get("menu.action.castle"), "white", C);
+                MI("H", Loc.Get("menu.action.home"), "white", C);
+                MI("C", Loc.Get("menu.action.challenges"), "white", C);
+                MI("L", Loc.Get("menu.action.lodging_short"), "white", C);
                 ML("Z", Loc.Get("menu.action.team_corner"), "white");
             }
             else
             {
-                int c = RC(2);
-                MI("K", Loc.Get("menu.action.castle"), "white", c);
+                MI("K", Loc.Get("menu.action.castle"), "white", C);
                 ML("H", Loc.Get("menu.action.home"), "white");
             }
         }
@@ -726,10 +719,9 @@ public class MainStreetLocation : BaseLocation
         terminal.Write(" ");
         if (tier >= 2)
         {
-            int c = RC(4);
-            MI("S", Loc.Get("menu.action.status"), "white", c);
-            MI("N", Loc.Get("menu.action.news"), "white", c);
-            MI("F", Loc.Get("menu.action.fame"), "white", c);
+            MI("S", Loc.Get("menu.action.status"), "white", C);
+            MI("N", Loc.Get("menu.action.news"), "white", C);
+            MI("F", Loc.Get("menu.action.fame"), "white", C);
             ML("E", Loc.Get("menu.action.explore"), "bright_green");
         }
         else
@@ -743,15 +735,13 @@ public class MainStreetLocation : BaseLocation
             terminal.Write(" ");
             if (UsurperRemake.Systems.SettlementSystem.Instance?.State.IsEstablished == true)
             {
-                int c = RC(3);
-                MI("=", Loc.Get("menu.action.stats_record"), "white", c);
-                MI("P", Loc.Get("menu.action.progress"), "white", c);
+                MI("=", Loc.Get("menu.action.stats_record"), "white", C);
+                MI("P", Loc.Get("menu.action.progress"), "white", C);
                 ML(">", Loc.Get("menu.action.settlement"), "bright_green");
             }
             else
             {
-                int c = RC(2);
-                MI("=", Loc.Get("menu.action.stats_record"), "white", c);
+                MI("=", Loc.Get("menu.action.stats_record"), "white", C);
                 ML("P", Loc.Get("menu.action.progress"), "white");
             }
         }
@@ -760,16 +750,14 @@ public class MainStreetLocation : BaseLocation
         terminal.Write(" ");
         if (tier >= 3)
         {
-            int c = RC(4);
-            MI("Y", Loc.Get("menu.action.dark_alley"), "gray", c);
-            MI("X", Loc.Get("menu.action.love_street"), "magenta", c);
-            MI("Q", Loc.Get("menu.action.quit_game"), "gray", c);
+            MI("Y", Loc.Get("menu.action.dark_alley"), "gray", C);
+            MI("X", Loc.Get("menu.action.love_street"), "magenta", C);
+            MI("Q", Loc.Get("menu.action.quit_game"), "gray", C);
             ML("~", Loc.Get("menu.action.settings"), "gray");
         }
         else
         {
-            int c = RC(2);
-            MI("Q", Loc.Get("menu.action.quit_game"), "gray", c);
+            MI("Q", Loc.Get("menu.action.quit_game"), "gray", C);
             ML("~", Loc.Get("menu.action.settings"), "gray");
         }
 

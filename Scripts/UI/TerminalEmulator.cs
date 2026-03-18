@@ -1972,6 +1972,20 @@ public partial class TerminalEmulator
     {
         if (_streamReader == null || _streamWriter == null) return string.Empty;
 
+        // Ensure all pending output is flushed to the TCP stream before blocking on input.
+        // Without this, MUD clients (Mudlet) may not render the prompt text because it's
+        // sitting in a StreamWriter buffer, causing the game to appear "frozen."
+        try
+        {
+            lock (_streamWriterLock)
+            {
+                _streamWriter.Flush();
+            }
+            if (_streamWriter.BaseStream != null)
+                await _streamWriter.BaseStream.FlushAsync();
+        }
+        catch { }
+
         var buffer = new System.Text.StringBuilder();
         var charBuf = new char[1];
         int escState = 0; // 0 = normal, 1 = after ESC, 2 = inside CSI (ESC [)
@@ -1989,11 +2003,11 @@ public partial class TerminalEmulator
 
             if (completed != readTask)
             {
-                // No character yet — only deliver messages when the input buffer
-                // is empty (player hasn't started typing).  Once any text is in
-                // the buffer, messages queue silently and flush after Enter —
-                // matching how traditional MUDs keep input uninterrupted.
-                if (buffer.Length == 0)
+                // No character yet — only deliver messages if the user isn't
+                // actively typing (500ms grace period prevents input stomping).
+                bool userIsTyping = buffer.Length > 0
+                    && (DateTime.Now - lastKeystrokeTime).TotalMilliseconds < 500;
+                if (!userIsTyping)
                     DeliverPendingMessagesWithRedraw(prompt, buffer);
                 continue; // readTask is still the same pending call
             }
