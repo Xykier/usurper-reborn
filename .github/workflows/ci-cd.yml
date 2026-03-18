@@ -773,6 +773,7 @@ jobs:
           if [ -f "steam-build/depot-windows/UsurperReborn.exe" ]; then
             cp launchers/Play.bat steam-build/depot-windows/
             cp launchers/Play-Accessible.bat steam-build/depot-windows/
+            cp -r Localization steam-build/depot-windows/
             echo "✅ Steam Windows build successful (with STEAM_BUILD flag)"
           else
             echo "❌ Steam Windows build failed"
@@ -790,6 +791,7 @@ jobs:
             cp launchers/play-accessible.sh steam-build/depot-linux/
             chmod +x steam-build/depot-linux/play.sh
             chmod +x steam-build/depot-linux/play-accessible.sh
+            cp -r Localization steam-build/depot-linux/
             echo "✅ Steam Linux build successful (with STEAM_BUILD flag)"
           else
             echo "❌ Steam Linux build failed"
@@ -806,6 +808,13 @@ jobs:
           dotnet publish usurper-reloaded.csproj -c Steam -r osx-arm64 -o steam-build/mac-arm64-temp \
             -p:PublishSingleFile=true -p:SelfContained=true -p:InvariantGlobalization=true
 
+          # Ensure Localization files are present in both temp builds
+          for tmpdir in steam-build/mac-x64-temp steam-build/mac-arm64-temp; do
+            if [ ! -d "$tmpdir/Localization" ]; then
+              cp -r Localization "$tmpdir/"
+            fi
+          done
+
           # Place both binaries in the depot with architecture suffixes
           mkdir -p steam-build/depot-macos
           if [ -f "steam-build/mac-x64-temp/UsurperReborn" ] && [ -f "steam-build/mac-arm64-temp/UsurperReborn" ]; then
@@ -819,6 +828,9 @@ jobs:
             cp launchers/play-mac-accessible.sh steam-build/depot-macos/play-accessible.sh
             chmod +x steam-build/depot-macos/play.sh
             chmod +x steam-build/depot-macos/play-accessible.sh
+
+            # Copy Localization files to macOS depot
+            cp -r Localization steam-build/depot-macos/
 
             echo "✅ Steam macOS universal build successful (x64 + arm64)"
           else
