@@ -4178,6 +4178,11 @@ public partial class CombatEngine
             playerDefense += defBoons.FlatDefense;
         }
 
+        // Fear the Throne (NG+ perk): enemies deal -10% damage (intimidation)
+        int fearReduction = MetaProgressionSystem.Instance.GetMonsterFleeReduction();
+        if (fearReduction > 0)
+            monsterAttack = (long)(monsterAttack * (1.0 - fearReduction / 100.0));
+
         // Minimum damage is 5% of monster attack to prevent defense stacking invulnerability
         long minDamage = Math.Max(1, monsterAttack / 20);
         long actualDamage = Math.Max(minDamage, monsterAttack - playerDefense);
@@ -9349,21 +9354,45 @@ public partial class CombatEngine
     /// <summary>
     /// Apply damage to all living monsters (AoE) - damage is split among targets
     /// </summary>
+    /// <summary>
+    /// Get diminishing AoE damage multiplier for a target at the given index.
+    /// 100% → 75% → 50% → 25% floor. Prevents AoE from being strictly superior to single-target.
+    /// </summary>
+    private static double GetAoEDiminishingMultiplier(int targetIndex) => targetIndex switch
+    {
+        0 => 1.00,
+        1 => 0.75,
+        2 => 0.50,
+        _ => 0.25 // 25% floor for 4th+ targets
+    };
+
     private async Task ApplyAoEDamage(List<Monster> monsters, long totalDamage, CombatResult result, string damageSource = "AoE attack")
     {
         var livingMonsters = monsters.Where(m => m.IsAlive).ToList();
         if (livingMonsters.Count == 0) return;
 
-        // Full damage to each monster (AoE base damage is already balanced for multi-target)
-        long damagePerMonster = totalDamage;
-
+        // Diminishing AoE damage: 100% → 75% → 50% → 25% (floor) per target
+        // Total damage output is spread, not multiplied — prevents AoE from being
+        // strictly superior to single-target in multi-monster encounters.
         terminal.WriteLine("");
         terminal.SetColor("bright_yellow");
-        terminal.WriteLine($"{damageSource} hits all enemies for {damagePerMonster} damage each!");
+        terminal.WriteLine($"{damageSource} hits all enemies!");
         terminal.WriteLine("");
 
-        foreach (var monster in livingMonsters)
+        for (int i = 0; i < livingMonsters.Count; i++)
         {
+            var monster = livingMonsters[i];
+
+            // Diminishing returns: 100%, 75%, 50%, 25% floor
+            double diminish = i switch
+            {
+                0 => 1.00,
+                1 => 0.75,
+                2 => 0.50,
+                _ => 0.25 // 25% floor for 4th+ targets
+            };
+            long damagePerMonster = Math.Max(1, (long)(totalDamage * diminish));
+
             long armor = monster.ArmPow;
             if (monster.IsCorroded) armor = Math.Max(0, (long)(armor * 0.6));
             long actualDamage = Math.Max(1, damagePerMonster - armor);
@@ -10514,7 +10543,7 @@ public partial class CombatEngine
         damage = DifficultySystem.ApplyPlayerDamageMultiplier(damage);
 
         terminal.SetColor("bright_cyan");
-        terminal.WriteLine(Loc.Get("combat.precise_strike_hit", damage));
+        terminal.WriteLine(Loc.Get("combat.precise_strike_hit", target.Name, damage));
 
         // Apply damage directly, bypassing some defense
         long actualDamage = Math.Max(1, damage - (target.ArmPow / 2));
@@ -11301,9 +11330,10 @@ public partial class CombatEngine
                     terminal.SetColor("bright_yellow");
                     terminal.WriteLine(Loc.Get("combat.ability_aoe_holy"));
                     var livingMonsHoly = monsters.Where(m => m.IsAlive).ToList();
-                    foreach (var m in livingMonsHoly)
+                    for (int hi = 0; hi < livingMonsHoly.Count; hi++)
                     {
-                        long holyAoeDmg = abilityResult.Damage;
+                        var m = livingMonsHoly[hi];
+                        long holyAoeDmg = (long)(abilityResult.Damage * GetAoEDiminishingMultiplier(hi));
                         if (m.MonsterClass == MonsterClass.Undead || m.MonsterClass == MonsterClass.Demon || m.Undead > 0)
                             holyAoeDmg = (long)(holyAoeDmg * 1.5);
                         long actualHolyDmg = Math.Max(1, holyAoeDmg - m.ArmPow / 2);
@@ -11479,10 +11509,13 @@ public partial class CombatEngine
 
             case "evasion":
                 player.DodgeNextAttack = true;
-                player.TempDefenseBonus += 50;
-                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, 2);
+                int evasionDef = abilityResult.DefenseBonus > 0 ? abilityResult.DefenseBonus : 50;
+                player.TempDefenseBonus += evasionDef;
+                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 2);
                 terminal.SetColor("magenta");
                 terminal.WriteLine(Loc.Get(isPlayer ? "combat.ability_evasion" : "combat.ability_evasion_npc", actorName));
+                terminal.SetColor("cyan");
+                terminal.WriteLine($"  (+{evasionDef} DEF for {(abilityResult.Duration > 0 ? abilityResult.Duration : 2)} rounds)");
                 break;
 
             case "stealth":
@@ -11560,10 +11593,15 @@ public partial class CombatEngine
 
             case "vanish":
                 player.DodgeNextAttack = true;
+                int vanishDef = abilityResult.DefenseBonus > 0 ? abilityResult.DefenseBonus : 80;
+                player.TempDefenseBonus += vanishDef;
+                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 1);
                 if (!player.ActiveStatuses.ContainsKey(StatusEffect.Hidden))
                     player.ActiveStatuses[StatusEffect.Hidden] = 1;
                 terminal.SetColor("magenta");
                 terminal.WriteLine(Loc.Get(isPlayer ? "combat.ability_vanish" : "combat.ability_vanish_npc", actorName));
+                terminal.SetColor("cyan");
+                terminal.WriteLine($"  (+{vanishDef} DEF, Hidden)");
                 break;
 
             case "shadow":
@@ -11641,15 +11679,31 @@ public partial class CombatEngine
                 break;
 
             case "aoe_corrode":
-                // Apply IsCorroded to all living monsters (multi-monster version)
-                foreach (var corrodeTarget in monsters.Where(m => m.IsAlive))
+            {
+                // AoE damage + corrode to all living monsters (multi-monster version)
+                var corrodeTargets = monsters.Where(m => m.IsAlive).ToList();
+                for (int ci = 0; ci < corrodeTargets.Count; ci++)
                 {
+                    var corrodeTarget = corrodeTargets[ci];
+                    long corrodeDmg = abilityResult.Damage > 0 ? abilityResult.Damage : 50 + player.Intelligence * 2;
+                    corrodeDmg = (long)(corrodeDmg * GetAoEDiminishingMultiplier(ci));
+                    corrodeTarget.HP -= (int)corrodeDmg;
+                    result.TotalDamageDealt += corrodeDmg;
                     corrodeTarget.IsCorroded = true;
                     corrodeTarget.CorrodedDuration = abilityResult.Duration > 0 ? abilityResult.Duration : 3;
+                    terminal.SetColor("bright_green");
+                    terminal.WriteLine($"  Corrosive cloud hits {corrodeTarget.Name} for {corrodeDmg} damage!");
                     terminal.SetColor("dark_green");
                     terminal.WriteLine($"  {Loc.Get("combat.corroded_armor", corrodeTarget.Name)}");
+                    if (corrodeTarget.HP <= 0)
+                    {
+                        corrodeTarget.HP = 0;
+                        if (!result.DefeatedMonsters.Contains(corrodeTarget))
+                            result.DefeatedMonsters.Add(corrodeTarget);
+                    }
                 }
                 break;
+            }
 
             case "party_song":
                 // Bard songs affect the entire party
@@ -11935,9 +11989,11 @@ public partial class CombatEngine
                 int bonusDmg = allyCount * 30;
                 if (monsters != null)
                 {
-                    foreach (var m in monsters.Where(m => m.IsAlive))
+                    var crescLiving = monsters.Where(m => m.IsAlive).ToList();
+                    for (int ci = 0; ci < crescLiving.Count; ci++)
                     {
-                        int dmg = abilityResult.Damage + bonusDmg;
+                        var m = crescLiving[ci];
+                        int dmg = (int)((abilityResult.Damage + bonusDmg) * GetAoEDiminishingMultiplier(ci));
                         m.HP -= dmg;
                         terminal.SetColor("bright_cyan");
                         terminal.WriteLine(Loc.Get("combat.ability_crescendo_aoe", m.Name, dmg));
@@ -12155,9 +12211,11 @@ public partial class CombatEngine
                 // 140 AoE + enemies take +15% damage for 4 rounds (Vulnerable)
                 if (monsters != null)
                 {
-                    foreach (var m in monsters.Where(m => m.IsAlive))
+                    var entropyLiving = monsters.Where(m => m.IsAlive).ToList();
+                    for (int ei = 0; ei < entropyLiving.Count; ei++)
                     {
-                        int dmg = abilityResult.Damage;
+                        var m = entropyLiving[ei];
+                        int dmg = (int)(abilityResult.Damage * GetAoEDiminishingMultiplier(ei));
                         m.HP -= dmg;
                         m.IsMarked = true;
                         m.MarkedDuration = Math.Max(m.MarkedDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 4);
@@ -12353,12 +12411,15 @@ public partial class CombatEngine
                     if (target.HP <= 0 && monsters != null)
                     {
                         int overflow = (int)Math.Abs(target.HP); // overkill, computed before clamp
-                        int spreadDmg = Math.Max(overflow, dmg / 2);
+                        int spreadDmgBase = Math.Max(overflow, dmg / 2);
                         target.HP = 0;
                         if (!result.DefeatedMonsters.Contains(target))
                             result.DefeatedMonsters.Add(target);
-                        foreach (var m in monsters.Where(m => m.IsAlive && m != target))
+                        var overflowLiving = monsters.Where(m => m.IsAlive && m != target).ToList();
+                        for (int oi = 0; oi < overflowLiving.Count; oi++)
                         {
+                            var m = overflowLiving[oi];
+                            int spreadDmg = (int)(spreadDmgBase * GetAoEDiminishingMultiplier(oi));
                             m.HP -= spreadDmg;
                             terminal.SetColor("bright_red");
                             terminal.WriteLine(Loc.Get("combat.ability_overflow_aoe_spread", m.Name, spreadDmg));
@@ -12851,11 +12912,14 @@ public partial class CombatEngine
                 if (monsters != null)
                 {
                     long chainReduced = (long)(chainDamage * 0.5);
-                    foreach (var m in monsters.Where(m => m.IsAlive && m != target))
+                    var chainTargets = monsters.Where(m => m.IsAlive && m != target).ToList();
+                    for (int chi = 0; chi < chainTargets.Count; chi++)
                     {
-                        m.HP -= (int)chainReduced;
-                        result.TotalDamageDealt += chainReduced;
-                        terminal.WriteLine($"  Lightning chains to {m.Name} for {chainReduced} damage!", "yellow");
+                        var m = chainTargets[chi];
+                        long chainHit = (long)(chainReduced * GetAoEDiminishingMultiplier(chi));
+                        m.HP -= (int)chainHit;
+                        result.TotalDamageDealt += chainHit;
+                        terminal.WriteLine($"  Lightning chains to {m.Name} for {chainHit} damage!", "yellow");
                     }
                 }
                 break;
@@ -17846,10 +17910,13 @@ public partial class CombatEngine
 
             case "evasion":
                 player.DodgeNextAttack = true;
-                player.TempDefenseBonus += 50;
-                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, 2);
+                int evasionDefSM = abilityResult.DefenseBonus > 0 ? abilityResult.DefenseBonus : 50;
+                player.TempDefenseBonus += evasionDefSM;
+                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 2);
                 terminal.SetColor("magenta");
                 terminal.WriteLine(Loc.Get("combat.melt_shadows"));
+                terminal.SetColor("cyan");
+                terminal.WriteLine($"  (+{evasionDefSM} DEF for {(abilityResult.Duration > 0 ? abilityResult.Duration : 2)} rounds)");
                 break;
 
             case "stealth":
@@ -17925,10 +17992,15 @@ public partial class CombatEngine
 
             case "vanish":
                 player.DodgeNextAttack = true;
+                int vanishDefSM = abilityResult.DefenseBonus > 0 ? abilityResult.DefenseBonus : 80;
+                player.TempDefenseBonus += vanishDefSM;
+                player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, abilityResult.Duration > 0 ? abilityResult.Duration : 1);
                 if (!player.ActiveStatuses.ContainsKey(StatusEffect.Hidden))
                     player.ActiveStatuses[StatusEffect.Hidden] = 1;
                 terminal.SetColor("magenta");
                 terminal.WriteLine(Loc.Get("combat.vanish_completely"));
+                terminal.SetColor("cyan");
+                terminal.WriteLine($"  (+{vanishDefSM} DEF, Hidden)");
                 break;
 
             case "shadow":

@@ -104,15 +104,7 @@ public static class BugReportSystem
             }
         }
 
-        // For non-BBS users, also try browser
-        if (!DoorMode.IsInDoorMode)
-        {
-            var issueBody = BuildIssueBody(description, diagnostics);
-            var title = TruncateForTitle(description);
-            var url = BuildGitHubIssueUrl(title, issueBody);
-            TryCopyToClipboard(issueBody);
-            TryOpenBrowser(url);
-        }
+        // GitHub issue creation removed — bug reports go to Discord webhook only
 
         terminal.SetColor("white");
         terminal.WriteLine("");
@@ -186,7 +178,8 @@ public static class BugReportSystem
         {
             var sb = new StringBuilder();
 
-            // Discord embed-style formatting
+            // Ping Rage on new bug reports
+            sb.AppendLine("<@273583986482348032>");
             sb.AppendLine("**Bug Report** from Usurper Reborn");
             sb.AppendLine("```");
             sb.AppendLine($"Version:  {info.GameVersion}");

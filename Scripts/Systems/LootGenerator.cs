@@ -2187,14 +2187,9 @@ public static class LootGenerator
         /// </summary>
         private static bool ShouldBeUnidentified(ItemRarity rarity)
         {
-            return rarity switch
-            {
-                ItemRarity.Rare => random.NextDouble() < 0.40,       // 40% chance
-                ItemRarity.Epic => random.NextDouble() < 0.60,       // 60% chance
-                ItemRarity.Legendary => random.NextDouble() < 0.80,  // 80% chance
-                ItemRarity.Artifact => true,                          // Always unidentified
-                _ => false                                            // Common/Uncommon always known
-            };
+            // v0.53.2: All new loot drops are always identified.
+            // The identify system remains for existing unidentified items in player inventories.
+            return false;
         }
 
         /// <summary>

@@ -1122,6 +1122,32 @@ namespace UsurperRemake.Systems
 
             await terminal.GetInputAsync($"  {Loc.Get("ui.press_enter")}");
 
+            // === NOCTURA BETRAYAL — Post-Manwe surprise boss fight ===
+            if (boss.Type == OldGodType.Manwe && StoryProgressionSystem.Instance.HasStoryFlag("noctura_ally"))
+            {
+                // Trigger the betrayal
+                var betrayalResult = await HandleNocturaBetrayal(player, terminal, dungeonTeammates);
+
+                // Set story flags regardless of outcome
+                story.SetStoryFlag("noctura_betrayed", true);
+                story.SetStoryFlag("noctura_ally", false); // Alliance is over
+
+                // Record in MetaProgression (persists across NG+ cycles)
+                MetaProgressionSystem.Instance.RecordNocturaBetrayal(betrayalResult);
+
+                if (betrayalResult)
+                {
+                    // Player defeated Noctura
+                    story.SetStoryFlag("noctura_betrayal_defeated", true);
+                    story.UpdateGodState(OldGodType.Noctura, GodStatus.Defeated);
+                }
+                else
+                {
+                    // Noctura escaped with power
+                    story.SetStoryFlag("noctura_escaped_with_power", true);
+                }
+            }
+
             return new BossEncounterResult
             {
                 Success = true,
@@ -1131,6 +1157,129 @@ namespace UsurperRemake.Systems
                 GoldGained = goldReward,
                 ApproachType = activeCombatModifiers.ApproachType
             };
+        }
+
+        /// <summary>
+        /// Handle the Noctura betrayal boss fight that triggers after defeating Manwe
+        /// when the player previously allied with Noctura on floor 70.
+        /// Returns true if player won, false if player lost.
+        /// </summary>
+        private async Task<bool> HandleNocturaBetrayal(Character player, TerminalEmulator terminal, List<Character>? teammates)
+        {
+            var betrayalData = OldGodsData.GetNocturaBetrayal();
+
+            // Show betrayal intro
+            terminal.Clear();
+            terminal.WriteLine("");
+            foreach (var line in betrayalData.IntroDialogue)
+            {
+                if (string.IsNullOrEmpty(line)) { terminal.WriteLine(""); continue; }
+                terminal.SetColor(line.StartsWith("NOCTURA:") ? "dark_magenta" : "gray");
+                terminal.WriteLine($"  {line}");
+                await Task.Delay(1500);
+            }
+
+            await terminal.GetInputAsync($"\n  {Loc.Get("ui.press_enter")}");
+
+            // Partial heal — Noctura wants a "fair" fight
+            long healAmount = (player.MaxHP - player.HP) / 2;
+            if (healAmount > 0)
+            {
+                player.HP += healAmount;
+                terminal.SetColor("dark_magenta");
+                terminal.WriteLine($"\n  Shadow energy courses through you, restoring {healAmount} HP...");
+                terminal.SetColor("gray");
+                terminal.WriteLine("  NOCTURA: \"I want you at your best. It's no fun otherwise.\"");
+                await Task.Delay(2000);
+            }
+
+            // Create Noctura as a monster for combat using the same pattern as CreateBossMonster
+            long monsterStrength = betrayalData.Strength / 2;
+            long monsterWeapPow = betrayalData.Strength / 2;
+            int monsterDefence = (int)(betrayalData.Defence / 2);
+            long monsterArmPow = betrayalData.Defence / 2;
+
+            var noctura = new Monster
+            {
+                Name = betrayalData.Name,
+                Level = betrayalData.Level,
+                HP = betrayalData.HP,
+                MaxHP = betrayalData.MaxHP,
+                Strength = monsterStrength,
+                WeapPow = monsterWeapPow,
+                Defence = monsterDefence,
+                ArmPow = monsterArmPow,
+                MagicRes = (int)(50 + betrayalData.Wisdom / 10),
+                MonsterColor = betrayalData.ThemeColor,
+                FamilyName = "OldGod",
+                IsBoss = true,
+                IsActive = true,
+                CanSpeak = true,
+                Phrase = betrayalData.IntroDialogue.Length > 0 ? betrayalData.IntroDialogue[0] : "",
+                Experience = betrayalData.Level * 2000,
+                Gold = betrayalData.Level * 500,
+            };
+            noctura.SpecialAbilities = new List<string>(betrayalData.Phase1Abilities);
+
+            // Run combat
+            terminal.Clear();
+            UIHelper.WriteBoxHeader(terminal, "NOCTURA, THE SHADOW ASCENDANT", "dark_magenta", 63);
+            terminal.WriteLine("");
+
+            var combatEngine = new CombatEngine(terminal);
+            var result = await combatEngine.PlayerVsMonsters(player, new List<Monster> { noctura }, teammates);
+
+            if (result.Outcome == CombatOutcome.Victory)
+            {
+                // Show defeat dialogue
+                terminal.Clear();
+                terminal.WriteLine("");
+                UIHelper.WriteBoxHeader(terminal, "THE SHADOW FALLS", "bright_magenta", 63);
+                terminal.WriteLine("");
+
+                foreach (var line in betrayalData.DefeatDialogue)
+                {
+                    if (string.IsNullOrEmpty(line)) { terminal.WriteLine(""); continue; }
+                    terminal.SetColor(line.StartsWith("NOCTURA:") ? "dark_magenta" : "white");
+                    terminal.WriteLine($"  {line}");
+                    await Task.Delay(1500);
+                }
+
+                // Rewards
+                long xpReward = 300000;
+                int goldReward = 100000;
+                player.Experience += xpReward;
+                player.Gold += goldReward;
+                player.Fame += 100;
+
+                terminal.WriteLine("");
+                terminal.SetColor("bright_cyan");
+                terminal.WriteLine($"  Experience gained: {xpReward:N0}");
+                terminal.SetColor("bright_yellow");
+                terminal.WriteLine($"  Gold found: {goldReward:N0}");
+
+                await terminal.GetInputAsync($"\n  {Loc.Get("ui.press_enter")}");
+                return true;
+            }
+            else
+            {
+                // Player lost — Noctura escapes with power
+                terminal.Clear();
+                terminal.WriteLine("");
+
+                foreach (var line in betrayalData.LossDialogue)
+                {
+                    if (string.IsNullOrEmpty(line)) { terminal.WriteLine(""); continue; }
+                    terminal.SetColor(line.StartsWith("NOCTURA:") ? "dark_magenta" : "gray");
+                    terminal.WriteLine($"  {line}");
+                    await Task.Delay(1500);
+                }
+
+                player.HP = Math.Max(1, player.HP);
+
+                await terminal.GetInputAsync($"\n  {Loc.Get("ui.press_enter")}");
+                return false;
+            }
         }
 
         /// <summary>

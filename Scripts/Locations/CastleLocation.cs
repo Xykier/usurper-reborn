@@ -2649,7 +2649,7 @@ public class CastleLocation : BaseLocation
                 NewsSystem.Instance.Newsy(true, $"BOUNTY: {amount:N0} gold on {name} by order of {currentKing.GetTitle()} {currentKing.Name}!");
 
                 // Wire into QuestSystem so the bounty is trackable
-                QuestSystem.PostBountyOnPlayer(name, "Royal decree", (int)Math.Min(amount, int.MaxValue));
+                QuestSystem.PostBountyOnPlayer(name, "Royal decree", amount);
             }
         }
 
@@ -4575,8 +4575,6 @@ public class CastleLocation : BaseLocation
             return false;
         }
 
-        long runningPlayerHP = currentPlayer.HP;
-
         // PHASE 1: Fight through monster guards first
         foreach (var monster in currentKing.MonsterGuards.ToList())
         {
@@ -4585,36 +4583,29 @@ public class CastleLocation : BaseLocation
             terminal.WriteLine(Loc.Get("castle.fight_monster_guard", monster.Name, monster.Level));
             terminal.WriteLine("");
 
-            long monsterHP = monster.HP;
-
-            while (monsterHP > 0 && runningPlayerHP > 0)
+            // Create a Character wrapper from MonsterGuard data for PvP combat
+            var guardChar = new Character
             {
-                // Player attacks
-                long playerDamage = Math.Max(1, currentPlayer.Strength + currentPlayer.WeapPow - monster.Defence);
-                playerDamage += random.Next(1, (int)Math.Max(2, currentPlayer.WeapPow / 3));
-                monsterHP -= playerDamage;
+                Name2 = monster.Name,
+                Level = monster.Level,
+                HP = monster.HP,
+                MaxHP = monster.HP,
+                Strength = monster.Strength,
+                Defence = monster.Defence,
+                WeapPow = monster.WeapPow,
+                ArmPow = monster.ArmPow,
+                AI = CharacterAI.Computer,
+                Class = CharacterClass.Warrior
+            };
 
-                terminal.SetColor("bright_green");
-                terminal.WriteLine(Loc.Get("castle.strike_monster", monster.Name, playerDamage, Math.Max(0, monsterHP)));
+            var combatEngine = new CombatEngine(terminal);
+            var result = await combatEngine.PlayerVsPlayer(currentPlayer, guardChar);
 
-                if (monsterHP <= 0) break;
-
-                // Monster attacks
-                long monsterDamage = Math.Max(1, monster.Strength + monster.WeapPow - currentPlayer.Defence - currentPlayer.ArmPow);
-                monsterDamage += random.Next(1, (int)Math.Max(2, monster.WeapPow / 3));
-                runningPlayerHP -= monsterDamage;
-
-                terminal.SetColor("red");
-                terminal.WriteLine(Loc.Get("castle.monster_claws", monster.Name, monsterDamage, Math.Max(0, runningPlayerHP)));
-
-                await Task.Delay(300);
-            }
-
-            if (runningPlayerHP <= 0)
+            if (result.Outcome != CombatOutcome.Victory)
             {
                 terminal.SetColor("red");
                 terminal.WriteLine(Loc.Get("castle.slain_by_monster", monster.Name));
-                currentPlayer.HP = 1;
+                currentPlayer.HP = Math.Max(1, currentPlayer.HP);
                 terminal.WriteLine(Loc.Get("castle.challenge_failed"));
                 await Task.Delay(2500);
                 return false;
@@ -4625,6 +4616,11 @@ public class CastleLocation : BaseLocation
                 terminal.WriteLine(Loc.Get("castle.defeated_monster", monster.Name));
                 currentKing.MonsterGuards.Remove(monster);
                 NewsSystem.Instance?.Newsy(true, $"{currentPlayer.DisplayName} slew the monster guard {monster.Name}!");
+
+                // Show HP between fights
+                terminal.SetColor("cyan");
+                terminal.WriteLine("");
+                terminal.WriteLine($"You catch your breath... HP: {currentPlayer.HP}/{currentPlayer.MaxHP}");
             }
 
             await Task.Delay(1500);
@@ -4651,17 +4647,12 @@ public class CastleLocation : BaseLocation
             terminal.WriteLine(Loc.Get("castle.fight_royal_guard", guard.Name));
             terminal.WriteLine("");
 
-            // Look up actual NPC stats if available, otherwise scale fallback with king level
+            // Look up actual NPC stats if available, otherwise create fallback
             var actualNpc = NPCSpawnSystem.Instance?.GetNPCByName(guard.Name);
             int estKingLevel = currentKing != null ? Math.Max(20, (int)(currentKing.TotalReign / 5) + 20) : 20;
-            long guardStr = actualNpc?.Strength ?? (30 + estKingLevel * 5);
-            long guardHP = actualNpc?.HP ?? (100 + estKingLevel * 30);
-            long guardDef = actualNpc?.Defence ?? (10 + estKingLevel * 3);
-            int guardLevel = actualNpc?.Level ?? Math.Max(10, estKingLevel - 5);
 
             // Apply loyalty modifier to guard effectiveness
             float loyaltyMod = guard.Loyalty / 100f;
-            guardStr = (long)(guardStr * loyaltyMod);
 
             // Low loyalty guards might flee before combat
             if (guard.Loyalty < 30 && random.Next(100) < 30)
@@ -4674,56 +4665,79 @@ public class CastleLocation : BaseLocation
                 continue;
             }
 
+            // Prepare the guard character for PvP combat
+            Character guardCharacter;
             if (actualNpc != null)
             {
+                // NPC is already a Character — apply loyalty modifier to Strength
+                guardCharacter = actualNpc;
+                long originalStr = guardCharacter.Strength;
+                guardCharacter.Strength = (long)(guardCharacter.Strength * loyaltyMod);
+
                 terminal.SetColor("gray");
-                terminal.WriteLine(Loc.Get("castle.guard_stats", guardLevel, guardStr, guardDef, guard.Loyalty));
+                terminal.WriteLine(Loc.Get("castle.guard_stats", guardCharacter.Level, guardCharacter.Strength, guardCharacter.Defence, guard.Loyalty));
                 terminal.WriteLine("");
-            }
 
-            while (guardHP > 0 && runningPlayerHP > 0)
-            {
-                // Player attacks
-                long playerDamage = Math.Max(1, currentPlayer.Strength + currentPlayer.WeapPow - guardDef);
-                guardHP -= playerDamage;
+                var combatEngine = new CombatEngine(terminal);
+                var result = await combatEngine.PlayerVsPlayer(currentPlayer, guardCharacter);
 
-                terminal.SetColor("bright_green");
-                terminal.WriteLine(Loc.Get("castle.strike_guard", guard.Name, playerDamage, Math.Max(0, guardHP)));
+                // Restore original Strength after combat
+                guardCharacter.Strength = originalStr;
 
-                if (guardHP <= 0) break;
-
-                // Guard attacks - effectiveness reduced by low loyalty
-                long guardDamage = Math.Max(1, guardStr - currentPlayer.Defence);
-                runningPlayerHP -= guardDamage;
-
-                terminal.SetColor("red");
-                terminal.WriteLine(Loc.Get("castle.guard_strikes", guard.Name, guardDamage, Math.Max(0, runningPlayerHP)));
-
-                await Task.Delay(300);
-            }
-
-            if (runningPlayerHP <= 0)
-            {
-                terminal.SetColor("red");
-                terminal.WriteLine(Loc.Get("castle.defeated_by_guard", guard.Name));
-                currentPlayer.HP = 1;
-                terminal.WriteLine(Loc.Get("castle.challenge_failed"));
-                await Task.Delay(2500);
-                return false;
+                if (result.Outcome != CombatOutcome.Victory)
+                {
+                    terminal.SetColor("red");
+                    terminal.WriteLine(Loc.Get("castle.defeated_by_guard", guard.Name));
+                    currentPlayer.HP = Math.Max(1, currentPlayer.HP);
+                    terminal.WriteLine(Loc.Get("castle.challenge_failed"));
+                    await Task.Delay(2500);
+                    return false;
+                }
             }
             else
             {
-                terminal.SetColor("bright_green");
-                terminal.WriteLine(Loc.Get("castle.defeated_guard", guard.Name));
-                currentKing.Guards.Remove(guard);
-                NewsSystem.Instance?.Newsy(true, $"{currentPlayer.DisplayName} defeated guard {guard.Name}!");
+                // Create fallback Character from estimated stats
+                int guardLevel = Math.Max(10, estKingLevel - 5);
+                guardCharacter = new Character
+                {
+                    Name2 = guard.Name,
+                    Level = guardLevel,
+                    Strength = (long)((30 + estKingLevel * 5) * loyaltyMod),
+                    Defence = 10 + estKingLevel * 3,
+                    HP = 100 + estKingLevel * 30,
+                    MaxHP = 100 + estKingLevel * 30,
+                    WeapPow = 20 + estKingLevel * 2,
+                    ArmPow = 10 + estKingLevel,
+                    AI = CharacterAI.Computer,
+                    Class = CharacterClass.Warrior
+                };
+
+                var combatEngine = new CombatEngine(terminal);
+                var result = await combatEngine.PlayerVsPlayer(currentPlayer, guardCharacter);
+
+                if (result.Outcome != CombatOutcome.Victory)
+                {
+                    terminal.SetColor("red");
+                    terminal.WriteLine(Loc.Get("castle.defeated_by_guard", guard.Name));
+                    currentPlayer.HP = Math.Max(1, currentPlayer.HP);
+                    terminal.WriteLine(Loc.Get("castle.challenge_failed"));
+                    await Task.Delay(2500);
+                    return false;
+                }
             }
+
+            terminal.SetColor("bright_green");
+            terminal.WriteLine(Loc.Get("castle.defeated_guard", guard.Name));
+            currentKing.Guards.Remove(guard);
+            NewsSystem.Instance?.Newsy(true, $"{currentPlayer.DisplayName} defeated guard {guard.Name}!");
+
+            // Show HP between fights
+            terminal.SetColor("cyan");
+            terminal.WriteLine("");
+            terminal.WriteLine($"You catch your breath... HP: {currentPlayer.HP}/{currentPlayer.MaxHP}");
 
             await Task.Delay(1500);
         }
-
-        // Update player HP from the guard battles
-        currentPlayer.HP = runningPlayerHP;
 
         // Fight the king — use real stats with defender bonus
         terminal.ClearScreen();
@@ -4732,26 +4746,45 @@ public class CastleLocation : BaseLocation
         terminal.WriteLine("");
 
         // Look up real king stats: NPC king, player king (offline), or scaled fallback
-        long kingStr, kingDef, kingWeapPow, kingArmPow;
-        long kingHP;
-        int kingLevel;
+        Character kingCharacter;
         var kingNpc = NPCSpawnSystem.Instance?.GetNPCByName(currentKing.Name);
 
         if (kingNpc != null)
         {
-            // NPC King — use actual stats + defender bonus
-            kingStr = kingNpc.Strength;
-            kingDef = (long)(kingNpc.Defence * GameConfig.KingDefenderDefBonus);
-            kingWeapPow = kingNpc.WeapPow;
-            kingArmPow = kingNpc.ArmPow;
-            kingHP = (long)(kingNpc.MaxHP * GameConfig.KingDefenderHPBonus);
-            kingLevel = kingNpc.Level;
+            // NPC King — use actual NPC with defender bonus applied
+            kingCharacter = kingNpc;
+            long origDef = kingCharacter.Defence;
+            long origMaxHP = kingCharacter.MaxHP;
+            long origHP = kingCharacter.HP;
+            kingCharacter.Defence = (long)(kingCharacter.Defence * GameConfig.KingDefenderDefBonus);
+            kingCharacter.MaxHP = (long)(kingCharacter.MaxHP * GameConfig.KingDefenderHPBonus);
+            kingCharacter.HP = kingCharacter.MaxHP;
+
+            terminal.SetColor("gray");
+            terminal.WriteLine(Loc.Get("castle.king_stats", kingCharacter.Level, kingCharacter.Strength, kingCharacter.Defence, kingCharacter.HP));
+            terminal.WriteLine("");
+
+            var combatEngine = new CombatEngine(terminal);
+            var kingResult = await combatEngine.PlayerVsPlayer(currentPlayer, kingCharacter);
+
+            // Restore original NPC stats after combat
+            kingCharacter.Defence = origDef;
+            kingCharacter.MaxHP = origMaxHP;
+            kingCharacter.HP = Math.Max(1, origHP);
+
+            if (kingResult.Outcome == CombatOutcome.Victory)
+            {
+                // Continue to victory handling below
+            }
+            else
+            {
+                goto KingFightLost;
+            }
         }
         else if (currentKing.AI == CharacterAI.Human && DoorMode.IsOnlineMode)
         {
             // Player King (offline) — try loading from database
-            long pStr = 100, pDef = 50, pWP = 50, pAP = 30, pHP = 500;
-            int pLevel = 20;
+            PlayerData kingData = null;
             try
             {
                 var backend = SaveSystem.Instance?.Backend as SqlSaveBackend;
@@ -4759,143 +4792,147 @@ public class CastleLocation : BaseLocation
                 {
                     var kingSave = await backend.ReadGameData(currentKing.Name.ToLowerInvariant());
                     if (kingSave?.Player != null)
-                    {
-                        pStr = kingSave.Player.Strength;
-                        pDef = kingSave.Player.Defence;
-                        pWP = kingSave.Player.WeapPow;
-                        pAP = kingSave.Player.ArmPow;
-                        pHP = kingSave.Player.MaxHP > 0 ? kingSave.Player.MaxHP : kingSave.Player.HP;
-                        pLevel = kingSave.Player.Level;
-                    }
+                        kingData = kingSave.Player;
                 }
             }
-            catch { /* Fall through to values above */ }
+            catch { /* Fall through */ }
+
+            if (kingData != null)
+            {
+                kingCharacter = PlayerCharacterLoader.CreateFromSaveData(kingData, currentKing.Name);
+            }
+            else
+            {
+                // Fallback values if DB load failed
+                int pLevel = 20;
+                kingCharacter = new Character
+                {
+                    Name2 = currentKing.Name,
+                    Level = pLevel,
+                    Strength = 100,
+                    Defence = 50,
+                    WeapPow = 50,
+                    ArmPow = 30,
+                    HP = 500,
+                    MaxHP = 500,
+                    AI = CharacterAI.Computer,
+                    Class = CharacterClass.Warrior
+                };
+            }
 
             // Apply defender bonus
-            kingStr = pStr;
-            kingDef = (long)(pDef * GameConfig.KingDefenderDefBonus);
-            kingWeapPow = pWP;
-            kingArmPow = pAP;
-            kingHP = (long)(pHP * GameConfig.KingDefenderHPBonus);
-            kingLevel = pLevel;
+            kingCharacter.Defence = (long)(kingCharacter.Defence * GameConfig.KingDefenderDefBonus);
+            kingCharacter.MaxHP = (long)(kingCharacter.MaxHP * GameConfig.KingDefenderHPBonus);
+            kingCharacter.HP = kingCharacter.MaxHP;
+
+            terminal.SetColor("gray");
+            terminal.WriteLine(Loc.Get("castle.king_stats", kingCharacter.Level, kingCharacter.Strength, kingCharacter.Defence, kingCharacter.HP));
+            terminal.WriteLine("");
+
+            var combatEngine = new CombatEngine(terminal);
+            var kingResult = await combatEngine.PlayerVsPlayer(currentPlayer, kingCharacter);
+
+            if (kingResult.Outcome != CombatOutcome.Victory)
+                goto KingFightLost;
         }
         else
         {
             // Fallback — scale with estimated king level
-            kingLevel = Math.Max(20, currentKing.TotalReign > 0 ? 20 + (int)(currentKing.TotalReign / 5) : 20);
-            kingStr = 50 + kingLevel * 8;
-            kingDef = (long)((10 + kingLevel * 4) * GameConfig.KingDefenderDefBonus);
-            kingWeapPow = 20 + kingLevel * 3;
-            kingArmPow = 10 + kingLevel * 2;
-            kingHP = (long)((200 + kingLevel * 40) * GameConfig.KingDefenderHPBonus);
-        }
+            int kingLevel = Math.Max(20, currentKing.TotalReign > 0 ? 20 + (int)(currentKing.TotalReign / 5) : 20);
+            kingCharacter = new Character
+            {
+                Name2 = currentKing.Name,
+                Level = kingLevel,
+                Strength = 50 + kingLevel * 8,
+                Defence = (long)((10 + kingLevel * 4) * GameConfig.KingDefenderDefBonus),
+                WeapPow = 20 + kingLevel * 3,
+                ArmPow = 10 + kingLevel * 2,
+                HP = (long)((200 + kingLevel * 40) * GameConfig.KingDefenderHPBonus),
+                MaxHP = (long)((200 + kingLevel * 40) * GameConfig.KingDefenderHPBonus),
+                AI = CharacterAI.Computer,
+                Class = CharacterClass.Warrior
+            };
 
-        terminal.SetColor("gray");
-        terminal.WriteLine(Loc.Get("castle.king_stats", kingLevel, kingStr, kingDef, kingHP));
-        terminal.WriteLine("");
-
-        long finalPlayerHP = currentPlayer.HP;
-
-        int round = 0;
-        while (kingHP > 0 && finalPlayerHP > 0)
-        {
-            round++;
-            terminal.SetColor("cyan");
-            terminal.WriteLine(Loc.Get("castle.round_label", round));
-
-            // Player attacks — armor reduces damage
-            long playerDmg = Math.Max(1, currentPlayer.Strength + currentPlayer.WeapPow - kingDef - kingArmPow);
-            playerDmg += random.Next(Math.Max(1, (int)currentPlayer.WeapPow / 2));
-            kingHP -= playerDmg;
-
-            terminal.SetColor("bright_green");
-            terminal.WriteLine(Loc.Get("castle.strike_king", playerDmg, Math.Max(0, kingHP)));
-
-            if (kingHP <= 0) break;
-
-            // King attacks — uses full combat stats
-            long kingDmg = Math.Max(1, kingStr + kingWeapPow - currentPlayer.Defence - currentPlayer.ArmPow);
-            kingDmg += random.Next(Math.Max(1, (int)kingWeapPow / 3));
-            finalPlayerHP -= kingDmg;
-
-            terminal.SetColor("red");
-            terminal.WriteLine(Loc.Get("castle.king_strikes", currentKing.Name, kingDmg, Math.Max(0, finalPlayerHP)));
-
-            await Task.Delay(500);
-        }
-
-        currentPlayer.HP = Math.Max(1, finalPlayerHP);
-
-        if (kingHP <= 0)
-        {
-            // Player wins!
+            terminal.SetColor("gray");
+            terminal.WriteLine(Loc.Get("castle.king_stats", kingCharacter.Level, kingCharacter.Strength, kingCharacter.Defence, kingCharacter.HP));
             terminal.WriteLine("");
-            terminal.SetColor("bright_yellow");
-            if (!IsScreenReader)
-            {
-                terminal.WriteLine("════════════════════════════════════════════════");
-                terminal.WriteLine(Loc.Get("castle.victory"));
-                terminal.WriteLine("════════════════════════════════════════════════");
-            }
-            else
-            {
-                terminal.WriteLine(Loc.Get("castle.victory"));
-            }
-            terminal.WriteLine(Loc.Get("castle.defeated_king", currentKing.GetTitle(), currentKing.Name));
-            terminal.WriteLine(Loc.Get("castle.throne_is_yours"));
 
-            // Record old monarch
-            monarchHistory.Add(new MonarchRecord
-            {
-                Name = currentKing.Name,
-                Title = currentKing.GetTitle(),
-                DaysReigned = (int)currentKing.TotalReign,
-                CoronationDate = currentKing.CoronationDate,
-                EndReason = $"Defeated by {currentPlayer.DisplayName}"
-            });
-            while (monarchHistory.Count > MaxMonarchHistory)
-                monarchHistory.RemoveAt(0);
+            var combatEngine = new CombatEngine(terminal);
+            var kingResult = await combatEngine.PlayerVsPlayer(currentPlayer, kingCharacter);
 
-            // Crown new monarch — inherit the previous king's treasury and orphans
-            long inheritedTreasury = currentKing.Treasury;
-            var inheritedOrphans = currentKing?.Orphans?.ToList();
-            string oldKingName = currentKing.Name;
-            bool oldKingWasHuman = currentKing.AI == CharacterAI.Human;
-            ClearRoyalMarriage(currentKing); // Clear old king's royal spouse before replacing
-            currentPlayer.King = true;
-            currentKing = King.CreateNewKing(currentPlayer.DisplayName, CharacterAI.Human, currentPlayer.Sex, inheritedOrphans);
-            currentKing.Treasury = inheritedTreasury;
-            playerIsKing = true;
+            if (kingResult.Outcome != CombatOutcome.Victory)
+                goto KingFightLost;
+        }
 
-            currentPlayer.PKills++;
+        currentPlayer.HP = Math.Max(1, currentPlayer.HP);
 
-            // Track archetype - Major Ruler moment
-            UsurperRemake.Systems.ArchetypeTracker.Instance.RecordBecameKing();
-
-            NewsSystem.Instance.Newsy(true, $"{currentPlayer.DisplayName} has seized the throne! Long live the new {currentKing.GetTitle()}!");
-
-            // Notify the dethroned player
-            if (oldKingWasHuman)
-                NotifyDethronedPlayer(oldKingName, currentPlayer.DisplayName, "defeated you in combat");
-
-            // Persist to world_state so world sim and other players see the new king immediately
-            PersistRoyalCourtToWorldState();
-
-            await Task.Delay(4000);
-            return false; // Stay in castle as new king
+        // Player wins!
+        terminal.WriteLine("");
+        terminal.SetColor("bright_yellow");
+        if (!IsScreenReader)
+        {
+            terminal.WriteLine("════════════════════════════════════════════════");
+            terminal.WriteLine(Loc.Get("castle.victory"));
+            terminal.WriteLine("════════════════════════════════════════════════");
         }
         else
         {
-            // Player lost
-            terminal.WriteLine("");
-            terminal.SetColor("red");
-            terminal.WriteLine(Loc.Get("castle.you_defeated"));
-            terminal.WriteLine(Loc.Get("castle.guards_drag_out"));
-
-            await Task.Delay(3000);
-            await NavigateToLocation(GameLocation.MainStreet);
-            return true; // Exit castle
+            terminal.WriteLine(Loc.Get("castle.victory"));
         }
+        terminal.WriteLine(Loc.Get("castle.defeated_king", currentKing.GetTitle(), currentKing.Name));
+        terminal.WriteLine(Loc.Get("castle.throne_is_yours"));
+
+        // Record old monarch
+        monarchHistory.Add(new MonarchRecord
+        {
+            Name = currentKing.Name,
+            Title = currentKing.GetTitle(),
+            DaysReigned = (int)currentKing.TotalReign,
+            CoronationDate = currentKing.CoronationDate,
+            EndReason = $"Defeated by {currentPlayer.DisplayName}"
+        });
+        while (monarchHistory.Count > MaxMonarchHistory)
+            monarchHistory.RemoveAt(0);
+
+        // Crown new monarch — inherit the previous king's treasury and orphans
+        long inheritedTreasury = currentKing.Treasury;
+        var inheritedOrphans = currentKing?.Orphans?.ToList();
+        string oldKingName = currentKing.Name;
+        bool oldKingWasHuman = currentKing.AI == CharacterAI.Human;
+        ClearRoyalMarriage(currentKing); // Clear old king's royal spouse before replacing
+        currentPlayer.King = true;
+        currentKing = King.CreateNewKing(currentPlayer.DisplayName, CharacterAI.Human, currentPlayer.Sex, inheritedOrphans);
+        currentKing.Treasury = inheritedTreasury;
+        playerIsKing = true;
+
+        currentPlayer.PKills++;
+
+        // Track archetype - Major Ruler moment
+        UsurperRemake.Systems.ArchetypeTracker.Instance.RecordBecameKing();
+
+        NewsSystem.Instance.Newsy(true, $"{currentPlayer.DisplayName} has seized the throne! Long live the new {currentKing.GetTitle()}!");
+
+        // Notify the dethroned player
+        if (oldKingWasHuman)
+            NotifyDethronedPlayer(oldKingName, currentPlayer.DisplayName, "defeated you in combat");
+
+        // Persist to world_state so world sim and other players see the new king immediately
+        PersistRoyalCourtToWorldState();
+
+        await Task.Delay(4000);
+        return false; // Stay in castle as new king
+
+        KingFightLost:
+        // Player lost the king fight
+        currentPlayer.HP = Math.Max(1, currentPlayer.HP);
+        terminal.WriteLine("");
+        terminal.SetColor("red");
+        terminal.WriteLine(Loc.Get("castle.you_defeated"));
+        terminal.WriteLine(Loc.Get("castle.guards_drag_out"));
+
+        await Task.Delay(3000);
+        await NavigateToLocation(GameLocation.MainStreet);
+        return true; // Exit castle
     }
 
     private async Task<bool> ClaimEmptyThrone()
@@ -5527,6 +5564,10 @@ public class CastleLocation : BaseLocation
 
             string title = currentPlayer.Sex == CharacterSex.Male ? "Sir" : "Dame";
             currentPlayer.NobleTitle = title;
+
+            // Persist knight title to MetaProgression so it survives NG+ cycles
+            MetaProgressionSystem.Instance.UnlockedTitles.Add(title);
+            MetaProgressionSystem.Instance.SaveData();
 
             terminal.SetColor("bright_cyan");
             terminal.WriteLine("  The blade touches your right shoulder...");

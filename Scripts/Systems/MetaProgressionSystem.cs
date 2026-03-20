@@ -61,6 +61,20 @@ namespace UsurperRemake.Systems
         public HashSet<string> UnlockedTitles => data.UnlockedTitles;
 
         /// <summary>
+        /// Noctura betrayal state (persists across NG+ cycles)
+        /// 0=never encountered, 1=betrayed+escaped, 2=betrayed+defeated
+        /// </summary>
+        public int NocturaBetrayal => data.NocturaBetrayal;
+        public int NocturaTimesBetrayed => data.NocturaTimesBetrayed;
+
+        public void RecordNocturaBetrayal(bool playerWon)
+        {
+            data.NocturaBetrayal = playerWon ? 2 : 1;
+            data.NocturaTimesBetrayed++;
+            SaveData();
+        }
+
+        /// <summary>
         /// Total monsters killed across all playthroughs
         /// </summary>
         public long TotalMonstersKilled => data.TotalMonstersKilled;
@@ -237,6 +251,21 @@ namespace UsurperRemake.Systems
         }
 
         /// <summary>
+        /// Get monster flee chance reduction (Fear the Throne perk: enemies are -10% less likely to flee)
+        /// </summary>
+        public int GetMonsterFleeReduction() => HasBonus("FEAR_THE_THRONE") ? 10 : 0;
+
+        /// <summary>
+        /// Get artifact effect multiplier (Artifact Hunter perk: +50% artifact stat bonuses)
+        /// </summary>
+        public float GetArtifactMultiplier() => HasBonus("ARTIFACT_HUNTER") ? 1.50f : 1.0f;
+
+        /// <summary>
+        /// Whether fallen companions may appear as ghost advisors (Survivor's Guilt perk)
+        /// </summary>
+        public bool HasSurvivorsGuilt => HasBonus("SURVIVORS_GUILT");
+
+        /// <summary>
         /// Get shop discount based on unlocks
         /// </summary>
         public float GetShopDiscount()
@@ -358,7 +387,7 @@ namespace UsurperRemake.Systems
 
         private static readonly object _fileLock = new object();
 
-        private void SaveData()
+        public void SaveData()
         {
             try
             {
@@ -425,5 +454,9 @@ namespace UsurperRemake.Systems
         public HashSet<string> UnlockedTitles { get; set; } = new();
         public DateTime FirstPlaythrough { get; set; } = DateTime.Now;
         public DateTime LastPlaythrough { get; set; } = DateTime.Now;
+
+        // Noctura betrayal tracking (persists across NG+ cycles)
+        public int NocturaBetrayal { get; set; } = 0;     // 0=never, 1=betrayed+escaped, 2=betrayed+defeated
+        public int NocturaTimesBetrayed { get; set; } = 0; // How many cycles the betrayal has occurred
     }
 }

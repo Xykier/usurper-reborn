@@ -647,7 +647,7 @@ public static class ClassAbilitySystem
         {
             Id = "backstab",
             Name = "Backstab",
-            Description = "Strike from the shadows for critical damage.",
+            Description = "Guaranteed critical hit from stealth. Requires dagger. 40 base damage, scales with STR+DEX.",
             LevelRequired = 1,
             StaminaCost = 20,
             Cooldown = 2,
@@ -661,7 +661,7 @@ public static class ClassAbilitySystem
         {
             Id = "poison_blade",
             Name = "Poison Blade",
-            Description = "Coat your weapon with deadly poison.",
+            Description = "30 base damage + 5-round poison DoT. Requires dagger. Scales with STR+DEX.",
             LevelRequired = 10,
             StaminaCost = 30,
             Cooldown = 3,
@@ -676,7 +676,7 @@ public static class ClassAbilitySystem
         {
             Id = "shadow_step",
             Name = "Shadow Step",
-            Description = "Disappear into shadows, becoming nearly impossible to hit.",
+            Description = "Dodge next attack + DEF bonus for 2 rounds (scales with CON). 4-round cooldown.",
             LevelRequired = 18,
             StaminaCost = 35,
             Cooldown = 4,
@@ -690,7 +690,7 @@ public static class ClassAbilitySystem
         {
             Id = "death_mark",
             Name = "Death Mark",
-            Description = "Mark a target for death, increasing damage dealt.",
+            Description = "Mark target for 4 rounds: all attacks deal +30% damage to marked enemy. Scales with INT.",
             LevelRequired = 28,
             StaminaCost = 45,
             Cooldown = 5,
@@ -704,7 +704,7 @@ public static class ClassAbilitySystem
         {
             Id = "biaxin",
             Name = "Biaxin",
-            Description = "Coat your blade with Biaxin, a rare paralytic toxin. Deals damage, corrodes the target's armor (-40% DEF for 4 rounds), and poisons them.",
+            Description = "70 base damage + poison (4 rounds) + armor corrosion (-40% DEF, 4 rounds). Requires dagger.",
             LevelRequired = 35,
             StaminaCost = 45,
             Cooldown = 4,
@@ -719,7 +719,7 @@ public static class ClassAbilitySystem
         {
             Id = "assassinate",
             Name = "Assassinate",
-            Description = "A lethal strike. Can instantly kill weakened enemies.",
+            Description = "160 base damage. Instant kill on targets below 15% HP. Requires dagger. Scales with STR+DEX.",
             LevelRequired = 42,
             StaminaCost = 70,
             Cooldown = 6,
@@ -733,7 +733,7 @@ public static class ClassAbilitySystem
         {
             Id = "vanish",
             Name = "Vanish",
-            Description = "Completely disappear, resetting combat advantage.",
+            Description = "Dodge next attack + large DEF bonus (scales with CON) + Hidden status. Next attack from stealth crits.",
             LevelRequired = 52,
             StaminaCost = 50,
             Cooldown = 5,
@@ -747,7 +747,7 @@ public static class ClassAbilitySystem
         {
             Id = "noctura_embrace",
             Name = "Noctura's Embrace",
-            Description = "The Shadow Goddess cloaks you in darkness.",
+            Description = "+50 ATK and +60 DEF for 4 rounds. Scales with CHA. Shadow buff stacks with other bonuses.",
             LevelRequired = 65,
             StaminaCost = 60,
             Cooldown = 6,
@@ -762,7 +762,7 @@ public static class ClassAbilitySystem
         {
             Id = "blade_dance",
             Name = "Blade Dance",
-            Description = "A flurry of deadly strikes hitting all enemies.",
+            Description = "AoE attack hitting all enemies (diminishing: 100%/75%/50%/25%). 38 base damage. Requires dagger.",
             LevelRequired = 78,
             StaminaCost = 75,
             Cooldown = 5,
@@ -776,7 +776,7 @@ public static class ClassAbilitySystem
         {
             Id = "death_blossom",
             Name = "Death Blossom",
-            Description = "The ultimate assassination technique. Lethal to all.",
+            Description = "250 base AoE damage + execute on targets below 15% HP. Capstone. Requires dagger. Scales with STR+DEX.",
             LevelRequired = 92,
             StaminaCost = 90,
             Cooldown = 7,
@@ -2354,12 +2354,19 @@ public static class ClassAbilitySystem
                 return false;
         }
 
-        // Check shield requirement
+        // Check shield requirement — also accept any OffHand item with ShieldBonus or OffHandOnly handedness
+        // (handles legacy shields that went through CreateArmor without WeaponType set)
         if (ability.RequiresShield)
         {
             var offHand = character.GetEquipment(EquipmentSlot.OffHand);
-            if (offHand == null || (offHand.WeaponType != WeaponType.Shield &&
-                offHand.WeaponType != WeaponType.Buckler && offHand.WeaponType != WeaponType.TowerShield))
+            if (offHand == null)
+                return false;
+            bool isShield = offHand.WeaponType == WeaponType.Shield
+                         || offHand.WeaponType == WeaponType.Buckler
+                         || offHand.WeaponType == WeaponType.TowerShield
+                         || offHand.ShieldBonus > 0
+                         || offHand.Handedness == WeaponHandedness.OffHandOnly;
+            if (!isShield)
                 return false;
         }
 

@@ -3240,6 +3240,11 @@ public abstract class BaseLocation
                 terminal.WriteLine($"] {Loc.Get("prefs.language")} ({Loc.Get("prefs.current", UsurperRemake.Systems.Loc.GetLanguageName(currentPlayer.Language))})");
                 terminal.Write("[");
                 terminal.SetColor("bright_yellow");
+                terminal.Write("T");
+                terminal.SetColor("white");
+                terminal.WriteLine($"] Title ({currentPlayer.NobleTitle ?? "None"})");
+                terminal.Write("[");
+                terminal.SetColor("bright_yellow");
                 terminal.Write("0");
                 terminal.SetColor("white");
                 terminal.WriteLine($"] {Loc.Get("prefs.back")}");
@@ -3408,6 +3413,61 @@ public abstract class BaseLocation
                         dungeonLoc?.InvalidateFloorCache();
                         await GameEngine.Instance.SaveCurrentGame();
                         await Task.Delay(800);
+                    }
+                    break;
+
+                case "T":
+                    terminal.WriteLine("");
+                    terminal.SetColor("bright_yellow");
+                    terminal.WriteLine("  Select a title:");
+                    terminal.WriteLine("");
+
+                    // Gather all available titles
+                    var availableTitles = new List<string>();
+
+                    // Knight title
+                    if (currentPlayer.IsKnighted)
+                        availableTitles.Add(currentPlayer.Sex == CharacterSex.Female ? "Dame" : "Sir");
+
+                    // MetaProgression titles (earned across NG+ cycles)
+                    var metaTitles = MetaProgressionSystem.Instance.UnlockedTitles;
+                    foreach (var mt in metaTitles)
+                        if (!availableTitles.Contains(mt)) availableTitles.Add(mt);
+
+                    if (availableTitles.Count == 0)
+                    {
+                        terminal.SetColor("gray");
+                        terminal.WriteLine("  You haven't earned any titles yet.");
+                        terminal.WriteLine("  Titles are earned through knighthood, defeating Old Gods, and completing endings.");
+                        await Task.Delay(2000);
+                    }
+                    else
+                    {
+                        terminal.SetColor("white");
+                        terminal.WriteLine($"  0. (None) — remove current title");
+                        for (int ti = 0; ti < availableTitles.Count; ti++)
+                        {
+                            string marker = availableTitles[ti] == currentPlayer.NobleTitle ? " *" : "";
+                            terminal.WriteLine($"  {ti + 1}. {availableTitles[ti]}{marker}");
+                        }
+                        terminal.WriteLine("");
+                        var titleChoice = await terminal.GetInput("  Select: ");
+                        if (titleChoice.Trim() == "0")
+                        {
+                            currentPlayer.NobleTitle = null;
+                            terminal.SetColor("green");
+                            terminal.WriteLine("  Title removed.");
+                            await GameEngine.Instance.SaveCurrentGame();
+                            await Task.Delay(1000);
+                        }
+                        else if (int.TryParse(titleChoice.Trim(), out int titleIdx) && titleIdx >= 1 && titleIdx <= availableTitles.Count)
+                        {
+                            currentPlayer.NobleTitle = availableTitles[titleIdx - 1];
+                            terminal.SetColor("green");
+                            terminal.WriteLine($"  Title set to: {currentPlayer.NobleTitle} {currentPlayer.DisplayName}");
+                            await GameEngine.Instance.SaveCurrentGame();
+                            await Task.Delay(1000);
+                        }
                     }
                     break;
 

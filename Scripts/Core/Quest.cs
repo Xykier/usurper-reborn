@@ -34,6 +34,7 @@ public partial class Quest
     // Quest Rewards
     public byte Reward { get; set; } = 0;
     public QuestRewardType RewardType { get; set; }
+    public long BountyGold { get; set; } = 0;  // Direct gold bounty (for king bounties — bypasses byte Reward limit)
 
     // Quest Penalties (for failure)
     public byte Penalty { get; set; } = 0;

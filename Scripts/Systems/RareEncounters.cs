@@ -205,6 +205,9 @@ namespace UsurperRemake.Systems
             terminal.WriteLine("");
 
             bool inTavern = true;
+            int strangerTalks = 0;
+            const int maxStrangerTalks = 1; // One talk per tavern visit
+
             while (inTavern)
             {
                 var choice = await terminal.GetInput(Loc.Get("ui.your_choice"));
@@ -231,7 +234,16 @@ namespace UsurperRemake.Systems
                         break;
 
                     case "T":
-                        await TavernStranger(terminal, player, level);
+                        if (player.TavernStrangerTalkedToday)
+                        {
+                            terminal.SetColor("gray");
+                            terminal.WriteLine("The stranger waves you off. \"We've talked enough for today. Come back tomorrow.\"");
+                        }
+                        else
+                        {
+                            await TavernStranger(terminal, player, level);
+                            player.TavernStrangerTalkedToday = true;
+                        }
                         break;
 
                     case "R":

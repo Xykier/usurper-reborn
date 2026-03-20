@@ -600,6 +600,7 @@ public class Character
     public bool SettlementCircleUsedToday { get; set; }
     public bool SettlementWorkshopUsedToday { get; set; }
     public bool ThroneChallengedToday { get; set; }
+    public bool TavernStrangerTalkedToday { get; set; }
     public int WorkshopBuffCombats { get; set; } = 0;  // Combats remaining with Workshop weapon sharpening buff
 
     // Wilderness exploration (v0.49.4)
@@ -657,7 +658,8 @@ public class Character
         EquippedItems.TryGetValue(EquipmentSlot.MainHand, out var mainId) && mainId > 0 &&
         EquippedItems.TryGetValue(EquipmentSlot.OffHand, out var offId) && offId > 0 &&
         EquipmentDatabase.GetById(mainId)?.Handedness == WeaponHandedness.OneHanded &&
-        EquipmentDatabase.GetById(offId)?.Handedness == WeaponHandedness.OneHanded;
+        EquipmentDatabase.GetById(offId)?.Handedness == WeaponHandedness.OneHanded &&
+        !HasShieldEquipped; // Shield + weapon is sword-and-board, not dual wielding
 
     public bool HasShieldEquipped =>
         EquippedItems.TryGetValue(EquipmentSlot.OffHand, out var offId) && offId > 0 &&
@@ -667,7 +669,11 @@ public class Character
 
     public bool IsTwoHanding =>
         EquippedItems.TryGetValue(EquipmentSlot.MainHand, out var mainId) && mainId > 0 &&
-        EquipmentDatabase.GetById(mainId)?.Handedness == WeaponHandedness.TwoHanded;
+        (EquipmentDatabase.GetById(mainId)?.Handedness == WeaponHandedness.TwoHanded
+         || EquipmentDatabase.GetById(mainId)?.WeaponType == WeaponType.Bow
+         || EquipmentDatabase.GetById(mainId)?.WeaponType == WeaponType.Staff
+         || EquipmentDatabase.GetById(mainId)?.WeaponType == WeaponType.Maul
+         || EquipmentDatabase.GetById(mainId)?.WeaponType == WeaponType.Polearm);
 
     /// <summary>
     /// Get the equipment in a specific slot

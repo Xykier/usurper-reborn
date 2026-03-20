@@ -773,6 +773,129 @@ namespace UsurperRemake.Data
             };
         }
 
+        /// <summary>
+        /// Special betrayal version of Noctura — triggered post-Manwe when player has noctura_ally flag.
+        /// This is NOT the regular floor 70 Noctura; it's a separate, more powerful version.
+        /// </summary>
+        public static OldGodBossData GetNocturaBetrayal()
+        {
+            return new OldGodBossData
+            {
+                Type = OldGodType.Noctura,
+                Name = "Noctura, The Shadow Ascendant",
+                Title = "Goddess of Shadows, Betrayer",
+                Level = 100,
+                HP = 300000,
+                MaxHP = 300000,
+                Strength = 240,
+                Defence = 180,
+                Agility = 250,
+                Wisdom = 200,
+                Charisma = 180,
+                AttacksPerRound = 3,
+
+                EncounterLocation = "Dungeon Floor 100",
+                DungeonFloor = 100,
+                ThemeColor = "dark_magenta",
+
+                Description = "The shadow goddess reveals her true nature, empowered by stolen divine essence.",
+
+                IntroDialogue = new[]
+                {
+                    "As Manwe falls, a cold laugh echoes through the chamber.",
+                    "",
+                    "From the shadows behind the broken throne, SHE steps forward.",
+                    "",
+                    "NOCTURA: \"Did you really think I helped you out of kindness?\"",
+                    "",
+                    "Her form shifts — no longer the wounded goddess you pitied.",
+                    "She stands tall, wreathed in living shadow, eyes burning violet.",
+                    "",
+                    "NOCTURA: \"Every god you defeated. Every seal you broke.\"",
+                    "NOCTURA: \"You were clearing the path. MY path.\"",
+                    "",
+                    "She reaches toward Manwe's fading essence and PULLS.",
+                    "Light and shadow merge. Her power surges.",
+                    "",
+                    "NOCTURA: \"Thank you, little shadow. You've been so very useful.\"",
+                    "NOCTURA: \"Now there's just one loose end to tie up.\""
+                },
+
+                Phase1Threshold = 1.0f,
+                Phase2Threshold = 0.5f,
+                Phase3Threshold = 0.15f,
+
+                Phase1Abilities = new[] { "Shadow Strike", "Fear Aura", "Living Shadows", "Void Drain" },
+                Phase2Abilities = new[] { "Vanish", "Shadow Storm", "Puppeteer", "Soul Siphon" },
+                Phase3Abilities = new[] { "Eclipse", "Final Darkness", "Shadow Incarnate", "Desperate Betrayer" },
+
+                Phase2Dialogue = new[]
+                {
+                    "Noctura's form flickers — she splits into a dozen shadow copies.",
+                    "\"You can't kill a shadow, little one. We are EVERYWHERE.\""
+                },
+
+                Phase3Dialogue = new[]
+                {
+                    "Noctura staggers, shadow bleeding from her wounds.",
+                    "\"No... I didn't come this far to lose to a MORTAL!\"",
+                    "Her eyes blaze with stolen divine light.",
+                    "\"I WILL have this power. Even if I have to tear it from your corpse!\""
+                },
+
+                DefeatDialogue = new[]
+                {
+                    "Noctura collapses, the stolen power unraveling around her.",
+                    "",
+                    "NOCTURA: \"How... I had it all planned...\"",
+                    "",
+                    "The shadows recede. For a moment, you see her as she truly is.",
+                    "Not a goddess. Not a monster. Just... afraid.",
+                    "",
+                    "NOCTURA: \"I was tired of being imprisoned. Tired of being weak.\"",
+                    "NOCTURA: \"Can you blame me for wanting to be free?\"",
+                    "",
+                    "She fades into shadow, but you sense she's not destroyed.",
+                    "Diminished. Scattered. But not gone.",
+                    "",
+                    "\"We'll meet again, little shadow. In the next cycle...\""
+                },
+
+                LossDialogue = new[]
+                {
+                    "Noctura laughs as you fall.",
+                    "",
+                    "NOCTURA: \"So close. So very close.\"",
+                    "",
+                    "She absorbs the last of Manwe's essence.",
+                    "The power of creation flows through the Goddess of Shadows.",
+                    "",
+                    "NOCTURA: \"Don't worry. I'll take GOOD care of this world.\"",
+                    "",
+                    "She vanishes into the darkness, leaving you broken but alive.",
+                    "You feel the weight of her betrayal... and a vow to set things right."
+                },
+
+                CanBeSaved = false,
+                SaveRequirement = null,
+                SaveDialogue = null,
+
+                SpecialMechanics = new Dictionary<string, string>
+                {
+                    ["ShadowStrike"] = "Fast shadow attacks that bypass armor partially",
+                    ["FearAura"] = "Chance to stun party members each round",
+                    ["Vanish"] = "Becomes untargetable for 1 round, then strikes from behind",
+                    ["Eclipse"] = "Massive AoE shadow damage to entire party"
+                },
+
+                LoreUnlocked = "The Shadow's Gambit: Noctura never intended to be your ally. From the moment she offered " +
+                              "her hand on Floor 70, she was playing a longer game. Every god you defeated weakened the " +
+                              "divine order. Every seal you broke loosened the chains on her ambition. When Manwe fell, " +
+                              "she seized his fading essence to ascend beyond her station. The Shadow Weaver became " +
+                              "the Shadow Ascendant — but even stolen power has limits."
+            };
+        }
+
         #endregion
     }
 
@@ -807,6 +930,7 @@ namespace UsurperRemake.Data
         public string[] Phase2Dialogue { get; set; } = Array.Empty<string>();
         public string[] Phase3Dialogue { get; set; } = Array.Empty<string>();
         public string[] DefeatDialogue { get; set; } = Array.Empty<string>();
+        public string[] LossDialogue { get; set; } = Array.Empty<string>();
 
         // Phase thresholds (percentage of HP)
         public float Phase1Threshold { get; set; }

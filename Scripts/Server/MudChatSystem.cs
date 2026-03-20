@@ -385,6 +385,7 @@ public static class MudChatSystem
         CharacterClass.Cyclebreaker => "Cycl",
         CharacterClass.Abysswarden  => "Abys",
         CharacterClass.Voidreaver   => "Void",
+        CharacterClass.MysticShaman => "Sham",
         _                           => "????"
     };
 

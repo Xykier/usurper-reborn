@@ -349,61 +349,65 @@ namespace UsurperRemake.Systems
         /// </summary>
         private void ApplyArtifactBonuses(Character player, ArtifactData artifact)
         {
+            // Artifact Hunter NG+ perk: +50% artifact stat bonuses
+            float artifactMult = MetaProgressionSystem.Instance.GetArtifactMultiplier();
+
             foreach (var bonus in artifact.StatBonuses)
             {
+                int scaledValue = (int)(bonus.Value * artifactMult);
                 switch (bonus.Key.ToLower())
                 {
                     case "strength":
-                        player.Strength += bonus.Value;
+                        player.Strength += scaledValue;
                         break;
                     case "defence":
-                        player.Defence += bonus.Value;
+                        player.Defence += scaledValue;
                         break;
                     case "stamina":
-                        player.Stamina += bonus.Value;
+                        player.Stamina += scaledValue;
                         break;
                     case "agility":
-                        player.Agility += bonus.Value;
+                        player.Agility += scaledValue;
                         break;
                     case "charisma":
-                        player.Charisma += bonus.Value;
+                        player.Charisma += scaledValue;
                         break;
                     case "dexterity":
-                        player.Dexterity += bonus.Value;
+                        player.Dexterity += scaledValue;
                         break;
                     case "wisdom":
-                        player.Wisdom += bonus.Value;
+                        player.Wisdom += scaledValue;
                         break;
                     case "intelligence":
                         // Map to an appropriate stat
-                        player.Wisdom += bonus.Value / 2;
-                        player.Dexterity += bonus.Value / 2;
+                        player.Wisdom += scaledValue / 2;
+                        player.Dexterity += scaledValue / 2;
                         break;
                     case "maxhp":
-                        player.MaxHP += bonus.Value;
-                        player.HP += bonus.Value;
+                        player.MaxHP += scaledValue;
+                        player.HP += scaledValue;
                         break;
                     case "maxmana":
-                        player.MaxMana += bonus.Value;
-                        player.Mana += bonus.Value;
+                        player.MaxMana += scaledValue;
+                        player.Mana += scaledValue;
                         break;
                     case "weappow":
-                        player.BonusWeapPow += bonus.Value;
+                        player.BonusWeapPow += scaledValue;
                         break;
                     case "chivalry":
-                        player.Chivalry += bonus.Value;
+                        player.Chivalry += scaledValue;
                         break;
                     case "darkness":
-                        player.Darkness += bonus.Value;
+                        player.Darkness += scaledValue;
                         break;
                     case "allstats":
-                        player.Strength += bonus.Value;
-                        player.Defence += bonus.Value;
-                        player.Stamina += bonus.Value;
-                        player.Agility += bonus.Value;
-                        player.Charisma += bonus.Value;
-                        player.Dexterity += bonus.Value;
-                        player.Wisdom += bonus.Value;
+                        player.Strength += scaledValue;
+                        player.Defence += scaledValue;
+                        player.Stamina += scaledValue;
+                        player.Agility += scaledValue;
+                        player.Charisma += scaledValue;
+                        player.Dexterity += scaledValue;
+                        player.Wisdom += scaledValue;
                         break;
                 }
             }

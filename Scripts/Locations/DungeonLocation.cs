@@ -12995,6 +12995,51 @@ public class DungeonLocation : BaseLocation
 
             await AmnesiaSystem.Instance.OnPlayerRest(terminal, player);
 
+            // Survivor's Guilt NG+ perk: fallen companions appear as ghost advisors
+            if (MetaProgressionSystem.Instance.HasSurvivorsGuilt)
+            {
+                var fallen = CompanionSystem.Instance?.GetFallenCompanions()?.ToList();
+                if (fallen != null && fallen.Count > 0)
+                {
+                    var ghost = fallen[dungeonRandom.Next(fallen.Count)];
+                    terminal.WriteLine("");
+                    terminal.SetColor("dark_cyan");
+                    terminal.WriteLine($"  A translucent figure shimmers beside you...");
+                    await Task.Delay(1000);
+                    terminal.SetColor("bright_cyan");
+                    terminal.WriteLine($"  {ghost.Companion.Name}: \"Still fighting, I see. Good.\"");
+                    await Task.Delay(1000);
+
+                    // Grant a small combat buff
+                    var ghostBuff = dungeonRandom.Next(3);
+                    if (ghostBuff == 0)
+                    {
+                        player.TempAttackBonus += 15;
+                        player.TempAttackBonusDuration = Math.Max(player.TempAttackBonusDuration, 3);
+                        terminal.WriteLine($"  {ghost.Companion.Name}: \"Let me lend you my strength.\"");
+                        terminal.SetColor("green");
+                        terminal.WriteLine($"  (+15 ATK for 3 combats)");
+                    }
+                    else if (ghostBuff == 1)
+                    {
+                        player.TempDefenseBonus += 15;
+                        player.TempDefenseBonusDuration = Math.Max(player.TempDefenseBonusDuration, 3);
+                        terminal.WriteLine($"  {ghost.Companion.Name}: \"I'll watch your back. Like old times.\"");
+                        terminal.SetColor("green");
+                        terminal.WriteLine($"  (+15 DEF for 3 combats)");
+                    }
+                    else
+                    {
+                        long ghostHeal = player.MaxHP / 5;
+                        player.HP = Math.Min(player.MaxHP, player.HP + ghostHeal);
+                        terminal.WriteLine($"  {ghost.Companion.Name}: \"Rest now. You'll need your strength.\"");
+                        terminal.SetColor("green");
+                        terminal.WriteLine($"  (+{ghostHeal} HP)");
+                    }
+                    await Task.Delay(1500);
+                }
+            }
+
             // In single-player, dungeon rest can advance the day if it's nighttime
             if (!UsurperRemake.BBS.DoorMode.IsOnlineMode && DailySystemManager.CanRestForNight(player))
             {

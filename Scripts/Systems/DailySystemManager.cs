@@ -358,6 +358,7 @@ public class DailySystemManager
         player.SettlementCircleUsedToday = false;
         player.SettlementWorkshopUsedToday = false;
         player.ThroneChallengedToday = false;
+        player.TavernStrangerTalkedToday = false;
 
         // Reset fatigue on full sleep (v0.49.1)
         player.Fatigue = 0;
