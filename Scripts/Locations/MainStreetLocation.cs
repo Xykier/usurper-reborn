@@ -1224,11 +1224,11 @@ public class MainStreetLocation : BaseLocation
                 await ShowMail();
                 return false;
 
-            // Secret dev menu - hidden command
+            // Dev menu removed in v0.53.7 — use admin console instead
             case "DEV":
             case "CHEATER":
             case "DEVMENU":
-                await EnterDevMenu();
+                terminal.WriteLine("  The dev menu has been removed. Use the admin console.", "gray");
                 return false;
 
             // Talk to NPCs
@@ -2964,48 +2964,6 @@ public class MainStreetLocation : BaseLocation
         WorldEventSystem.Instance.DisplayWorldStatus(terminal);
         terminal.WriteLine("");
         await terminal.PressAnyKey(Loc.Get("ui.press_enter"));
-    }
-
-    /// <summary>
-    /// Enter the secret developer menu for testing
-    /// </summary>
-    private async Task EnterDevMenu()
-    {
-        // In online/BBS mode, restrict dev menu to authorized users only
-        if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
-        {
-            // Online mode: only authorized admins can access
-            var playerName = currentPlayer?.Name1;
-            if (!string.Equals(playerName, "Rage", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(playerName, "fastfinge", StringComparison.OrdinalIgnoreCase))
-            {
-                terminal.SetColor("red");
-                terminal.WriteLine($"  {Loc.Get("main_street.dev_access_denied")}");
-                await Task.Delay(1000);
-                return;
-            }
-        }
-        else if (UsurperRemake.BBS.DoorMode.IsInDoorMode)
-        {
-            // BBS door mode: only SysOps can access
-            if (!UsurperRemake.BBS.DoorMode.IsSysOp)
-            {
-                terminal.SetColor("red");
-                terminal.WriteLine($"  {Loc.Get("main_street.dev_access_denied")}");
-                await Task.Delay(1000);
-                return;
-            }
-        }
-
-        terminal.SetColor("dark_magenta");
-        terminal.WriteLine("");
-        terminal.WriteLine($"  {Loc.Get("main_street.dev_shimmer")}");
-        await Task.Delay(500);
-        terminal.WriteLine($"  {Loc.Get("main_street.dev_reality")}");
-        await Task.Delay(500);
-
-        var devMenu = new DevMenuLocation();
-        await devMenu.EnterLocation(currentPlayer, terminal);
     }
 
     /// <summary>

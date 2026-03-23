@@ -162,6 +162,7 @@ public static class ShopItemGenerator
                 ClassRestrictions = ParseClassRestrictions(template.Classes),
             };
             ApplyWeaponBonuses(equip, weaponType, level);
+            ApplyNameThematicBonuses(equip, template.Name, power);
             results.Add(equip);
         }
 
@@ -230,6 +231,7 @@ public static class ShopItemGenerator
                 ClassRestrictions = ParseClassRestrictions(template.Classes),
             };
             ApplyArmorBonuses(equip, armorType, level);
+            ApplyNameThematicBonuses(equip, template.Name, power);
             results.Add(equip);
         }
 
@@ -260,6 +262,7 @@ public static class ShopItemGenerator
                 MinLevel = level,
             };
             ApplyAccessoryBonuses(equip, template.Name, level);
+            ApplyNameThematicBonuses(equip, template.Name, power);
             results.Add(equip);
         }
 
@@ -384,6 +387,46 @@ public static class ShopItemGenerator
                 equip.ConstitutionBonus = (int)(s * 3) + (int)(s * 2); // 0-5
                 break;
         }
+    }
+
+    /// <summary>
+    /// Apply name-based thematic stat bonuses to shop equipment.
+    /// Mirrors LootGenerator.ApplyThematicBonuses but works on Equipment directly.
+    /// </summary>
+    private static void ApplyNameThematicBonuses(Equipment equip, string templateName, int power)
+    {
+        var name = templateName.ToLowerInvariant();
+        int primary = Math.Max(1, power / 5);
+        int secondary = Math.Max(1, power / 7);
+
+        if (name.Contains("holy") || name.Contains("sacred") || name.Contains("blessed") ||
+            name.Contains("divine") || name.Contains("celestial") || name.Contains("paladin"))
+        { equip.WisdomBonus += primary; equip.ConstitutionBonus += secondary; }
+        else if (name.Contains("arcane") || name.Contains("mystic") || name.Contains("wizard") ||
+                 name.Contains("mage") || name.Contains("sorcery") || name.Contains("focus") ||
+                 name.Contains("mind") || name.Contains("void"))
+        { equip.IntelligenceBonus += primary; equip.WisdomBonus += secondary; }
+        else if (name.Contains("shadow") || name.Contains("assassin") || name.Contains("night") ||
+                 name.Contains("phantom") || name.Contains("rogue") || name.Contains("darkness"))
+        { equip.DexterityBonus += primary; equip.AgilityBonus += secondary; }
+        else if (name.Contains("war") || name.Contains("battle") || name.Contains("titan") ||
+                 name.Contains("champion") || name.Contains("gladiator") || name.Contains("fighter"))
+        { equip.StrengthBonus += primary; equip.DefenceBonus += secondary; }
+        else if (name.Contains("dragon"))
+        { equip.StrengthBonus += primary; equip.ConstitutionBonus += secondary; equip.DefenceBonus += Math.Max(1, power / 9); }
+        else if (name.Contains("ranger") || name.Contains("scout") || name.Contains("elven") ||
+                 name.Contains("forest"))
+        { equip.DexterityBonus += primary; equip.AgilityBonus += secondary; }
+        else if (name.Contains("song") || name.Contains("lute") || name.Contains("lyre") ||
+                 name.Contains("harp") || name.Contains("horn") || name.Contains("flute") ||
+                 name.Contains("drum") || name.Contains("opus") || name.Contains("virtuoso") ||
+                 name.Contains("performer") || name.Contains("troubadour") || name.Contains("minstrel"))
+        { equip.CharismaBonus += primary; equip.DexterityBonus += secondary; }
+        else if (name.Contains("charm") || name.Contains("glamour") || name.Contains("siren") ||
+                 name.Contains("orator") || name.Contains("herald") || name.Contains("eloquen") ||
+                 name.Contains("regal") || name.Contains("noble") || name.Contains("crown") ||
+                 name.Contains("allure") || name.Contains("voice") || name.Contains("diplomat"))
+        { equip.CharismaBonus += primary; equip.WisdomBonus += secondary; }
     }
 
     /// <summary>

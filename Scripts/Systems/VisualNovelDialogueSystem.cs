@@ -1291,7 +1291,9 @@ namespace UsurperRemake.Systems
             }
 
             // Check NPC's relationship status
-            bool npcIsMarried = npc.Married || npc.IsMarried;
+            // Use marriage registry as the authoritative source (matches gossip screen)
+            // NPC flags (Married/IsMarried) can be stale from dead spouses or registry desyncs
+            bool npcIsMarried = NPCMarriageRegistry.Instance?.IsMarriedToNPC(npc.ID) == true;
             // Check if NPC has a spouse/partner that isn't the player (makes flirting harder)
             // If NPC is already player's Lover/FWB, they're receptive - don't penalize
             bool npcHasLover = !string.IsNullOrEmpty(npc.SpouseName) && npc.SpouseName != player!.Name2;
@@ -2219,8 +2221,18 @@ namespace UsurperRemake.Systems
             player.SpouseName = npc.Name2;
             player.MarriedTimes++;
 
+            // Update NPC married status
+            npc.IsMarried = true;
+            npc.Married = true;
+            npc.SpouseName = player.DisplayName;
+            npc.MarriedTimes++;
+
             // Add to RomanceTracker as spouse
             RomanceTracker.Instance.AddSpouse(npc.ID, false);
+
+            // Register in NPCMarriageRegistry (authoritative source for gossip/flirt)
+            NPCMarriageRegistry.Instance?.RegisterMarriage(
+                player.ID ?? "", npc.ID, player.DisplayName, npc.Name2);
 
             // Generate news
             NewsSystem.Instance?.Newsy(true, $"{player.Name} and {npc.Name2} have gotten married! Congratulations to the happy couple!");

@@ -138,6 +138,61 @@ When the king sets bail on a prisoner, the prisoner now receives both a system m
 
 `GetUnreadMessages` SQL now matches on both `to_player = username` AND `to_player = display_name`, fixing petition and bail messages not being received when the king's display name differs from their account username.
 
+## Alethia Lore: Aurelion's Lost Beloved
+
+Alethia, Aurelion's wife, has been woven into the game's narrative. She was murdered by Noctura — Aurelion's own sister — out of forbidden love and jealousy. The truth is revealed through a layered breadcrumb trail:
+
+**Spell Renames:** Tidesworn's "Tidal Ward" → "Alethia's Ward" and Wavecaller's "Restorative Tide" → "Alethia's Grace" — both with lore-themed descriptions invoking Aurelion's lost beloved.
+
+**Lore Fragments (6 new):**
+- Noctura fragments hint at shadow, night-blooming flowers, and "something a sister should not feel" without naming the murder directly
+- Aurelion fragments reveal "Alethia was his light, his grace" and "She was murdered. And the Light has never recovered."
+- Players can infer Noctura killed Alethia from the clues before the confirmation
+
+**Ghost Encounters (floors 60-85, 25% at rest spots):** Alethia's luminous spirit appears with 4 possible dialogue sets — she speaks of her love for Aurelion, hints at Noctura's jealousy ("She loved him too. Not as a sister should."), and her own murder ("She came wearing shadows and smiling. I did not fear her. She was family."). Restores 1/3 HP and mana.
+
+**Dream: "The Grace of Light" (levels 35-70):** A dream showing Aurelion and Alethia in a garden, a shadow watching from the treeline burning with forbidden love, and the night the garden filled with night-blooming flowers. "He never stops calling."
+
+**Aurelion Dialogue (new "Who was Alethia?" choice):** Full revelation — Noctura loved Aurelion, he chose Alethia instead, Noctura murdered her. "My light has been going out ever since. Not because Manwe broke me. Because she was my light. And she is gone."
+
+**Story So Far updated:** Sundering text now reads: "The shadow goddess consumed her brother's beloved in darkness. The god of light, broken by grief, faded to barely a whisper."
+
+## Level Cap 100
+
+Player level is now capped at 100. Auto-level-up and Level Master both enforce the cap. NPC teammate catch-up XP also respects the cap.
+
+## Crescendo Party Buff
+
+Wavecaller's Crescendo ability buffed: base damage 120→180, per-ally bonus 30→50, cooldown 6→5 rounds. New: inspires the entire party with +25 ATK, +25 DEF for 3 rounds on cast. Both single-monster and multi-monster handlers updated.
+
+## Void Rupture AoE Diminishing
+
+Void Rupture (Voidreaver AoE ability) was dealing full damage to all targets with no diminishing returns. Now uses the standard AoE diminishing multiplier (100%/75%/50%/25%). Explosion damage on kills now scales at 15% of hit damage (minimum 60) instead of a flat 60.
+
+## Arena Immortal Filter
+
+Players who ascended to immortality are now filtered from the PvP arena opponent list. Also filtered from the website PvP leaderboard. Uses `isImmortal` flag in player data.
+
+## Arena Username Fix
+
+Arena opponent save data was loaded using `DisplayName` instead of `Username`, causing "load failed" for players whose display name differs from their account name (e.g., prestige renames). `PlayerSummary` now includes a `Username` field used for all backend lookups.
+
+## Throne Challenge Spam Cooldown
+
+NPC throne challenges spammed dethroned players with repeated warning and defeat messages because the challenge system didn't detect king changes. Added: king change detection clears pending challenges, 10-minute cooldown after any dethronement, pending challenges cleared when throne is vacated.
+
+## Companion Execute AI Fix
+
+Companion AI used Execute on full-HP targets because it checked for low-HP monsters at ability selection time, but by execution time those monsters had died from earlier attacks in the round. Now re-checks living monsters before committing to Execute and cancels if no valid low-HP target exists.
+
+## Companion Weapon Comparison Fix
+
+Teammate weapon loot comparison used different scoring for new items (`lootItem.Attack`) vs equipped items (`currentEquip.WeaponPower`) with no stat bonuses on either side. A 138 WP weapon with good stats could replace a 164 WP weapon and be called an "upgrade." Now uses weighted scoring: WeaponPower * 3 + all stat bonuses for both sides. Dual-wield slot selection also uses the same weighted formula.
+
+## Blood Frenzy Description Clarification
+
+Blood Frenzy description updated from "Attack twice per round" to "Basic attacks hit twice per round. Does not affect abilities or spells." The mechanic was working correctly — Haste doubles basic attacks but not ability/spell actions — but the description was misleading.
+
 ## /g Gold Command Fix
 
 `/g` was documented as a gold shortcut in the help menu but was intercepted by the MUD chat system as an alias for `/group` before the location could process it. Removed `/g` as a group alias — players use `/group` for grouping and `/g` now correctly shows gold status.
@@ -162,7 +217,17 @@ The immigration system stopped spawning diversity-based immigrants when populati
 - `Scripts/Core/Character.cs` — `ExecutionsToday`, `TotalExecutions` properties
 - `Scripts/Core/King.cs` — Name validation in `CreateNewKing`; sentence expiry clears NPC `DaysInPrison` and location
 - `Scripts/Locations/CastleLocation.cs` — Rebellion system (coin flip, Walk of Shame, character deletion); execution broadcast; prison menu overhaul (visual/BBS/SR); prison null guard; double imprisonment check; dead NPC filter; establishment toggle fix; throne challenge null guard; prisoner inheritance on all 4 succession paths; `CrownNPC` uses `CreateNewKing`; NPC gold deduction on coronation
-- `Scripts/Systems/CombatEngine.cs` — Shaman totem processing in PvP combat loop
+- `Scripts/Systems/CombatEngine.cs` — Shaman totem processing in PvP combat loop; Crescendo party buff (+25 ATK/DEF); Void Rupture AoE diminishing + scaled explosion; companion weapon weighted scoring; Execute AI re-check; Blood Frenzy description
+- `Scripts/Systems/ClassAbilitySystem.cs` — Crescendo base 120→180, per-ally 30→50, cooldown 6→5; Blood Frenzy description clarified
+- `Scripts/Systems/SpellSystem.cs` — Tidal Ward → Alethia's Ward; Restorative Tide → Alethia's Grace (spell renames + lore descriptions)
+- `Scripts/Systems/DialogueSystem.cs` — New Aurelion "Who was Alethia?" dialogue node with full Noctura revelation
+- `Scripts/Systems/DreamSystem.cs` — New "The Grace of Light" dream (levels 35-70, Alethia/Aurelion/Noctura)
+- `Scripts/Systems/FeatureInteractionSystem.cs` — 4 new lore fragments (2 Noctura with Alethia hints, 2 Aurelion with Alethia references)
+- `Scripts/Systems/ChallengeSystem.cs` — King change detection; 10-minute dethronement cooldown; pending challenge cleanup
+- `Scripts/Systems/IOnlineSaveBackend.cs` — `Username` field added to `PlayerSummary`
+- `Scripts/Systems/SqlSaveBackend.cs` — `GetAllPlayerSummaries` includes username, filters immortals; `GetUnreadMessages` matches username OR display_name
+- `Scripts/Locations/ArenaLocation.cs` — Uses `Username` for `ReadGameData`, `HasAttackedPlayerToday`, same-account filter
+- `Scripts/Locations/LevelMasterLocation.cs` — Level cap 100 enforcement
 - `Scripts/Systems/OnlineStateManager.cs` — `SaveRoyalCourtToWorldState` saves empty state when king is null
 - `Scripts/Systems/SaveDataStructures.cs` — `ThroneChallengedToday`, `TotalExecutions` fields
 - `Scripts/Systems/SaveSystem.cs` — Serialize `ThroneChallengedToday`, `TotalExecutions`
@@ -171,9 +236,10 @@ The immigration system stopped spawning diversity-based immigrants when populati
 - `Scripts/Systems/WorldSimulator.cs` — Immigration population cap 80→200
 - `Scripts/Server/PlayerSession.cs` — `SuppressDisconnectSave` flag for rebellion character deletion
 - `Scripts/Server/MudChatSystem.cs` — Removed `/g` as group alias (conflicts with `/gold`)
-- `Scripts/Locations/DungeonLocation.cs` — Safe haven navigation in dungeon guide
+- `Scripts/Locations/DungeonLocation.cs` — Safe haven navigation in dungeon guide; Alethia ghost encounter (floors 60-85)
 - `Tests/GameConfigTests.cs` — MaxLevel assertion updated for 100 cap
-- `Localization/en.json` — 92 missing keys added; establishment fix
+- `Localization/en.json` — 92 missing keys added; establishment fix; Story So Far Alethia text; Alethia spell descriptions
+- `web/ssh-proxy.js` — PvP leaderboard immortal filter
 - `Localization/es.json` — 133 keys synced; ~310 translated; format fixes; `castle.closed_past` fix
 - `Localization/hu.json` — 133 keys synced; ~297 translated; 17 format fixes; `castle.closed_past` fix
 - `Localization/it.json` — 133 keys synced; ~332 translated; format fixes; `castle.closed_past` fix

@@ -2595,6 +2595,18 @@ public partial class GameEngine
                 }
             }
 
+            // Marriage cleanup: verify spouse NPC still exists and is alive
+            if (currentPlayer != null && currentPlayer.IsMarried && !string.IsNullOrEmpty(currentPlayer.SpouseName))
+            {
+                var spouseNPC = NPCSpawnSystem.Instance?.GetNPCByName(currentPlayer.SpouseName);
+                if (spouseNPC == null || spouseNPC.IsDead || spouseNPC.IsPermaDead)
+                {
+                    DebugLogger.Instance.LogWarning("MARRIAGE", $"Spouse '{currentPlayer.SpouseName}' not found or dead — clearing marriage for {currentPlayer.Name2}");
+                    currentPlayer.IsMarried = false;
+                    currentPlayer.SpouseName = "";
+                }
+            }
+
             // Online mode: cache divine boon effects for mortals who worship a player-god
             if (UsurperRemake.BBS.DoorMode.IsOnlineMode && currentPlayer != null
                 && !string.IsNullOrEmpty(currentPlayer.WorshippedGod)
@@ -6293,6 +6305,7 @@ public partial class GameEngine
         terminal.WriteLine(Loc.Get("engine.credits_fastfinge"));
         terminal.WriteLine(Loc.Get("engine.credits_maxsond"));
         terminal.WriteLine(Loc.Get("engine.credits_djlunacy"));
+        terminal.WriteLine(Loc.Get("engine.credits_xykier"));
         terminal.WriteLine("");
 
         terminal.SetColor("bright_magenta");

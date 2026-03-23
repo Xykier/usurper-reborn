@@ -910,7 +910,7 @@ public static class EnhancedNPCBehaviors
             // Marry the player to the NPC
             npc.Married = true;
             npc.IsMarried = true;
-            npc.SpouseName = player.Name;
+            npc.SpouseName = player.DisplayName;
             npc.MarriedTimes++;
 
             player.Married = true;
@@ -918,8 +918,10 @@ public static class EnhancedNPCBehaviors
             player.SpouseName = npc.Name2;
             player.MarriedTimes++;
 
-            // Update RomanceTracker
+            // Update RomanceTracker and NPCMarriageRegistry
             RomanceTracker.Instance?.AddSpouse(npc.ID);
+            NPCMarriageRegistry.Instance?.RegisterMarriage(
+                player.ID ?? "", npc.ID, player.DisplayName, npc.Name2);
 
             // Generate wedding news (dramatic remarriage after affair)
             NewsSystem.Instance?.WriteNews(

@@ -1429,6 +1429,9 @@ public class CastleLocation : BaseLocation
                     catch { /* notification failed */ }
                     // Deduct 10% gold as execution penalty
                     await backend.DeductGoldByPercentage(name, 10);
+
+                    // ImprisonPlayer(name, 0) already set DaysInPrison=0 in DB
+                    // Player picks up the release on next save/load cycle
                 }
                 PersistRoyalCourtToWorldState();
             }
@@ -4132,16 +4135,16 @@ public class CastleLocation : BaseLocation
             // Register the actual marriage on both characters
             currentPlayer.Married = true;
             currentPlayer.IsMarried = true;
-            currentPlayer.SpouseName = candidate.Name;
+            currentPlayer.SpouseName = candidate.DisplayName;
             currentPlayer.MarriedTimes++;
 
             candidate.Married = true;
             candidate.IsMarried = true;
-            candidate.SpouseName = currentPlayer.Name;
+            candidate.SpouseName = currentPlayer.DisplayName;
             candidate.MarriedTimes++;
 
             // Register with marriage registry and romance tracker
-            NPCMarriageRegistry.Instance.RegisterMarriage(currentPlayer.ID, candidate.ID, currentPlayer.Name, candidate.Name);
+            NPCMarriageRegistry.Instance.RegisterMarriage(currentPlayer.ID, candidate.ID, currentPlayer.DisplayName, candidate.DisplayName);
             RomanceTracker.Instance?.AddSpouse(candidate.ID);
 
             // Create/update the relationship record to married
@@ -7430,16 +7433,23 @@ public class CastleLocation : BaseLocation
         var spouseName = outgoingKing.Spouse.Name;
         outgoingKing.Spouse = null;
 
-        // Clear marriage state on the NPC
+        // Clear marriage state on the NPC spouse
         var spouseNPC = NPCSpawnSystem.Instance?.ActiveNPCs?.FirstOrDefault(n => n.Name == spouseName);
         if (spouseNPC != null)
         {
             spouseNPC.Married = false;
             spouseNPC.IsMarried = false;
             spouseNPC.SpouseName = "";
+
+            // Clear marriage registry by NPC ID (not name)
+            NPCMarriageRegistry.Instance?.EndMarriage(spouseNPC.ID);
+
+            // Clear RomanceTracker (throne change, not death)
+            try { RomanceTracker.Instance?.Divorce(spouseNPC.ID, "Royal marriage annulled (throne change)", false); }
+            catch { /* RomanceTracker may not be initialized */ }
         }
 
-        // Clear marriage registry entry for the old king
+        // Also try clearing by king name in case the NPC wasn't found
         NPCMarriageRegistry.Instance?.EndMarriage(outgoingKing.Name);
 
         DebugLogger.Instance.LogInfo("CASTLE", $"Cleared royal marriage to {spouseName} (throne changed)");

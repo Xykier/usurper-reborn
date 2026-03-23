@@ -30,6 +30,13 @@ namespace UsurperRemake.Systems
             player = character;
         }
 
+        private void InvalidateFilteredCache()
+        {
+            filteredInventory = null;
+            filteredInventoryMap = null;
+            currFilteredSlot = null;
+        }
+
         /// <summary>
         /// Main inventory menu - shows equipment and allows management
         /// </summary>
@@ -679,6 +686,9 @@ namespace UsurperRemake.Systems
                     }
                     break;
             }
+
+            // Inventory may have changed — invalidate filtered cache
+            InvalidateFilteredCache();
         }
 
         private async Task EquipFromBackpack(int itemIndex, EquipmentSlot? slot = null)
@@ -819,7 +829,7 @@ namespace UsurperRemake.Systems
 
             // For one-handed weapons, ask which slot to use
             EquipmentSlot? finalSlot = null;
-            if (slot != null && Character.RequiresSlotSelection(equipment))
+            if (slot == null && Character.RequiresSlotSelection(equipment))
             {
                 finalSlot = await PromptForWeaponSlot();
                 if (finalSlot == null)
@@ -1170,6 +1180,7 @@ namespace UsurperRemake.Systems
             {
                 case "U":
                     HandleUnequipItem(slot);
+                    InvalidateFilteredCache();
                     break;
                 case "<":
                 case ",":

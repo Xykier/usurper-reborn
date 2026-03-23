@@ -1010,10 +1010,35 @@ public class WorldSimulator
             UsurperRemake.Systems.DebugLogger.Instance.LogInfo("LIFECYCLE",
                 $"{spouse.Name2} is now widowed after {deceased.Name2}'s passing");
         }
+        else if (!string.IsNullOrEmpty(deceased.SpouseName) && UsurperRemake.BBS.DoorMode.IsOnlineMode)
+        {
+            // Spouse not found in NPC list — might be a player
+            // Notify the player; login cleanup will clear their marriage flags
+            try
+            {
+                var backend = SaveSystem.Instance?.Backend as SqlSaveBackend;
+                if (backend != null)
+                {
+                    backend.SendMessage("System", deceased.SpouseName, "system",
+                        $"Your beloved {deceased.Name2} has passed away. You are now widowed.").GetAwaiter().GetResult();
+
+                    DebugLogger.Instance.LogInfo("LIFECYCLE",
+                        $"Player {deceased.SpouseName} will be widowed on login after NPC spouse {deceased.Name2}'s permadeath");
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Instance.LogError("LIFECYCLE", $"Failed to notify player {deceased.SpouseName} of spouse death: {ex.Message}");
+            }
+        }
 
         // Always clear the registry entry, even if the spouse wasn't found
         // (e.g., spouse already dead, name mismatch, or not loaded)
         NPCMarriageRegistry.Instance.EndMarriage(deceased.ID);
+
+        // Clear RomanceTracker spouse record (for player spouse deaths)
+        try { RomanceTracker.Instance?.HandleSpouseDeath(deceased.ID); }
+        catch { /* RomanceTracker may not be initialized */ }
 
         // Clear deceased's own marriage flags
         deceased.Married = false;
@@ -1067,6 +1092,31 @@ public class WorldSimulator
         {
             UsurperRemake.Systems.DebugLogger.Instance.LogInfo("WORLDSIM",
                 $"Cleaned up {cleaned} orphaned marriage(s) involving dead NPCs");
+        }
+
+        // Reverse check: NPCs flagged as married but not in the registry
+        int flagsCleaned = 0;
+        foreach (var npc in npcs.Where(n => (n.Married || n.IsMarried) && n.IsAlive && !n.IsDead))
+        {
+            if (registry.IsMarriedToNPC(npc.ID) != true)
+            {
+                // Check if spouse exists and is alive — if not, clear the stale flag
+                var spouse = !string.IsNullOrEmpty(npc.SpouseName)
+                    ? npcs.FirstOrDefault(n => n.Name2 == npc.SpouseName && n.IsAlive && !n.IsDead)
+                    : null;
+                if (spouse == null)
+                {
+                    npc.Married = false;
+                    npc.IsMarried = false;
+                    npc.SpouseName = "";
+                    flagsCleaned++;
+                }
+            }
+        }
+        if (flagsCleaned > 0)
+        {
+            UsurperRemake.Systems.DebugLogger.Instance.LogInfo("WORLDSIM",
+                $"Cleared {flagsCleaned} stale marriage flags on NPCs not in registry");
         }
     }
 

@@ -396,25 +396,24 @@ public class DailySystemManager
             }
         }
 
-        // Blood Moon cycle check (v0.52.0)
-        player.BloodMoonDay++;
-        if (player.BloodMoonDay >= GameConfig.BloodMoonCycleDays)
+        // Blood Moon: global server-wide event every 30 days (v0.52.0, made global in v0.53.7)
+        bool isBloodMoonDay = currentDay > 0 && currentDay % GameConfig.BloodMoonCycleDays == 0;
+        bool wasBloodMoon = player.IsBloodMoon;
+        player.IsBloodMoon = isBloodMoonDay;
+
+        if (isBloodMoonDay && !wasBloodMoon)
         {
-            player.BloodMoonDay = 0;
-            player.IsBloodMoon = true;
+            // Blood Moon just started for this player
             terminal?.WriteLine("", "white");
             if (GameConfig.ScreenReaderMode)
-            {
                 terminal?.WriteLine("  [BLOOD MOON RISING]", "bright_red");
-            }
             else
-            {
                 terminal?.WriteLine("  ★ BLOOD MOON RISING! ★", "bright_red");
-            }
             terminal?.WriteLine("  The sky turns crimson... Monsters grow fierce!", "red");
             terminal?.WriteLine("  Monsters: +50% power | XP: x2 | Gold: x3", "red");
             terminal?.WriteLine("", "white");
-            // Broadcast to online players (once per reset boundary, not per player)
+
+            // Server-wide broadcast (once per Blood Moon, not per player)
             if (UsurperRemake.BBS.DoorMode.IsOnlineMode)
             {
                 var now = DateTime.UtcNow;
@@ -426,10 +425,9 @@ public class DailySystemManager
                 }
             }
         }
-        else if (player.IsBloodMoon)
+        else if (wasBloodMoon && !isBloodMoonDay)
         {
-            // Blood moon ends after 1 day
-            player.IsBloodMoon = false;
+            // Blood Moon just ended
             terminal?.WriteLine("  The Blood Moon fades... The world returns to normal.", "gray");
             terminal?.WriteLine("", "white");
         }

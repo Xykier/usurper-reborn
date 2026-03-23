@@ -542,8 +542,8 @@ public class DungeonLocation : BaseLocation
         term.WriteLine("");
         await term.PressAnyKey();
 
-        // Generate the guardian as a mini-boss scaled for floor 5
-        var guardian = MonsterGenerator.GenerateMonster(5, isBoss: false, isMiniBoss: true);
+        // Generate the guardian as a regular monster scaled for floor 5 (not mini-boss — too hard for support classes)
+        var guardian = MonsterGenerator.GenerateMonster(5, isBoss: false, isMiniBoss: false);
         guardian.Name = "Dungeon Guardian";
         guardian.MonsterColor = "bright_red";
         guardian.CanSpeak = true;
@@ -1714,23 +1714,16 @@ public class DungeonLocation : BaseLocation
                 term.WriteLine(Loc.Get("dungeon.god_spared_hope"), "bright_cyan");
                 term.WriteLine(Loc.Get("dungeon.god_spared_lingers"), "white");
                 term.WriteLine("");
-                term.SetColor("bright_magenta");
-                term.WriteLine(Loc.Get("dungeon.promised_loom"));
-                term.WriteLine(Loc.Get("dungeon.artifact_deeper"), "yellow");
-                term.WriteLine("");
 
                 player.Chivalry += 75;
                 term.WriteLine(Loc.Get("dungeon.chivalry_mercy"), "bright_green");
-                term.SetColor("bright_yellow");
-                term.WriteLine("");
-                term.WriteLine(Loc.Get("dungeon.quest_started_loom"));
 
                 // Online news
                 if (UsurperRemake.Systems.OnlineStateManager.IsActive)
                 {
                     var sparerName = player.Name2 ?? player.Name1;
                     _ = UsurperRemake.Systems.OnlineStateManager.Instance!.AddNews(
-                        $"{sparerName} has shown mercy to the Old God {result.God} and vowed to find a cure!", "quest");
+                        $"{sparerName} has shown mercy to the Old God {result.God} and received a sacred relic!", "quest");
                 }
                 break;
 
@@ -9447,7 +9440,7 @@ public class DungeonLocation : BaseLocation
             {
                 var selectedMember = teammates[idx - 1];
 
-                // Don't allow managing grouped player equipment or echo characters
+                // Don't allow managing grouped player equipment or echo characters or mercenaries
                 if (selectedMember.IsGroupedPlayer)
                 {
                     terminal.SetColor("yellow");
@@ -9459,6 +9452,13 @@ public class DungeonLocation : BaseLocation
                 {
                     terminal.SetColor("yellow");
                     terminal.WriteLine("  Echo characters cannot be managed.");
+                    await Task.Delay(1500);
+                    continue;
+                }
+                if (selectedMember.IsMercenary)
+                {
+                    terminal.SetColor("yellow");
+                    terminal.WriteLine("  Royal bodyguards use their own equipment and cannot be re-equipped.");
                     await Task.Delay(1500);
                     continue;
                 }

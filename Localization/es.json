@@ -16649,5 +16649,8 @@
   "castle.est_magicshop": "Magic Shop",
   "castle.est_healer": "The Healer",
   "castle.est_auctionhouse": "Auction House",
-  "castle.est_church": "The Church"
+  "castle.est_church": "The Church",
+  "inventory.slot.equip": "[B#] Equip backpack item",
+  "inventory.slot.options_line2": "[<]/[>] Page backpack  [Q] Return to inventory",
+  "engine.credits_xykier": "    Xykier                   - Code Contributions"
 }

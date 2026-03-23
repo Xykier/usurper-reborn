@@ -448,7 +448,7 @@ namespace UsurperRemake.Data
                 Level = 90,           // Above floor 85 - requires preparation
                 HP = 250000,          // God of Light — radiant divine armor, enchanted weapons essential
                 MaxHP = 250000,
-                Strength = 280,       // Purifying light burns
+                Strength = 840,       // Purifying light burns (3x to prevent cheesing)
                 Defence = 180,
                 Agility = 120,
                 Wisdom = 280,         // High magic damage
@@ -556,7 +556,7 @@ namespace UsurperRemake.Data
                 Level = 98,           // Near floor 95 - penultimate challenge
                 HP = 350000,          // God of Earth — massive stone skin, demands full preparation
                 MaxHP = 350000,
-                Strength = 350,       // Devastating mountain blows
+                Strength = 1050,      // Devastating mountain blows (3x to prevent cheesing)
                 Defence = 300,        // Incredibly tanky
                 Agility = 25,
                 AttacksPerRound = 2,  // Slow but each hit is brutal
@@ -665,7 +665,7 @@ namespace UsurperRemake.Data
                 Level = 100,          // Final boss - the ultimate challenge
                 HP = 500000,          // The Creator — the ultimate battle, requires everything you've got
                 MaxHP = 500000,
-                Strength = 400,       // The power of creation itself
+                Strength = 1200,      // The power of creation itself (3x to prevent cheesing)
                 Defence = 300,
                 Agility = 200,
                 Wisdom = 350,         // Master of all magic

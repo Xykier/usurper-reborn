@@ -8026,6 +8026,9 @@ public partial class CombatEngine
             // Skip grouped players — they already had their chance in the pass-down chain
             if (teammate.IsGroupedPlayer) continue;
 
+            // Skip mercenaries (royal bodyguards) — they use baked-in stats, no equipment
+            if (teammate.IsMercenary) continue;
+
             // Check class restrictions — companions can't grab weapons/shields their class can't use
             var (canUseClass, _) = LootGenerator.CanClassUseLootItem(teammate.Class, lootItem);
             if (!canUseClass) continue;
@@ -10936,8 +10939,13 @@ public partial class CombatEngine
         bool isPlayer = (player == currentPlayer);
         string actorName = isPlayer ? "You" : player.DisplayName;
 
+        // Skip base single-target damage for AoE abilities — their special effect handlers do all the damage
+        bool isAoEAbility = abilityResult.SpecialEffect is "crescendo_aoe" or "aoe" or "whirlwind"
+            or "aoe_holy" or "fire" or "void_rupture" or "chain_lightning" or "corrosive_cloud_aoe"
+            or "dissonant_wave" or "aoe_taunt" or "harmonic_crescendo";
+
         // Apply damage
-        if (abilityResult.Damage > 0 && target != null && target.IsAlive)
+        if (abilityResult.Damage > 0 && target != null && target.IsAlive && !isAoEAbility)
         {
             long actualDamage = abilityResult.Damage;
 
@@ -13301,13 +13309,23 @@ public partial class CombatEngine
                     }
                 }
 
-                // Apply any protection/buff bonus from the spell to caster
+                // Apply any protection/buff bonus from the spell to entire party
                 if (spellResult.ProtectionBonus > 0)
                 {
                     int dur = spellResult.Duration > 0 ? spellResult.Duration : 999;
                     player.MagicACBonus = spellResult.ProtectionBonus;
                     player.ApplyStatus(StatusEffect.Blessed, dur);
                     terminal.WriteLine($"You are magically protected! (+{spellResult.ProtectionBonus} AC)", "blue");
+
+                    if (currentTeammates != null)
+                    {
+                        foreach (var tm in currentTeammates.Where(t => t.IsAlive))
+                        {
+                            tm.MagicACBonus = spellResult.ProtectionBonus;
+                            tm.ApplyStatus(StatusEffect.Blessed, dur);
+                            terminal.WriteLine($"{tm.DisplayName} is magically protected! (+{spellResult.ProtectionBonus} AC)", "blue");
+                        }
+                    }
                 }
 
                 result.CombatLog.Add($"{player.DisplayName} casts {spellInfo.Name} on the whole party.");
@@ -13340,6 +13358,15 @@ public partial class CombatEngine
                         {
                             CompanionSystem.Instance.SyncCompanionHP(allyTarget);
                         }
+                    }
+                    // Also apply protection if the heal spell has a protection bonus
+                    if (spellResult.ProtectionBonus > 0)
+                    {
+                        int dur = spellResult.Duration > 0 ? spellResult.Duration : 999;
+                        allyTarget.MagicACBonus = spellResult.ProtectionBonus;
+                        allyTarget.ApplyStatus(StatusEffect.Blessed, dur);
+                        terminal.SetColor("blue");
+                        terminal.WriteLine($"{allyTarget.DisplayName} is magically protected! (+{spellResult.ProtectionBonus} AC)");
                     }
                     result.CombatLog.Add($"{player.DisplayName} casts {spellInfo.Name} on {allyTarget.DisplayName}.");
                 }

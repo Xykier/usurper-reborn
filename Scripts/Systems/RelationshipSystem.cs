@@ -128,8 +128,9 @@ public partial class RelationshipSystem
         int oldRelation = isReversed ? relation.Relation2 : relation.Relation1;
 
         // v0.26: Enforce daily relationship gain cap for positive relationship changes
+        // Milestone events (confession, marriage) bypass the cap via overrideMaxFeeling
         int effectiveSteps = steps;
-        if (direction > 0)
+        if (direction > 0 && !overrideMaxFeeling)
         {
             effectiveSteps = EnforceDailyRelationshipCap(character1.Name, character2.Name, steps);
             if (effectiveSteps <= 0)
@@ -235,10 +236,14 @@ public partial class RelationshipSystem
                     relation.Relation1 == GameConfig.RelationMarried &&
                     relation.Relation2 == GameConfig.RelationMarried)
                 {
-                    // Check if spouse is dead before returning
+                    // Check if spouse is dead — clear stale marriage record
                     var spouse = NPCSpawnSystem.Instance?.GetNPCByName(relation.Name2);
                     if (spouse != null && spouse.IsDead)
-                        continue; // Skip dead spouse
+                    {
+                        relation.Relation1 = GameConfig.RelationNormal;
+                        relation.Relation2 = GameConfig.RelationNormal;
+                        continue;
+                    }
                     return relation.Name2;
                 }
 
@@ -246,10 +251,14 @@ public partial class RelationshipSystem
                     relation.Relation1 == GameConfig.RelationMarried &&
                     relation.Relation2 == GameConfig.RelationMarried)
                 {
-                    // Check if spouse is dead before returning
+                    // Check if spouse is dead — clear stale marriage record
                     var spouse = NPCSpawnSystem.Instance?.GetNPCByName(relation.Name1);
                     if (spouse != null && spouse.IsDead)
-                        continue; // Skip dead spouse
+                    {
+                        relation.Relation1 = GameConfig.RelationNormal;
+                        relation.Relation2 = GameConfig.RelationNormal;
+                        continue;
+                    }
                     return relation.Name1;
                 }
             }
@@ -266,6 +275,13 @@ public partial class RelationshipSystem
     public static bool PerformMarriage(Character character1, Character character2, out string message)
     {
         message = "";
+
+        // Can't marry yourself
+        if (character1 == character2 || character1.Name == character2.Name)
+        {
+            message = "You cannot marry yourself!";
+            return false;
+        }
 
         // Check if either character is permanently dead (IsDead is on NPC/Player, not base Character)
         if (character1 is NPC deadCheck1 && deadCheck1.IsDead)
@@ -345,19 +361,32 @@ public partial class RelationshipSystem
         relation.MarriedDays = 0;
         relation.MarriedTimes++;
         
-        // Update character marriage status
+        // Update character marriage status (use DisplayName for consistent lookups)
         character1.Married = true;
         character1.IsMarried = true;
-        character1.SpouseName = character2.Name;
+        character1.SpouseName = character2.DisplayName;
         character1.MarriedTimes++;
         character1.IntimacyActs--;
-        
+
         character2.Married = true;
         character2.IsMarried = true;
-        character2.SpouseName = character1.Name;
+        character2.SpouseName = character1.DisplayName;
         character2.MarriedTimes++;
         
         SaveRelationship(relation);
+
+        // Register in NPCMarriageRegistry (authoritative source for gossip/flirt checks)
+        if (character2 is NPC npcSpouse)
+        {
+            NPCMarriageRegistry.Instance?.RegisterMarriage(
+                character1.ID ?? "", npcSpouse.ID, character1.Name, npcSpouse.Name2);
+        }
+
+        // Register in RomanceTracker (tracks player romantic history)
+        if (character2 is NPC romanceNpc)
+        {
+            RomanceTracker.Instance?.AddSpouse(romanceNpc.ID);
+        }
 
         // Online news: marriage
         if (OnlineStateManager.IsActive)
@@ -460,6 +489,18 @@ public partial class RelationshipSystem
         
         SaveRelationship(relation);
         
+        // Clear NPCMarriageRegistry
+        if (character2 is NPC divorcedNpc)
+        {
+            NPCMarriageRegistry.Instance?.EndMarriage(divorcedNpc.ID);
+        }
+
+        // Clear RomanceTracker spouse record
+        if (character2 is NPC romNpc)
+        {
+            RomanceTracker.Instance?.Divorce(romNpc.ID, "Divorce", true);
+        }
+
         // Handle child custody (children go to character2 - the spouse)
         HandleChildCustodyAfterDivorce(character1, character2);
         

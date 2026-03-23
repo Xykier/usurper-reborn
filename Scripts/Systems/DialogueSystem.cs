@@ -1260,17 +1260,18 @@ namespace UsurperRemake.Systems
                     "\"The curse... it could be broken. Perhaps.\"",
                     "\"But not by force. Not by battle.\"",
                     "",
-                    "\"There is an artifact. The Soulweaver's Loom.\"",
-                    "\"It could untangle what Manwe corrupted.\"",
+                    "\"I found an artifact long ago. The Soulweaver's Loom.\"",
+                    "\"I tried to use it to heal my own fractured heart,\"",
+                    "\"but it only bound the corruption deeper.\"",
                     "",
-                    "\"But it lies in the deepest shadow.\"",
-                    "\"Would you... would you truly seek it? For me?\""
+                    "\"In your hands, it might work differently.\"",
+                    "\"Would you... would you truly try? For me?\""
                 },
                 Choices = new List<DialogueChoice>
                 {
                     new()
                     {
-                        Text = "I will find this artifact and free you.",
+                        Text = "I will try. Give me the Loom.",
                         NextNodeId = "veloura_save_promise",
                         Tone = DialogueTone.Friendly,
                         Effects = new List<DialogueEffect>
@@ -1298,11 +1299,12 @@ namespace UsurperRemake.Systems
                     "The goddess weeps openly now, but these are tears of joy.",
                     "",
                     "\"You are... remarkable, mortal.\"",
-                    "\"I will wait. I have waited ten thousand years.\"",
-                    "\"I can wait a little longer.\"",
                     "",
-                    "\"Find the Soulweaver's Loom. Return to me.\"",
-                    "\"And perhaps... perhaps I can be what I once was.\"",
+                    "She presses something warm into your hands.",
+                    "The Soulweaver's Loom -- ancient, luminous, humming with power.",
+                    "",
+                    "\"Take it. It was never meant for a goddess.\"",
+                    "\"Perhaps in mortal hands, it can do what I could not.\"",
                     "",
                     "She fades, leaving a warm glow in your heart."
                 },

@@ -337,16 +337,9 @@ namespace UsurperRemake.Systems
 
                 if (story.HasStoryFlag($"{type.ToString().ToLower()}_spared"))
                 {
-                    story.UpdateGodState(type, GodStatus.Awakened);
-                    story.SetStoryFlag($"{type.ToString().ToLower()}_save_quest", true);
-
-                    return new BossEncounterResult
-                    {
-                        Success = true,
-                        Outcome = BossOutcome.Spared,
-                        God = type,
-                        ApproachType = "merciful"
-                    };
+                    // Gods now give their artifact directly during the save dialogue
+                    // Route through HandleBossSaved for proper state update + artifact grant
+                    return await HandleBossSaved(player, boss, terminal);
                 }
 
                 // Combat time! Either the player chose a combat path, or said nothing
